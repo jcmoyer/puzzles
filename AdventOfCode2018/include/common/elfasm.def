@@ -1,0 +1,18 @@
+ELF_OPCODE(addr)
+ELF_OPCODE(addi)
+ELF_OPCODE(mulr)
+ELF_OPCODE(muli)
+ELF_OPCODE(banr)
+ELF_OPCODE(bani)
+ELF_OPCODE(borr)
+ELF_OPCODE(bori)
+ELF_OPCODE(setr)
+ELF_OPCODE(seti)
+ELF_OPCODE(gtir)
+ELF_OPCODE(gtri)
+ELF_OPCODE(gtrr)
+ELF_OPCODE(eqir)
+ELF_OPCODE(eqri)
+ELF_OPCODE(eqrr)
+
+#undef ELF_OPCODE
