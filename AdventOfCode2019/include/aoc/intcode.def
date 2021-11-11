@@ -1,0 +1,17 @@
+// clang-format off
+#ifndef INTCODE_OP
+#define INTCODE_OP(name, val, parcount)
+#endif
+
+INTCODE_OP(op_add   , 1,  3) // Ar Br Cw      C <- A + B
+INTCODE_OP(op_mul   , 2,  3) // Ar Br Cw      C <- A * B
+INTCODE_OP(op_input , 3,  1) // Aw            A <- input
+INTCODE_OP(op_output, 4,  1) // Aw            output(A)
+INTCODE_OP(op_jnz   , 5,  2) // Ar Br         if A != 0 then ip = B
+INTCODE_OP(op_jz    , 6,  2) // Ar Br         if A == 0 then ip = B
+INTCODE_OP(op_lt    , 7,  3) // Ar Br Cw      C <- A < B
+INTCODE_OP(op_eq    , 8,  3) // Ar Br Cw      C <- A == B
+INTCODE_OP(op_rbase , 9,  1) // Ar            rbase <- rbase + A
+INTCODE_OP(op_halt  , 99, 0) //               halts execution
+
+#undef INTCODE_OP
