@@ -1,12 +1,8 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.21)
 project(aoc2019)
 
-set(PYTHON_BIN python CACHE STRING "name of python binary to use for the test runner")
-
-find_package(sr CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-
-enable_testing()
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
+include(aoc_common)
 
 include_directories("include")
 add_subdirectory("src")
