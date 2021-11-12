@@ -10,12 +10,14 @@
 #include <string>
 #include <vector>
 
+#include <sr/sr.hpp>
+
 #include "common/elfasm.hpp"
-#include "common/point.hpp"
-#include "common/value_array.hpp"
+
+using point = sr::vec2i;
 
 // 4 element int array with value semantics for convenience
-using int_seq = value_array<int, 4>;
+using int_seq = std::array<int, 4>;
 
 instruction load_instruction(const int_seq& s) {
     return {(opcode)s[0], s[1], s[2], s[3]};
@@ -82,13 +84,13 @@ problem_data load_problem_data(std::istream& input) {
 #include <chrono>
 
 void assign_seq(std::vector<int64_t>& v, const int_seq& s) {
-    for (std::size_t i = 0; i < int_seq::SIZE; ++i) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
         v[i] = s[i];
     }
 }
 
 bool equals_seq(const std::vector<int64_t>& v, const int_seq& s) {
-    for (std::size_t i = 0; i < int_seq::SIZE; ++i) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
         if (v[i] != s[i])
             return false;
     }

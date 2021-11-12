@@ -10,9 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "common/array2d.hpp"
 #include "common/elfasm.hpp"
-#include "common/point.hpp"
 
 // 4 element int array with value semantics for convenience
 template <typename T = int64_t, std::size_t N = 4>

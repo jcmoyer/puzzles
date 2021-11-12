@@ -8,8 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
+
+using point = sr::vec2i;
 
 class tile_flags {
 public:
@@ -97,12 +98,12 @@ struct world {
     }
 
     void set_clay(point p) {
-        get_tile(p.x, p.y).ty = tile::clay;
+        get_tile(p.x(), p.y()).ty = tile::clay;
     }
 
     void set_spring(point p) {
         spring = p;
-        get_tile(spring.x, spring.y).ty = tile::spring;
+        get_tile(spring.x(), spring.y()).ty = tile::spring;
     }
 
     int count_settled_water() const {
@@ -132,21 +133,21 @@ struct world {
         for (const auto& p : dirty_now) {
             if (visited.count(p))
                 continue;
-            tile& t = get_tile(p.x, p.y);
+            tile& t = get_tile(p.x(), p.y());
             t.prepare();
             if (t.ty == tile::water) {
-                do_water(t, p.x, p.y);
+                do_water(t, p.x(), p.y());
             } else if (t.ty == tile::spring) {
-                do_spring(t, p.x, p.y);
+                do_spring(t, p.x(), p.y());
             } else if (t.ty == tile::clay) {
-                do_clay(t, p.x, p.y);
+                do_clay(t, p.x(), p.y());
             }
             visited.emplace(p);
         }
 
         // apply changes to dirty tiles
         for (const auto& p : dirty) {
-            tile& t = get_tile(p.x, p.y);
+            tile& t = get_tile(p.x(), p.y());
             t.commit();
         }
     }
@@ -284,7 +285,7 @@ struct world {
     }
 
     bool in_bounds(const point& p) const {
-        return in_bounds(p.x, p.y);
+        return in_bounds(p.x(), p.y());
     }
 
     bool in_bounds(int x, int y) const {
@@ -377,33 +378,33 @@ struct world {
 
         // we're really only interested in the sides of the U since walls propagate interior/exterior behavior
         // these are v0..v1 and v2..v3
-        for (int n = v0.y; n <= v1.y; ++n) {
+        for (int n = v0.y(); n <= v1.y(); ++n) {
             if (winding == WIND_CW) {
-                get_tile(v0.x, n).f.right_interior(true);
+                get_tile(v0.x(), n).f.right_interior(true);
             } else {
-                get_tile(v0.x, n).f.left_interior(true);
+                get_tile(v0.x(), n).f.left_interior(true);
             }
         }
 
-        for (int n = v2.y; n >= v3.y; --n) {
+        for (int n = v2.y(); n >= v3.y(); --n) {
             if (winding == WIND_CW) {
-                get_tile(v2.x, n).f.left_interior(true);
+                get_tile(v2.x(), n).f.left_interior(true);
             } else {
-                get_tile(v2.x, n).f.right_interior(true);
+                get_tile(v2.x(), n).f.right_interior(true);
             }
         }
 
-        int ystart = std::max(v0.y, v3.y);
+        int ystart = std::max(v0.y(), v3.y());
         int yend = ybottom;
         for (int yy = ystart; yy < yend; ++yy) {
-            for (int xx = 1 + v0.x; xx < v2.x; ++xx) {
+            for (int xx = 1 + v0.x(); xx < v2.x(); ++xx) {
                 get_tile(xx, yy).f.interior(true);
             }
         }
 
-        ystart = std::min(v0.y, v3.y);
+        ystart = std::min(v0.y(), v3.y());
         for (int yy = ystart; yy < yend; ++yy) {
-            for (int xx = 1 + v0.x; xx < v2.x; ++xx) {
+            for (int xx = 1 + v0.x(); xx < v2.x(); ++xx) {
                 get_tile(xx, yy).f.interior(true);
                 // additionally, make any buckets inside of this one an X-interior
                 get_tile(xx, yy).f.left_interior(true);
@@ -426,7 +427,7 @@ struct world {
         }
     }
 
-    array2d<tile> tiles;
+    sr::array2d<tile> tiles;
     std::vector<point> dirty;
     int sum_settled = 0;
     int width, height;
@@ -449,23 +450,23 @@ struct world_builder {
         add_spring();
 
         auto [min_x, max_x] = std::minmax_element(tiles.begin(), tiles.end(), [this](auto&& x, auto&& y) {
-            return x.first.x < y.first.x;
+            return x.first.x() < y.first.x();
         });
         auto [min_y, max_y] = std::minmax_element(tiles.begin(), tiles.end(), [this](auto&& x, auto&& y) {
-            return x.first.y < y.first.y;
+            return x.first.y() < y.first.y();
         });
 
-        point min{min_x->first.x, min_y->first.y};
-        point max{max_x->first.x, max_y->first.y};
+        point min{min_x->first.x(), min_y->first.y()};
+        point max{max_x->first.x(), max_y->first.y()};
 
         // HACK: inflate width by 2 tiles on both sides since the problem allows for infinite X
-        min.x -= 2;
-        max.x += 2;
-        min.y--;
-        max.y++;
+        min.x() -= 2;
+        max.x() += 2;
+        min.y()--;
+        max.y()++;
 
-        int width = max.x - min.x + 1;
-        int height = max.y - min.y + 1;
+        int width = max.x() - min.x() + 1;
+        int height = max.y() - min.y() + 1;
 
         world w(width, height);
         for (const auto& [p, t] : tiles) {

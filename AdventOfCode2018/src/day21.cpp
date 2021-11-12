@@ -13,9 +13,9 @@
 #include <thread>
 #include <vector>
 
-#include "common/array2d.hpp"
+#include <sr/sr.hpp>
+
 #include "common/elfasm.hpp"
-#include "common/point.hpp"
 
 struct problem_data {
     int ip_register = 0;

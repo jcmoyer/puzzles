@@ -6,14 +6,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
 
 const char OPEN = '.';
 const char LUMBER = '#';
 const char TREE = '|';
 
-using automata = array2d<char>;
+using automata = sr::array2d<char>;
+using point = sr::vec2i;
 
 namespace std {
 template <>

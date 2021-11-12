@@ -8,7 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common/array2d.hpp"
+#include <sr/sr.hpp>
+
+using point = sr::vec2i;
 
 // A region's erosion level is its geologic index plus the cave system's depth, all modulo 20183.
 int64_t erosion_level(int64_t geo_index, int64_t cave_depth) {
@@ -165,7 +167,7 @@ std::vector<point64> neighbors(const point64& p) {
     return {{p.x, p.y - 1}, {p.x - 1, p.y}, {p.x + 1, p.y}, {p.x, p.y + 1}};
 }
 
-std::vector<point64> astar(const array2d<terrain_type>& t, point64 start, point64 target) {
+std::vector<point64> astar(const sr::array2d<terrain_type>& t, point64 start, point64 target) {
     std::unordered_set<point64> visited;
     std::unordered_map<point64, point64> prev;
     std::unordered_map<point64, int64_t> start_score;
@@ -274,7 +276,7 @@ side exit_side(point64 from, point64 to) {
     }
 }
 
-void shortest_path2(const array2d<terrain_type>& t, point64 from, point64 to) {
+void shortest_path2(const sr::array2d<terrain_type>& t, point64 from, point64 to) {
     std::unordered_map<point64, std::array<int, 4>> dist;
     std::unordered_map<point64, point64> prev;
     std::vector<point64> q;
@@ -376,7 +378,7 @@ int main(int argc, char* argv[]) {
 
     int64_t padding = 150;
 
-    array2d<terrain_type> terrain(target_x + 1 + padding, target_y + 1 + padding);
+    sr::array2d<terrain_type> terrain(target_x + 1 + padding, target_y + 1 + padding);
 
     int64_t total_risk = 0;
     for (int64_t y = 0; y <= target_y + padding; ++y) {

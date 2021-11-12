@@ -6,10 +6,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
 
-using star_point = point4<int>;
+using star_point = sr::vec4i;
 
 struct constellation {
     std::vector<star_point> points;
@@ -20,7 +19,7 @@ struct constellation {
 
     bool in_range(const star_point& p) const {
         return std::any_of(points.begin(), points.end(), [&](const star_point& x) {
-            return manhattan(p, x) <= 3;
+            return sr::manhattan(p, x) <= 3;
         });
     }
 };
@@ -31,13 +30,13 @@ int main(int argc, char* argv[]) {
     std::deque<star_point> points;
     star_point p;
     while (input) {
-        input >> p.x;
+        input >> p.x();
         input.ignore(1, ',');
-        input >> p.y;
+        input >> p.y();
         input.ignore(1, ',');
-        input >> p.z;
+        input >> p.z();
         input.ignore(1, ',');
-        input >> p.w;
+        input >> p.w();
         points.push_back(p);
     }
 

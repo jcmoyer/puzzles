@@ -14,7 +14,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common/point.hpp"
+#include <sr/sr.hpp>
+
+using point = sr::vec2i;
 
 struct tile {
     enum type { none, floor, wall };
@@ -460,11 +462,11 @@ struct world {
     // std::map<point, tile> tiles;
 
     tile& tile_at_point(const point& p) {
-        return tile_at_point(p.x, p.y);
+        return tile_at_point(p.x(), p.y());
     }
 
     const tile& tile_at_point(const point& p) const {
-        return tile_at_point(p.x, p.y);
+        return tile_at_point(p.x(), p.y());
     }
 
     tile& tile_at_point(int x, int y) {
@@ -476,7 +478,7 @@ struct world {
     }
 
     bool in_bounds(const point& p) const {
-        return in_bounds(p.x, p.y);
+        return in_bounds(p.x(), p.y());
     }
 
     bool in_bounds(int x, int y) const {
@@ -540,16 +542,16 @@ struct world_builder {
         auto [min, max] = std::minmax_element(sparse_tiles.begin(), sparse_tiles.end(), [](auto&& a, auto&& b) {
             return a.first < b.first;
         });
-        int width = 1 + max->first.x - min->first.x;
-        int height = 1 + max->first.y - min->first.y;
+        int width = 1 + max->first.x() - min->first.x();
+        int height = 1 + max->first.y() - min->first.y();
         world w(width, height);
 
         for (auto& [pos, t] : sparse_tiles) {
-            w.add_tile(pos.x, pos.y, t.ty);
+            w.add_tile(pos.x(), pos.y(), t.ty);
         }
 
         for (auto& [pos, a] : sparse_actors) {
-            w.add_actor(pos.x, pos.y, a.ty);
+            w.add_actor(pos.x(), pos.y(), a.ty);
         }
 
         return w;

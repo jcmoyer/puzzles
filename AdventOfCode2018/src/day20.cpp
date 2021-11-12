@@ -5,8 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
+
+using point = sr::vec2i;
 
 bool alpha(char ch) {
     return ch >= 'A' && ch <= 'Z';
@@ -134,16 +135,16 @@ point walk_path(std::string_view v) {
     for (char c : v) {
         switch (c) {
         case 'W':
-            r.x--;
+            r.x()--;
             break;
         case 'E':
-            r.x++;
+            r.x()++;
             break;
         case 'N':
-            r.y--;
+            r.y()--;
             break;
         case 'S':
-            r.y++;
+            r.y()++;
             break;
         default:
             throw std::runtime_error("bad input");

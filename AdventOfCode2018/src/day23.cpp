@@ -7,17 +7,18 @@
 #include <string>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
+
+using vec3i64 = sr::vec3<int64_t>;
 
 struct nanobot {
-    point3<int64_t> pos;
+    vec3i64 pos;
     int64_t radius;
 
     std::vector<size_t> in_range;
 
-    bool is_in_radius(const point3<int64_t>& p, int64_t* distout) {
-        int64_t dist = manhattan(pos, p);
+    bool is_in_radius(const vec3i64& p, int64_t* distout) {
+        int64_t dist = sr::manhattan(pos, p);
         if (distout)
             *distout = dist;
         return dist <= radius;
@@ -34,9 +35,9 @@ std::vector<nanobot> load_nanobots(std::istream& input) {
         std::cmatch match;
         if (std::regex_match(line.data(), match, nanobot_regex)) {
             nanobot bot;
-            std::from_chars(match[1].first, match[1].second, bot.pos.x);
-            std::from_chars(match[2].first, match[2].second, bot.pos.y);
-            std::from_chars(match[3].first, match[3].second, bot.pos.z);
+            std::from_chars(match[1].first, match[1].second, bot.pos.x());
+            std::from_chars(match[2].first, match[2].second, bot.pos.y());
+            std::from_chars(match[3].first, match[3].second, bot.pos.z());
             std::from_chars(match[4].first, match[4].second, bot.radius);
             nanobots.push_back(bot);
         }
@@ -69,15 +70,15 @@ int main(int argc, char* argv[]) {
         if (manhattan(strongest.pos, b.pos) <= strongest.radius)
             ++sum;
 
-        min_x = std::min(min_x, b.pos.x);
-        max_x = std::max(max_x, b.pos.x);
-        min_y = std::min(min_y, b.pos.y);
-        max_y = std::max(max_y, b.pos.y);
-        min_z = std::min(min_z, b.pos.z);
-        max_z = std::max(max_z, b.pos.z);
-        total_x += b.pos.x;
-        total_y += b.pos.y;
-        total_z += b.pos.z;
+        min_x = std::min(min_x, b.pos.x());
+        max_x = std::max(max_x, b.pos.x());
+        min_y = std::min(min_y, b.pos.y());
+        max_y = std::max(max_y, b.pos.y());
+        min_z = std::min(min_z, b.pos.z());
+        max_z = std::max(max_z, b.pos.z());
+        total_x += b.pos.x();
+        total_y += b.pos.y();
+        total_z += b.pos.z();
 
         for (size_t i = 0; i < n.size(); ++i) {
             if (manhattan(b.pos, n[i].pos) <= b.radius) {
@@ -110,21 +111,21 @@ int main(int argc, char* argv[]) {
                 int64_t close_here = 0;
                 int64_t dist_here;
                 for (auto& b : n) {
-                    if (b.is_in_radius(point3<int64_t>{xo, yo, zo}, &dist_here)) {
+                    if (b.is_in_radius(vec3i64{xo, yo, zo}, &dist_here)) {
                         ++close_here;
                     }
                 }
                 if (close_here > max_close) {
                     max_close = close_here;
-                    best_dist = manhattan(point3<int64_t>{xo, yo, zo}, point3<int64_t>{0, 0, 0});
+                    best_dist = sr::manhattan(vec3i64{xo, yo, zo}, vec3i64{0, 0, 0});
 
                     std::cout << max_close << ": " << best_dist << std::endl;
 
                 } else if (close_here == max_close) {
                     // distance to origin breaks tie
-                    if (manhattan(point3<int64_t>{xo, yo, zo}, point3<int64_t>{0, 0, 0}) < best_dist) {
+                    if (sr::manhattan(vec3i64{xo, yo, zo}, vec3i64{0, 0, 0}) < best_dist) {
                         max_close = close_here;
-                        best_dist = manhattan(point3<int64_t>{xo, yo, zo}, point3<int64_t>{0, 0, 0});
+                        best_dist = sr::manhattan(vec3i64{xo, yo, zo}, vec3i64{0, 0, 0});
 
                         std::cout << max_close << ": " << best_dist << std::endl;
                     }

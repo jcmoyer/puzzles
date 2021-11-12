@@ -4,8 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "common/array2d.hpp"
-#include "common/point.hpp"
+#include <sr/sr.hpp>
 
 int main(int argc, char* argv[]) {
     std::ifstream input(argv[1]);
