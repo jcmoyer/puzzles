@@ -1,0 +1,26 @@
+---
+Language: Cpp
+DerivePointerAlignment: false
+PointerAlignment: Left
+Cpp11BracedListStyle: true
+ColumnLimit: 119
+IndentWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+BinPackArguments: false
+AlignAfterOpenBracket: DontAlign
+AllowShortFunctionsOnASingleLine: Empty
+BreakConstructorInitializers: BeforeColon
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
+FixNamespaceComments: false
+AccessModifierOffset: -4
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^<sr'
+    Priority:        2
+  - Regex:           '^<'
+    Priority:        1
+  - Regex:           '^"'
+    Priority:        3
