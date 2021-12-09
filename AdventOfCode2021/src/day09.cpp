@@ -15,13 +15,16 @@ int main(int argc, char* argv[]) {
     int sum = 0;
 
     sr::graph<vec2i> g;
+    std::vector<vec2i> lowest_points;
 
     sr::for_each_2d(tm, [&](char h, vec2i p) {
+        if (h == '9')
+            return;
+
         int lower = 0;
         int target = 4;
 
-        if (h != '9')
-            g.insert(p, {});
+        g.insert(p, {});
 
         target -= tm.x_edge(p.x());
         target -= tm.y_edge(p.y());
@@ -29,27 +32,26 @@ int main(int argc, char* argv[]) {
         sr::for_neighbors4(tm, p, [&](auto t, vec2i point) {
             if (h < t) {
                 ++lower;
-                if (h != '9' && t != '9')
+                if (t != '9')
                     g.add_edge(point, p, {});
             }
         });
 
         if (lower == target) {
-            sum += 1 + (h - '0');
+            lowest_points.push_back(p);
         }
     });
 
     std::vector<size_t> basins;
 
-    sr::for_each_2d(tm, [&](char h, vec2i p) {
-        if (g.contains(p)) {
-            size_t sz = 0;
-            g.back_dfs(p, [&](auto&&) {
-                ++sz;
-            });
-            basins.push_back(sz);
-        }
-    });
+    for (auto p : lowest_points) {
+        sum += 1 + (tm[p] - '0');
+        size_t sz = 0;
+        g.back_dfs(p, [&](auto&&) {
+            ++sz;
+        });
+        basins.push_back(sz);
+    }
 
     std::ranges::sort(basins, std::greater{});
 
