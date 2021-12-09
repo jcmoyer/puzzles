@@ -6,12 +6,18 @@
 
 int main(int argc, char* argv[]) {
     auto args = sr::parse_command_line(argc, argv);
+
     std::ifstream input(args.input_filename);
 
-    std::vector<int> ent;
+    std::vector<int> entries;
+
     for (const auto& line : sr::lines(input)) {
-        ent.push_back(std::stoi(line));
     }
+
+    for (auto& e : entries) {
+    }
+
+    sr::solution(0);
 
     return 0;
 }
