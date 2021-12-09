@@ -16,63 +16,40 @@ int main(int argc, char* argv[]) {
 
     sr::graph<vec2i> g;
 
-    for (int y = 0; y < tm.height(); ++y) {
-        for (int x = 0; x < tm.width(); ++x) {
-            char v = tm.at(x, y);
-            int lower = 0;
-            int target = 4;
+    sr::for_each_2d(tm, [&](char h, vec2i p) {
+        int lower = 0;
+        int target = 4;
 
-            if (v != '9')
-                g.insert(vec2i{x, y}, {});
+        if (h != '9')
+            g.insert(p, {});
 
-            if (x == 0 || x == tm.width() - 1) {
-                --target;
-            }
-            if (y == 0 || y == tm.height() - 1) {
-                --target;
-            }
+        target -= tm.x_edge(p.x());
+        target -= tm.y_edge(p.y());
 
-            if (x - 1 >= 0 && v < tm.at(x - 1, y)) {
+        sr::for_neighbors4(tm, p, [&](auto t, vec2i point) {
+            if (h < t) {
                 ++lower;
-                if (v != '9' && tm.at(x - 1, y) != '9')
-                    g.add_edge(vec2i{x - 1, y}, vec2i{x, y}, {});
+                if (h != '9' && t != '9')
+                    g.add_edge(point, p, {});
             }
-            if (x + 1 < tm.width() && v < tm.at(x + 1, y)) {
-                ++lower;
-                if (v != '9' && tm.at(x + 1, y) != '9')
-                    g.add_edge(vec2i{x + 1, y}, vec2i{x, y}, {});
-            }
+        });
 
-            if (y - 1 >= 0 && v < tm.at(x, y - 1)) {
-                ++lower;
-                if (v != '9' && tm.at(x, y - 1) != '9')
-                    g.add_edge(vec2i{x, y - 1}, vec2i{x, y}, {});
-            }
-            if (y + 1 < tm.height() && v < tm.at(x, y + 1)) {
-                ++lower;
-                if (v != '9' && tm.at(x, y + 1) != '9')
-                    g.add_edge(vec2i{x, y + 1}, vec2i{x, y}, {});
-            }
-
-            if (lower == target) {
-                sum += 1 + (v - '0');
-            }
+        if (lower == target) {
+            sum += 1 + (h - '0');
         }
-    }
+    });
 
     std::vector<size_t> basins;
 
-    for (int y = 0; y < tm.height(); ++y) {
-        for (int x = 0; x < tm.width(); ++x) {
-            if (g.contains(vec2i{x, y})) {
-                size_t sz = 0;
-                g.back_dfs(vec2i{x, y}, [&](auto&&) {
-                    ++sz;
-                });
-                basins.push_back(sz);
-            }
+    sr::for_each_2d(tm, [&](char h, vec2i p) {
+        if (g.contains(p)) {
+            size_t sz = 0;
+            g.back_dfs(p, [&](auto&&) {
+                ++sz;
+            });
+            basins.push_back(sz);
         }
-    }
+    });
 
     std::ranges::sort(basins, std::greater{});
 
