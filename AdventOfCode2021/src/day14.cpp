@@ -6,20 +6,20 @@
 
 size_t reduce(std::string_view polymer, const std::unordered_map<std::string, std::string>& insertions, size_t steps) {
     char first = polymer.front(), last = polymer.back();
+    std::unordered_map<std::string, uint64_t> occur_pairs, occur_trips;
     // split polymer into pairs
-    std::unordered_map<std::string, uint64_t> occur;
     for (int j = 0; j < polymer.size() - 1; ++j) {
         char left = polymer[j];
         char right = polymer[j + 1];
         std::string xy;
         xy += left;
         xy += right;
-        occur[xy]++;
+        occur_pairs[xy]++;
     }
     for (size_t i = 0; i < steps; ++i) {
         // each pair gets turned into a triplet
-        std::unordered_map<std::string, uint64_t> occur_trips;
-        for (auto&& [k, v] : occur) {
+        occur_trips.clear();
+        for (auto&& [k, v] : occur_pairs) {
             if (auto it = insertions.find(k); it != insertions.end()) {
                 std::string triplet;
                 triplet += k[0];
@@ -29,14 +29,14 @@ size_t reduce(std::string_view polymer, const std::unordered_map<std::string, st
             }
         }
         // reduce triplets into pairs
-        occur.clear();
+        occur_pairs.clear();
         for (auto&& [k, v] : occur_trips) {
-            occur[k.substr(0, 2)] += v;
-            occur[k.substr(1, 2)] += v;
+            occur_pairs[k.substr(0, 2)] += v;
+            occur_pairs[k.substr(1, 2)] += v;
         }
     }
     std::unordered_map<char, uint64_t> freq;
-    for (auto&& [k, v] : occur) {
+    for (auto&& [k, v] : occur_pairs) {
         for (char c : k) {
             freq[c] += v;
         }
@@ -45,6 +45,7 @@ size_t reduce(std::string_view polymer, const std::unordered_map<std::string, st
     // of the leftmost and rightmost character in the original polymer
     for (auto&& [k, v] : freq) {
         if (k == first || k == last) {
+            // TODO: this might be incorrect if first == last
             v = v / 2 + 1;
         } else {
             v /= 2;
@@ -58,10 +59,7 @@ size_t reduce(std::string_view polymer, const std::unordered_map<std::string, st
 
 int main(int argc, char* argv[]) {
     auto args = sr::parse_command_line(argc, argv);
-
     std::ifstream input(args.input_filename);
-
-    std::vector<int> entries;
 
     std::string polymer;
     std::getline(input, polymer);
