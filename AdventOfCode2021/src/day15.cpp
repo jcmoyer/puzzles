@@ -12,13 +12,14 @@ size_t heuristic(const risk_map_type& riskmap, sr::vec2i from, sr::vec2i to) {
 
 struct path_score {
     size_t g_score, f_score;
+    sr::vec2i from;
 
     static constexpr path_score infinity() {
         return {std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max()};
     }
 };
 
-size_t sum_risk(const risk_map_type& riskmap, const sr::array2d<sr::vec2i>& pathmap) {
+size_t sum_risk(const risk_map_type& riskmap, const sr::array2d<path_score>& pathmap) {
     sr::vec2i start{};
     sr::vec2i end{(int)riskmap.width() - 1, (int)riskmap.height() - 1};
 
@@ -26,7 +27,7 @@ size_t sum_risk(const risk_map_type& riskmap, const sr::array2d<sr::vec2i>& path
     size_t total_risk = 0;
     while (path_cur != start) {
         total_risk += riskmap.at(path_cur);
-        path_cur = pathmap[path_cur];
+        path_cur = pathmap[path_cur].from;
     }
     return total_risk;
 }
@@ -45,8 +46,6 @@ size_t astar(const risk_map_type& riskmap) {
     frontier.push_back(start);
     frontier_set.insert(start);
 
-    sr::array2d<sr::vec2i> came_from(riskmap.width(), riskmap.height());
-
     sr::array2d<path_score> score_map(riskmap.width(), riskmap.height(), path_score::infinity());
     score_map[start] = path_score{0, 0};
 
@@ -59,7 +58,7 @@ size_t astar(const risk_map_type& riskmap) {
         auto current = frontier.front();
 
         if (current == end)
-            return sum_risk(riskmap, came_from);
+            return sum_risk(riskmap, score_map);
 
         std::ranges::pop_heap(frontier, heap_pred);
         frontier.pop_back();
@@ -69,7 +68,7 @@ size_t astar(const risk_map_type& riskmap) {
             auto tentative_score = score_map[current].g_score + val;
             size_t nscore = score_map[npos].g_score;
             if (tentative_score < nscore) {
-                came_from[npos] = current;
+                score_map[npos].from = current;
                 score_map[npos].g_score = tentative_score;
                 score_map[npos].f_score = tentative_score + heuristic(riskmap, current, npos);
                 if (!frontier_set.contains(npos)) {
