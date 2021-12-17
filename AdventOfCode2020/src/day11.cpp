@@ -4,7 +4,7 @@
 
 #include <sr/sr.hpp>
 
-static constexpr sr::point neighborhood[]{
+static constexpr sr::vec2i neighborhood[]{
 
     {-1, -1},
     {0, -1},
@@ -217,7 +217,7 @@ protected:
     size_t count_visible_occupied(const update_context& ctx) {
         int hits = 0;
         for (const auto& d : neighborhood) {
-            ctx.for_each_ray(d.x, d.y, [&](iteration_context& ctx, char cell) {
+            ctx.for_each_ray(d.x(), d.y(), [&](iteration_context& ctx, char cell) {
                 if (cell == '#') {
                     ++hits;
                     ctx.abort();
