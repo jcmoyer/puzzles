@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     std::ifstream input(filename);
     intcode_program prog = load_program(input);
 
-    std::unordered_map<sr::point, char> map;
+    std::unordered_map<sr::vec2i, char> map;
 
     intcode_vm vm;
     vm.set_program(prog);
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
             x = 0;
             ++y;
         } else {
-            map[sr::point{x, y}] = ch;
+            map[sr::vec2i{x, y}] = ch;
             ++x;
         }
     });
@@ -45,10 +45,10 @@ int main(int argc, char* argv[]) {
     int sum = 0;
     for (auto& [k, v] : map) {
         // clang-format off
-        auto up    = k + sr::point{ 0,  1};
-        auto down  = k + sr::point{ 0, -1};
-        auto left  = k + sr::point{-1,  0};
-        auto right = k + sr::point{ 1,  0};
+        auto up    = k + sr::vec2i{ 0,  1};
+        auto down  = k + sr::vec2i{ 0, -1};
+        auto left  = k + sr::vec2i{-1,  0};
+        auto right = k + sr::vec2i{ 1,  0};
         // clang-format on
         auto up_i = map.find(up);
         auto down_i = map.find(down);
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
         auto right_i = map.find(right);
         if (up_i != map.end() && down_i != map.end() && left_i != map.end() && right_i != map.end()) {
             if (up_i->second == '#' && down_i->second == '#' && left_i->second == '#' && right_i->second == '#') {
-                sum += k.x * k.y;
+                sum += k.x() * k.y();
             }
         }
     }

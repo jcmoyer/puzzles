@@ -7,11 +7,10 @@
 
 #include <sr/sr.hpp>
 
-enum direction { right, up, left, down };
 enum color { black = 0, white = 1 };
 enum rotation { ccw = 0, cw = 1 };
 
-using paintmap = std::unordered_map<sr::point, color>;
+using paintmap = std::unordered_map<sr::vec2i, color>;
 
 template <typename Integer>
 constexpr color color_cast(Integer val) {
@@ -35,53 +34,6 @@ constexpr rotation rotation_cast(Integer val) {
     throw std::runtime_error("bad direction value");
 }
 
-direction rotate_cw(direction d) {
-    switch (d) {
-    case right:
-        return down;
-    case down:
-        return left;
-    case left:
-        return up;
-    case up:
-        return right;
-    }
-    throw std::runtime_error("bad direction");
-}
-
-direction rotate_ccw(direction d) {
-    switch (d) {
-    case right:
-        return up;
-    case up:
-        return left;
-    case left:
-        return down;
-    case down:
-        return right;
-    }
-    throw std::runtime_error("bad direction");
-}
-
-void move(sr::point& p, direction d) {
-    switch (d) {
-    case right:
-        p += sr::point{1, 0};
-        break;
-    case down:
-        p += sr::point{0, 1};
-        break;
-    case left:
-        p += sr::point{-1, 0};
-        break;
-    case up:
-        p += sr::point{0, -1};
-        break;
-    default:
-        throw std::runtime_error("bad direction");
-    }
-}
-
 class robot {
 public:
     robot(intcode_program prog, paintmap& map_);
@@ -97,8 +49,8 @@ private:
 
     paintmap& map;
     intcode_vm vm;
-    sr::point pos{};
-    direction facing = up;
+    sr::vec2i pos{};
+    sr::direction facing = sr::north;
     recvstate state = recv_color;
 };
 
@@ -140,21 +92,24 @@ void robot::do_recv_color(color c) {
 }
 
 void robot::do_recv_rotation(rotation rot) {
-    facing = rot == ccw ? rotate_ccw(facing) : rotate_cw(facing);
-    move(pos, facing);
+    facing = rot == ccw ? sr::rotate_ccw(facing) : sr::rotate_cw(facing);
+    sr::displace(pos, facing, 1);
     state = recv_color;
 }
 
 void render_map(const paintmap& m) {
-    auto [mi, ma] = std::minmax_element(m.begin(), m.end(), [](const auto& x, const auto& y) {
-        return x.first < y.first;
+    auto [miny, maxy] = std::minmax_element(m.begin(), m.end(), [](const auto& x, const auto& y) {
+        return x.first.y() < y.first.y();
+    });
+    auto [minx, maxx] = std::minmax_element(m.begin(), m.end(), [](const auto& x, const auto& y) {
+        return x.first.x() < y.first.x();
     });
 
-    sr::point minp = mi->first;
-    sr::point maxp = ma->first;
-    for (int y = minp.y; y <= maxp.y; ++y) {
-        for (int x = minp.x; x <= maxp.x; ++x) {
-            if (auto it = m.find(sr::point{x, y}); it != m.end()) {
+    sr::vec2i minp{minx->first.x(), miny->first.y()};
+    sr::vec2i maxp{maxx->first.x(), maxy->first.y()};
+    for (int y = maxp.y(); y >= minp.y(); --y) {
+        for (int x = minp.x(); x <= maxp.x(); ++x) {
+            if (auto it = m.find(sr::vec2i{x, y}); it != m.end()) {
                 fmt::print(it->second == white ? "#" : ".");
             } else {
                 fmt::print(".");

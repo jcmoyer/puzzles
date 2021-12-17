@@ -8,38 +8,22 @@
 
 #include <sr/sr.hpp>
 
-enum direction { right, up, left, down };
-
-direction parse_dir(char ch) {
+sr::direction parse_dir(char ch) {
     switch (ch) {
     case 'R':
-        return right;
+        return sr::east;
     case 'U':
-        return up;
+        return sr::north;
     case 'L':
-        return left;
+        return sr::west;
     case 'D':
-        return down;
+        return sr::south;
     }
     throw std::runtime_error("invalid direction character");
 }
 
-sr::point to_vector(direction d) {
-    switch (d) {
-    case right:
-        return {1, 0};
-    case up:
-        return {0, -1};
-    case left:
-        return {-1, 0};
-    case down:
-        return {0, 1};
-    }
-    throw std::runtime_error("invalid direction");
-}
-
 struct wire_run {
-    direction dir;
+    sr::direction dir;
     int dist;
 };
 
@@ -65,10 +49,10 @@ void parse_series(std::string& wiredata, std::vector<wire_run>& series) {
 
 template <typename F>
 void walk_series(const std::vector<wire_run>& series, F func) {
-    sr::point cursor{};
+    sr::vec2i cursor{};
     int steps = 0;
     for (const auto& run : series) {
-        sr::point delta = to_vector(run.dir);
+        sr::vec2i delta = sr::to_unit_vector<int>(run.dir);
         for (int i = 0; i < run.dist; ++i) {
             ++steps;
             cursor += delta;
@@ -90,20 +74,20 @@ int main(int argc, char* argv[]) {
     parse_series(wiredata1, wire1run);
     parse_series(wiredata2, wire2run);
 
-    std::unordered_map<sr::point, wiremap_cell> wire_map;
+    std::unordered_map<sr::vec2i, wiremap_cell> wire_map;
     wire_map.reserve(150000);
 
-    std::vector<sr::point> intersections;
+    std::vector<sr::vec2i> intersections;
     intersections.reserve(100);
 
     // first we mark all points that wire 1 runs through
-    walk_series(wire1run, [&](const sr::point& point, int steps) {
+    walk_series(wire1run, [&](const sr::vec2i& point, int steps) {
         wire_map.try_emplace(point, wiremap_cell{steps});
     });
 
     // then we walk through wire 2 and examine each point, checking to see if wire 1 ran through it
     // note that this does not paint wire 2 onto the wiremap
-    walk_series(wire2run, [&](const sr::point& point, int steps) {
+    walk_series(wire2run, [&](const sr::vec2i& point, int steps) {
         auto w1point = wire_map.find(point);
         if (w1point == wire_map.end()) {
             return;
@@ -114,7 +98,7 @@ int main(int argc, char* argv[]) {
     });
 
     // part 1: locate the intersection closest to origin
-    constexpr sr::point origin{};
+    constexpr sr::vec2i origin{};
     auto it1 = std::min_element(intersections.begin(), intersections.end(), [&](const auto& x, const auto& y) {
         return sr::manhattan(origin, x) < sr::manhattan(origin, y);
     });

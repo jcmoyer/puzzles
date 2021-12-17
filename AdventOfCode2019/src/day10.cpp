@@ -7,19 +7,19 @@
 #include <sr/sr.hpp>
 
 using tile = char;
-using asteroid = sr::point;
+using asteroid = sr::vec2i;
 using asteroid_field = std::unordered_set<asteroid>;
 
 const double PI = 3.14159265359;
 
 struct visresult {
-    sr::point pos;
+    sr::vec2i pos;
     size_t visible;
 };
 
-double dist(const sr::point& p0, const sr::point& p1) {
-    const int dx = p1.x - p0.x;
-    const int dy = p1.y - p0.y;
+double dist(const sr::vec2i& p0, const sr::vec2i& p1) {
+    const int dx = p1.x() - p0.x();
+    const int dy = p1.y() - p0.y();
     return std::sqrt(dx * dx + dy * dy);
 }
 
@@ -35,19 +35,19 @@ size_t num_visible_from(const asteroid_field& field, const asteroid& view) {
     // Yes, it produces the correct result. Sometimes.
     std::unordered_set<double> seen_angles;
     for (const auto& asteroid : field) {
-        double a = std::atan2(view.y - asteroid.y, view.x - asteroid.x);
+        double a = std::atan2(view.y() - asteroid.y(), view.x() - asteroid.x());
         seen_angles.insert(a);
     }
     return seen_angles.size();
 }
 
 int destroy_asteroids(const asteroid_field& field, const asteroid& view) {
-    std::unordered_map<double, std::vector<sr::point>> asteroids;
+    std::unordered_map<double, std::vector<sr::vec2i>> asteroids;
     std::unordered_set<double> seen_angles;
 
     // here we do the same thing as part 1 except we also note the angle to every single asteroid
     for (const auto& asteroid : field) {
-        double a = std::atan2(view.y - asteroid.y, view.x - asteroid.x);
+        double a = std::atan2(view.y() - asteroid.y(), view.x() - asteroid.x());
         seen_angles.insert(a);
         asteroids[a].push_back(asteroid);
     }
@@ -73,7 +73,7 @@ int destroy_asteroids(const asteroid_field& field, const asteroid& view) {
     // start of the array when we reach the end of it - this is conceptually similar to how you would move around a
     // unit circle with cos/sin and an ever decreasing angle
     int destroyed = 0;
-    sr::point last_destroyed;
+    sr::vec2i last_destroyed;
     while (destroyed != 200) {
         const double a = ordered_angles[i];
         if (auto it = asteroids.find(a); it != asteroids.end() && it->second.size()) {
@@ -86,7 +86,7 @@ int destroy_asteroids(const asteroid_field& field, const asteroid& view) {
         i = (i + 1) % ordered_angles.size();
     }
 
-    return last_destroyed.x * 100 + last_destroyed.y;
+    return last_destroyed.x() * 100 + last_destroyed.y();
 }
 
 std::vector<visresult> compute_visibility(const asteroid_field& field) {

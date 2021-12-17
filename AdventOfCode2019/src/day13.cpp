@@ -21,7 +21,7 @@ struct tile {
     tile_type type;
 };
 
-using tilemap = std::unordered_map<sr::point, tile>;
+using tilemap = std::unordered_map<sr::vec2i, tile>;
 
 auto count_blocks(const tilemap& tm) {
     return std::count_if(tm.begin(), tm.end(), [](const auto& kvp) {
@@ -52,8 +52,8 @@ private:
     tile current_tile;
     int64_t score = 0;
     int64_t blocks = 0;
-    sr::point paddle_pos;
-    sr::point ball_pos;
+    sr::vec2i paddle_pos;
+    sr::vec2i ball_pos;
 };
 
 breakout::breakout(intcode_program prog) {
@@ -117,7 +117,7 @@ void breakout::on_vm_output(int64_t message) {
 }
 
 void breakout::insert_tile(const tile& t) {
-    sr::point tile_point{static_cast<int>(t.x), static_cast<int>(t.y)};
+    sr::vec2i tile_point{static_cast<int>(t.x), static_cast<int>(t.y)};
     tm.insert_or_assign(tile_point, current_tile);
     // save paddle and ball coordinates so that we can determine how to move the paddle in relation to the ball
     if (current_tile.type == paddle) {
@@ -128,9 +128,9 @@ void breakout::insert_tile(const tile& t) {
 }
 
 int breakout::ideal_input() const {
-    if (paddle_pos.x < ball_pos.x) {
+    if (paddle_pos.x() < ball_pos.x()) {
         return 1;
-    } else if (paddle_pos.x > ball_pos.x) {
+    } else if (paddle_pos.x() > ball_pos.x()) {
         return -1;
     } else {
         return 0;

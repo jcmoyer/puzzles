@@ -21,7 +21,7 @@ struct tile {
     tile_type type;
 };
 
-using tilemap = std::unordered_map<sr::point, tile>;
+using tilemap = std::unordered_map<sr::vec2i, tile>;
 
 direction reverse(direction d) {
     switch (d) {
@@ -37,21 +37,21 @@ direction reverse(direction d) {
     throw std::runtime_error("bad direction");
 }
 
-direction to_direction(const sr::point& p) {
-    if (p == sr::point{0, 1}) {
+direction to_direction(const sr::vec2i& p) {
+    if (p == sr::vec2i{0, 1}) {
         return north;
-    } else if (p == sr::point{0, -1}) {
+    } else if (p == sr::vec2i{0, -1}) {
         return south;
-    } else if (p == sr::point{-1, 0}) {
+    } else if (p == sr::vec2i{-1, 0}) {
         return west;
-    } else if (p == sr::point{1, 0}) {
+    } else if (p == sr::vec2i{1, 0}) {
         return east;
     } else {
         throw std::runtime_error("cannot convert point to direction");
     }
 }
 
-sr::point to_vector(direction d) {
+sr::vec2i to_vector(direction d) {
     switch (d) {
     case east:
         return {1, 0};
@@ -65,16 +65,16 @@ sr::point to_vector(direction d) {
     throw std::runtime_error("invalid direction");
 }
 
-std::vector<sr::point> get_explorables_into(
-    const tilemap& tm, const sr::point& p, std::vector<sr::point>& explorables) {
+std::vector<sr::vec2i> get_explorables_into(
+    const tilemap& tm, const sr::vec2i& p, std::vector<sr::vec2i>& explorables) {
     // ensure p is in the map
     tm.at(p);
 
     // clang-format off
-    auto up    = p + sr::point{ 0,  1};
-    auto down  = p + sr::point{ 0, -1};
-    auto left  = p + sr::point{-1,  0};
-    auto right = p + sr::point{ 1,  0};
+    auto up    = p + sr::vec2i{ 0,  1};
+    auto down  = p + sr::vec2i{ 0, -1};
+    auto left  = p + sr::vec2i{-1,  0};
+    auto right = p + sr::vec2i{ 1,  0};
     // clang-format on
 
     if (!tm.count(up))
@@ -88,15 +88,15 @@ std::vector<sr::point> get_explorables_into(
     return explorables;
 }
 
-std::vector<sr::point> get_explorables(const tilemap& tm, const sr::point& p) {
-    std::vector<sr::point> explorables;
+std::vector<sr::vec2i> get_explorables(const tilemap& tm, const sr::vec2i& p) {
+    std::vector<sr::vec2i> explorables;
     explorables.reserve(4);
     get_explorables_into(tm, p, explorables);
     return explorables;
 }
 
-std::unordered_set<sr::point> get_all_explorables(const tilemap& tm) {
-    std::unordered_set<sr::point> explorables;
+std::unordered_set<sr::vec2i> get_all_explorables(const tilemap& tm) {
+    std::unordered_set<sr::vec2i> explorables;
 
     for (const auto& [k, v] : tm) {
         if (v.type == empty) {
@@ -112,18 +112,18 @@ bool is_moveable(tile_type t) {
     return t == empty || t == oxygen;
 }
 
-std::vector<sr::point> get_moveable_adjacent(const tilemap& tm, const sr::point& p) {
+std::vector<sr::vec2i> get_moveable_adjacent(const tilemap& tm, const sr::vec2i& p) {
     // ensure p is in the map
     tm.at(p);
 
     // clang-format off
-    auto up    = p + sr::point{ 0,  1};
-    auto down  = p + sr::point{ 0, -1};
-    auto left  = p + sr::point{-1,  0};
-    auto right = p + sr::point{ 1,  0};
+    auto up    = p + sr::vec2i{ 0,  1};
+    auto down  = p + sr::vec2i{ 0, -1};
+    auto left  = p + sr::vec2i{-1,  0};
+    auto right = p + sr::vec2i{ 1,  0};
     // clang-format on
 
-    std::vector<sr::point> moveables;
+    std::vector<sr::vec2i> moveables;
     moveables.reserve(4);
     if (auto it = tm.find(up); it != tm.end() && is_moveable(it->second.type))
         moveables.emplace_back(up);
@@ -140,15 +140,15 @@ std::vector<sr::point> get_moveable_adjacent(const tilemap& tm, const sr::point&
 }
 
 // describes how to get from one place to another
-movement_sequence build_movement_sequence(const tilemap& tm, const sr::point& from, const sr::point& to) {
+movement_sequence build_movement_sequence(const tilemap& tm, const sr::vec2i& from, const sr::vec2i& to) {
     std::vector<int64_t> moves;
 
     struct search_state {
-        sr::point pos;
+        sr::vec2i pos;
         movement_sequence movement;
     };
 
-    std::unordered_set<sr::point> visited;
+    std::unordered_set<sr::vec2i> visited;
 
     std::deque<search_state> frontier;
     frontier.push_back({from, {}});
@@ -190,10 +190,10 @@ int64_t spread_oxygen(tilemap& tm) {
     for (auto& [k, v] : tm) {
         if (v.type == oxygen) {
             // clang-format off
-            auto up    = k + sr::point{ 0,  1};
-            auto down  = k + sr::point{ 0, -1};
-            auto left  = k + sr::point{-1,  0};
-            auto right = k + sr::point{ 1,  0};
+            auto up    = k + sr::vec2i{ 0,  1};
+            auto down  = k + sr::vec2i{ 0, -1};
+            auto left  = k + sr::vec2i{-1,  0};
+            auto right = k + sr::vec2i{ 1,  0};
             // clang-format on
 
             if (auto it = tm.find(up); it != tm.end() && it->second.type == empty) {
@@ -224,7 +224,7 @@ public:
 
     void run();
 
-    void mark_tile(const sr::point& where, tile_type ty);
+    void mark_tile(const sr::vec2i& where, tile_type ty);
 
     void explore(const movement_sequence& s);
 
@@ -235,8 +235,8 @@ public:
 private:
     void on_vm_output(int64_t message);
 
-    sr::point current_pos{};
-    sr::point oxygen_pos{};
+    sr::vec2i current_pos{};
+    sr::vec2i oxygen_pos{};
     intcode_vm vm;
     direction last_direction = none;
 };
@@ -247,7 +247,7 @@ robot_control::robot_control(intcode_program prog) {
 
 void robot_control::run() {
     mark_tile(current_pos, empty);
-    // std::deque<sr::point> frontier;
+    // std::deque<sr::vec2i> frontier;
     // frontier.push_back(current_pos);
 
     auto explorables = get_all_explorables(tm);
@@ -296,8 +296,8 @@ void robot_control::explore(const movement_sequence& s) {
     }
 }
 
-void robot_control::mark_tile(const sr::point& where, tile_type ty) {
-    tile t{where.x, where.y, ty};
+void robot_control::mark_tile(const sr::vec2i& where, tile_type ty) {
+    tile t{where.x(), where.y(), ty};
     tm[where] = t;
 }
 
@@ -313,7 +313,7 @@ void robot_control::on_vm_output(int64_t message) {
 }
 
 int64_t robot_control::distance_to_oxygen() const {
-    return build_movement_sequence(tm, sr::point{}, oxygen_pos).size();
+    return build_movement_sequence(tm, sr::vec2i{}, oxygen_pos).size();
 }
 
 // for debugging purposes
@@ -322,14 +322,14 @@ void render_map(const tilemap& m) {
         return x.first < y.first;
     });
 
-    sr::point minp = mi->first;
-    sr::point maxp = ma->first;
-    for (int y = maxp.y; y >= minp.y; --y) {
-        for (int x = minp.x; x <= maxp.x; ++x) {
-            if (auto it = m.find(sr::point{x, y}); it != m.end()) {
+    sr::vec2i minp = mi->first;
+    sr::vec2i maxp = ma->first;
+    for (int y = maxp.y(); y >= minp.y(); --y) {
+        for (int x = minp.x(); x <= maxp.x(); ++x) {
+            if (auto it = m.find(sr::vec2i{x, y}); it != m.end()) {
                 if (it->second.type == oxygen) {
                     fmt::print("@");
-                } else if (it->first == sr::point{}) {
+                } else if (it->first == sr::vec2i{}) {
                     fmt::print(">");
                 } else {
                     fmt::print(it->second.type == wall ? "#" : ".");

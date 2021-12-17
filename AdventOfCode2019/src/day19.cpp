@@ -9,9 +9,9 @@
 
 #include "aoc/intcode.hpp"
 
-double dist(const sr::point& p0, const sr::point& p1) {
-    const int dx = p1.x - p0.x;
-    const int dy = p1.y - p0.y;
+double dist(const sr::vec2i& p0, const sr::vec2i& p1) {
+    const int dx = p1.x() - p0.x();
+    const int dy = p1.y() - p0.y();
     return std::sqrt(dx * dx + dy * dy);
 }
 
@@ -60,7 +60,7 @@ int64_t part2(const intcode_program& prog) {
 
     std::atomic<int64_t> shared_y = 960;
     std::vector<std::thread> threads;
-    std::vector<sr::point> results(N_THREADS);
+    std::vector<sr::vec2i> results(N_THREADS);
 
     for (unsigned int i = 0; i < N_THREADS; ++i) {
         threads.emplace_back([&, tid = i]() {
@@ -106,7 +106,7 @@ int64_t part2(const intcode_program& prog) {
                 // only check if there are >=100 cells horizontally in this scanline
                 for (int64_t x2 = start_x; x2 <= end_x - 100; ++x2) {
                     if (search_xy(prog, x2, y, 100, 100)) {
-                        results[tid] = sr::point{(int)x2, (int)y};
+                        results[tid] = sr::vec2i{(int)x2, (int)y};
                         return;
                     }
                 }
@@ -118,12 +118,12 @@ int64_t part2(const intcode_program& prog) {
         t.join();
     }
 
-    auto nearest = std::min_element(results.begin(), results.end(), [](const sr::point& x, const sr::point& y) {
-        constexpr auto origin = sr::point{};
+    auto nearest = std::min_element(results.begin(), results.end(), [](const sr::vec2i& x, const sr::vec2i& y) {
+        constexpr auto origin = sr::vec2i{};
         return dist(x, origin) < dist(y, origin);
     });
 
-    return nearest->x * 10000 + nearest->y;
+    return nearest->x() * 10000 + nearest->y();
 }
 
 int main(int argc, char* argv[]) {

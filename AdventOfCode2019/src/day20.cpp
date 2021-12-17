@@ -18,12 +18,12 @@ bool is_label_char(char ch) {
 
 struct portal {
     std::string name;
-    sr::point p0, p1;
+    sr::vec2i p0, p1;
 
-    void insert(const sr::point& p) {
-        if (p0 == sr::point{}) {
+    void insert(const sr::vec2i& p) {
+        if (p0 == sr::vec2i{}) {
             p0 = p;
-        } else if (p1 == sr::point{}) {
+        } else if (p1 == sr::vec2i{}) {
             p1 = p;
         } else {
             throw std::runtime_error("tried to associate more than 2 points with portal");
@@ -31,10 +31,10 @@ struct portal {
     }
 
     bool is_oneway() const {
-        return p0 != sr::point{} && p1 == sr::point{};
+        return p0 != sr::vec2i{} && p1 == sr::vec2i{};
     }
 
-    sr::point opposite(const sr::point& from) const {
+    sr::vec2i opposite(const sr::vec2i& from) const {
         if (p0 == from)
             return p1;
         else if (p1 == from)
@@ -43,7 +43,7 @@ struct portal {
             throw std::runtime_error("point not in portal");
     }
 
-    const sr::point& point(int i) const {
+    const sr::vec2i& point(int i) const {
         if (i == 0)
             return p0;
         else if (i == 1)
@@ -54,14 +54,14 @@ struct portal {
 };
 
 struct world {
-    std::unordered_map<sr::point, char> tilemap;
+    std::unordered_map<sr::vec2i, char> tilemap;
     std::unordered_map<std::string, portal> portals;
-    std::unordered_map<sr::point, std::string> reverse_portal_map;
+    std::unordered_map<sr::vec2i, std::string> reverse_portal_map;
 
     size_t width, height;
 
     void trim() {
-        std::vector<sr::point> removable;
+        std::vector<sr::vec2i> removable;
         for (auto& [pos, tile] : tilemap) {
             if (tile != '.' && tile != '#') {
                 removable.push_back(pos);
@@ -72,15 +72,15 @@ struct world {
         }
     }
 
-    bool is_outer(const sr::point& p) const {
-        return p.x == 2 || p.x == width - 3 || p.y == 2 || p.y == height - 3;
+    bool is_outer(const sr::vec2i& p) const {
+        return p.x() == 2 || p.x() == width - 3 || p.y() == 2 || p.y() == height - 3;
     }
 
-    bool is_inner(const sr::point& p) const {
+    bool is_inner(const sr::vec2i& p) const {
         return !is_outer(p);
     }
 
-    const sr::point& select_outer(const portal& p) const {
+    const sr::vec2i& select_outer(const portal& p) const {
         if (is_outer(p.p0))
             return p.p0;
         if (is_outer(p.p1))
@@ -88,7 +88,7 @@ struct world {
         throw std::runtime_error("neither points are outer");
     }
 
-    const sr::point& select_inner(const portal& p) const {
+    const sr::vec2i& select_inner(const portal& p) const {
         if (is_inner(p.p0))
             return p.p0;
         if (is_inner(p.p1))
@@ -98,13 +98,13 @@ struct world {
 };
 
 struct path_visit {
-    std::unordered_set<sr::point> points;
+    std::unordered_set<sr::vec2i> points;
     std::unordered_set<std::string> portals;
 };
 
 int64_t distance(const world& w, const portal& from, const portal& to) {
     struct search_state {
-        sr::point pos{};
+        sr::vec2i pos{};
         int64_t dist = 0;
         std::string path;
     };
@@ -112,9 +112,9 @@ int64_t distance(const world& w, const portal& from, const portal& to) {
     std::vector<search_state> states;
 
     std::deque<search_state> frontier;
-    // std::unordered_set<sr::point> visited;
+    // std::unordered_set<sr::vec2i> visited;
 
-    std::unordered_map<std::string, std::unordered_set<sr::point>> visited;
+    std::unordered_map<std::string, std::unordered_set<sr::vec2i>> visited;
 
     frontier.push_back(search_state{from.p0, 0, from.name});
 
@@ -137,10 +137,10 @@ int64_t distance(const world& w, const portal& from, const portal& to) {
         }
 
         // clang-format off
-        auto up    = current.pos + sr::point{ 0, -1};
-        auto down  = current.pos + sr::point{ 0, +1};
-        auto left  = current.pos + sr::point{-1,  0};
-        auto right = current.pos + sr::point{ 1,  0};
+        auto up    = current.pos + sr::vec2i{ 0, -1};
+        auto down  = current.pos + sr::vec2i{ 0, +1};
+        auto left  = current.pos + sr::vec2i{-1,  0};
+        auto right = current.pos + sr::vec2i{ 1,  0};
         // clang-format on
 
         if (auto it = w.tilemap.find(up); it != w.tilemap.end() && it->second == '.') {
@@ -204,7 +204,7 @@ int64_t distance(const world& w, const portal& from, const portal& to) {
 
 int64_t distance_part2(const world& w, const portal& from, const portal& to) {
     struct search_state {
-        sr::point pos{};
+        sr::vec2i pos{};
         int64_t dist = 0;
         std::string path;
         int level = 0;
@@ -214,7 +214,7 @@ int64_t distance_part2(const world& w, const portal& from, const portal& to) {
 
     std::deque<search_state> frontier;
 
-    std::unordered_map<int, std::unordered_map<std::string, std::unordered_set<sr::point>>> visited;
+    std::unordered_map<int, std::unordered_map<std::string, std::unordered_set<sr::vec2i>>> visited;
 
     frontier.push_back(search_state{from.p0, 0, from.name});
 
@@ -244,10 +244,10 @@ int64_t distance_part2(const world& w, const portal& from, const portal& to) {
         }
 
         // clang-format off
-        auto up    = current.pos + sr::point{ 0, -1};
-        auto down  = current.pos + sr::point{ 0, +1};
-        auto left  = current.pos + sr::point{-1,  0};
-        auto right = current.pos + sr::point{ 1,  0};
+        auto up    = current.pos + sr::vec2i{ 0, -1};
+        auto down  = current.pos + sr::vec2i{ 0, +1};
+        auto left  = current.pos + sr::vec2i{-1,  0};
+        auto right = current.pos + sr::vec2i{ 1,  0};
         // clang-format on
 
         if (auto it = w.tilemap.find(up);
@@ -352,7 +352,7 @@ int main(int argc, char* argv[]) {
         w.width = std::max(w.width, line.size());
         ++w.height;
         for (int x = 0; x < line.size(); ++x) {
-            sr::point p{x, y};
+            sr::vec2i p{x, y};
             w.tilemap[p] = line[x];
         }
         ++y;
@@ -361,14 +361,14 @@ int main(int argc, char* argv[]) {
     for (auto& [pos, tile] : w.tilemap) {
         if (tile == '.') {
             // clang-format off
-            auto up    = pos + sr::point{ 0, -1};
-            auto down  = pos + sr::point{ 0, +1};
-            auto left  = pos + sr::point{-1,  0};
-            auto right = pos + sr::point{ 1,  0};
+            auto up    = pos + sr::vec2i{ 0, -1};
+            auto down  = pos + sr::vec2i{ 0, +1};
+            auto left  = pos + sr::vec2i{-1,  0};
+            auto right = pos + sr::vec2i{ 1,  0};
             // clang-format on
 
             if (auto it = w.tilemap.find(up); it != w.tilemap.end() && is_label_char(it->second)) {
-                auto upup = w.tilemap.at(up + sr::point{0, -1});
+                auto upup = w.tilemap.at(up + sr::vec2i{0, -1});
                 std::string label{upup, it->second};
                 w.portals[label].name = label;
                 w.portals[label].insert(pos);
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (auto it = w.tilemap.find(down); it != w.tilemap.end() && is_label_char(it->second)) {
-                auto downdown = w.tilemap.at(down + sr::point{0, +1});
+                auto downdown = w.tilemap.at(down + sr::vec2i{0, +1});
                 std::string label{it->second, downdown};
                 w.portals[label].name = label;
                 w.portals[label].insert(pos);
@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (auto it = w.tilemap.find(left); it != w.tilemap.end() && is_label_char(it->second)) {
-                auto leftleft = w.tilemap.at(left + sr::point{-1, 0});
+                auto leftleft = w.tilemap.at(left + sr::vec2i{-1, 0});
                 std::string label{leftleft, it->second};
                 w.portals[label].name = label;
                 w.portals[label].insert(pos);
@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (auto it = w.tilemap.find(right); it != w.tilemap.end() && is_label_char(it->second)) {
-                auto rightright = w.tilemap.at(right + sr::point{1, 0});
+                auto rightright = w.tilemap.at(right + sr::vec2i{1, 0});
                 std::string label{it->second, rightright};
                 w.portals[label].name = label;
                 w.portals[label].insert(pos);
