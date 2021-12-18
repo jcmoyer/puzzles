@@ -42,11 +42,13 @@ struct tree_node {
             node_handle left, right;
         };
         // when ty == num
-        uint32_t val{};
+        uint64_t val;
     };
+
+    tree_node() : left{}, right{} {}
 };
 
-struct tree_context {
+class tree_context {
 public:
     constexpr node_handle create_node(node_type ty, node_handle parent = {}) {
         auto& n = nodes.emplace_back();
@@ -116,7 +118,7 @@ node_handle parse_one(tree_context& tc, std::string_view& s, node_handle parent)
     }
 }
 
-int64_t magnitude(const tree_context& tc, node_handle node) {
+uint64_t magnitude(const tree_context& tc, node_handle node) {
     const auto& n = tc[node];
     switch (n.ty) {
     case num:
@@ -228,10 +230,12 @@ bool try_split(tree_context& tc, node_handle node) {
     switch (tc[node].ty) {
     case num:
         if (tc[node].val >= 10) {
-            double base_val = tc[node].val / 2.0;
-            int new_left = std::floor(base_val);
-            int new_right = std::ceil(base_val);
-
+            uint64_t base_val = tc[node].val / 2;
+            uint64_t new_left = base_val;
+            uint64_t new_right = base_val;
+            if (tc[node].val % 2 == 1) {
+                ++new_right;
+            }
             tc.replace_node(node, pair);
             tc[node].left = tc.create_node(num, node);
             tc[node].right = tc.create_node(num, node);
@@ -275,12 +279,10 @@ node_handle copy_tree(
 int main(int argc, char* argv[]) {
     auto args = sr::parse_command_line(argc, argv);
 
-    std::ifstream input(args.input_filename);
-
     tree_context init_trees;
     std::vector<node_handle> init_roots;
 
-    for (auto& line : sr::lines(input)) {
+    for (auto& line : sr::lines(args.get_input_stream())) {
         std::string_view view(line);
         init_roots.push_back(parse_one(init_trees, view));
     }
@@ -295,7 +297,7 @@ int main(int argc, char* argv[]) {
     sr::solution(magnitude(tc, left));
 
     // part 2
-    int64_t max_mag = 0;
+    uint64_t max_mag = 0;
     for (size_t i = 0; i < init_roots.size(); ++i) {
         for (size_t j = 0; j < init_roots.size(); ++j) {
             if (i == j)
