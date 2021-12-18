@@ -1,62 +1,111 @@
-#include <fmt/format.h>
 #include <fstream>
-#include <numeric>
 
 #include <sr/sr.hpp>
+
+class node_handle {
+public:
+    constexpr node_handle() {
+        index = -1;
+    }
+
+    constexpr operator bool() const {
+        return valid();
+    }
+
+    constexpr bool valid() const {
+        return !invalid();
+    }
+
+    constexpr bool invalid() const {
+        return index == -1;
+    }
+
+    constexpr auto operator<=>(const node_handle&) const = default;
+
+private:
+    constexpr explicit node_handle(size_t val) {
+        index = val;
+    }
+
+    size_t index;
+    friend class tree_context;
+};
 
 enum node_type { pair, num };
 
 struct tree_node {
-    node_type ty;
-    size_t parent = -1; // -1 is no parent
-    size_t left, right;
-    int64_t val;
+    node_handle parent;
+    node_type ty{};
+    union {
+        // when ty == pair
+        struct {
+            node_handle left, right;
+        };
+        // when ty == num
+        uint32_t val{};
+    };
 };
 
 struct tree_context {
-    std::vector<tree_node> nodes;
-    size_t create_node(node_type ty, size_t parent = -1) {
+public:
+    constexpr node_handle create_node(node_type ty, node_handle parent = {}) {
         auto& n = nodes.emplace_back();
         n.ty = ty;
         n.parent = parent;
-        return nodes.size() - 1;
+        return node_handle{nodes.size() - 1};
     }
-    tree_node& get_node(size_t h) {
-        return nodes[h];
+
+    constexpr void replace_node(node_handle h, node_type ty) {
+        assert(h.valid());
+        nodes[h.index].ty = ty;
     }
+
+    constexpr tree_node& operator[](node_handle h) {
+        assert(h.valid());
+        return nodes[h.index];
+    }
+
+    constexpr const tree_node& operator[](node_handle h) const {
+        assert(h.valid());
+        return nodes[h.index];
+    }
+
     // invalidates all node handles
-    void clear() {
+    constexpr void clear() {
         nodes.clear();
     }
+
+private:
+    std::vector<tree_node> nodes;
 };
 
-size_t parse_one(tree_context& tc, std::string_view& s, size_t parent);
+node_handle parse_one(tree_context& tc, std::string_view& s, node_handle parent = {});
 
-size_t parse_digits(tree_context& tc, std::string_view& s, size_t parent) {
-    size_t h = tc.create_node(num, parent);
+node_handle parse_digits(tree_context& tc, std::string_view& s, node_handle parent) {
+    node_handle h = tc.create_node(num, parent);
     std::string buf;
     while (isdigit(s[0])) {
         buf += s[0];
         s.remove_prefix(1);
     }
-    tc.nodes[h].val = std::stoi(buf);
+    tc[h].val = std::stoi(buf);
     return h;
 }
 
-size_t parse_pair(tree_context& tc, std::string_view& s, size_t parent) {
-    size_t h = tc.create_node(pair, parent);
+node_handle parse_pair(tree_context& tc, std::string_view& s, node_handle parent) {
+    node_handle h = tc.create_node(pair, parent);
     assert(s[0] == '[');
     s.remove_prefix(1);
-    tc.nodes[h].left = parse_one(tc, s, h);
+    tc[h].left = parse_one(tc, s, h);
     assert(s[0] == ',');
     s.remove_prefix(1);
-    tc.nodes[h].right = parse_one(tc, s, h);
+    tc[h].right = parse_one(tc, s, h);
     assert(s[0] == ']');
     s.remove_prefix(1);
     return h;
 }
 
-size_t parse_one(tree_context& tc, std::string_view& s, size_t parent) {
+node_handle parse_one(tree_context& tc, std::string_view& s, node_handle parent) {
     char first = s.at(0);
     if (first == '[') {
         return parse_pair(tc, s, parent);
@@ -67,8 +116,8 @@ size_t parse_one(tree_context& tc, std::string_view& s, size_t parent) {
     }
 }
 
-int64_t magnitude(const tree_context& tc, size_t node) {
-    const auto& n = tc.nodes[node];
+int64_t magnitude(const tree_context& tc, node_handle node) {
+    const auto& n = tc[node];
     switch (n.ty) {
     case num:
         return n.val;
@@ -78,29 +127,13 @@ int64_t magnitude(const tree_context& tc, size_t node) {
     throw std::runtime_error("invalid type");
 }
 
-size_t combine_nodes(tree_context& tc, size_t left, size_t right) {
-    size_t new_node = tc.create_node(pair);
-    tc.nodes[new_node].left = left;
-    tc.nodes[new_node].right = right;
-    tc.nodes[left].parent = new_node;
-    tc.nodes[right].parent = new_node;
+node_handle combine_nodes(tree_context& tc, node_handle left, node_handle right) {
+    node_handle new_node = tc.create_node(pair);
+    tc[new_node].left = left;
+    tc[new_node].right = right;
+    tc[left].parent = new_node;
+    tc[right].parent = new_node;
     return new_node;
-}
-
-void print_tree(tree_context& tc, size_t node) {
-    const auto& n = tc.nodes[node];
-    switch (n.ty) {
-    case num:
-        printf("%d", n.val);
-        break;
-    case pair:
-        printf("[");
-        print_tree(tc, n.left);
-        printf(",");
-        print_tree(tc, n.right);
-        printf("]");
-        break;
-    }
 }
 
 enum search_bias {
@@ -108,146 +141,113 @@ enum search_bias {
     bias_right,
 };
 
-size_t search_number_down(tree_context& tc, size_t from, search_bias b) {
-    const auto& n = tc.nodes[from];
+node_handle search_number_down(const tree_context& tc, node_handle from, search_bias b) {
+    const auto& n = tc[from];
     switch (n.ty) {
     case num:
         return from;
     case pair:
         if (b == bias_left) {
-            size_t left_num = search_number_down(tc, n.left, b);
-            if (left_num != -1)
+            node_handle left_num = search_number_down(tc, n.left, b);
+            if (left_num)
                 return left_num;
-            size_t right_num = search_number_down(tc, n.right, b);
-            if (right_num != -1)
+            node_handle right_num = search_number_down(tc, n.right, b);
+            if (right_num)
                 return right_num;
         } else {
-            size_t right_num = search_number_down(tc, n.right, b);
-            if (right_num != -1)
+            node_handle right_num = search_number_down(tc, n.right, b);
+            if (right_num)
                 return right_num;
-            size_t left_num = search_number_down(tc, n.left, b);
-            if (left_num != -1)
+            node_handle left_num = search_number_down(tc, n.left, b);
+            if (left_num)
                 return left_num;
         }
     }
-    return -1;
+    return {};
 }
 
-size_t search_left_number(tree_context& tc, size_t from) {
-    auto& n = tc.nodes[from];
-    if (n.parent == -1)
-        return -1;
-    auto& p = tc.nodes[n.parent];
-    if (p.ty == pair) {
-        if (tc.nodes[p.left].ty == num)
-            return p.left;
-        else if (tc.nodes[p.left].ty == pair && p.left != from) {
-            size_t num = search_number_down(tc, p.left, bias_right);
-            if (num != -1)
-                return num;
-        }
-        return search_left_number(tc, n.parent);
+node_handle search_left_number(const tree_context& tc, node_handle from) {
+    auto& n = tc[from];
+    if (!n.parent)
+        return {};
+    auto& p = tc[n.parent];
+    assert(p.ty == pair);
+    if (p.left != from) {
+        node_handle result = search_number_down(tc, p.left, bias_right);
+        if (result)
+            return result;
+        return search_left_number(tc, p.left);
     } else {
         return search_left_number(tc, n.parent);
     }
 }
 
-size_t search_right_number(tree_context& tc, size_t from) {
-    auto& n = tc.nodes[from];
-    if (n.parent == -1)
-        return -1;
-    auto& p = tc.nodes[n.parent];
-    if (p.ty == pair) {
-        if (tc.nodes[p.right].ty == num)
-            return p.right;
-        else if (tc.nodes[p.right].ty == pair && p.right != from) {
-            size_t num = search_number_down(tc, p.right, bias_left);
-            if (num != -1)
-                return num;
-        }
-        return search_right_number(tc, n.parent);
+node_handle search_right_number(const tree_context& tc, node_handle from) {
+    auto& n = tc[from];
+    if (!n.parent)
+        return {};
+    auto& p = tc[n.parent];
+    assert(p.ty == pair);
+    if (p.right != from) {
+        auto result = search_number_down(tc, p.right, bias_left);
+        if (result)
+            return result;
+        return search_right_number(tc, p.right);
     } else {
         return search_right_number(tc, n.parent);
     }
 }
 
-bool try_explode(tree_context& tc, size_t node, int nest = 0) {
-    // If any pair is nested inside four pairs, the leftmost such pair explodes.
-    switch (tc.get_node(node).ty) {
-    case num:
-        break;
-    case pair:
-        if (nest == 4) {
-            // Exploding pairs will always consist of two regular numbers.
-            size_t left_num = search_left_number(tc, node);
-            if (left_num != -1) {
-                tc.nodes[left_num].val += tc.nodes[tc.get_node(node).left].val;
-            }
-
-            size_t right_num = search_right_number(tc, node);
-            if (right_num != -1) {
-                tc.nodes[right_num].val += tc.nodes[tc.get_node(node).right].val;
-            }
-
-            // Then, the entire exploding pair is replaced with the regular number 0.
-            size_t replace = tc.create_node(num, tc.get_node(node).parent);
-            tc.nodes[replace].val = 0;
-            if (tc.nodes[tc.get_node(node).parent].left == node) {
-                tc.nodes[tc.get_node(node).parent].left = replace;
-            } else {
-                tc.nodes[tc.get_node(node).parent].right = replace;
-            }
-            return true;
-
-            break;
-
-        } else {
-            if (try_explode(tc, tc.get_node(node).left, nest + 1))
-                return true;
-            if (try_explode(tc, tc.get_node(node).right, nest + 1))
-                return true;
-        }
-        break;
+bool try_explode(tree_context& tc, node_handle node, int nest = 0) {
+    if (tc[node].ty != pair) {
+        return false;
     }
-    return false;
+    // If any pair is nested inside four pairs, the leftmost such pair explodes.
+    // Exploding pairs will always consist of two regular numbers.
+    if (nest == 4) {
+        node_handle left_num = search_left_number(tc, node);
+        if (left_num) {
+            tc[left_num].val += tc[tc[node].left].val;
+        }
+
+        node_handle right_num = search_right_number(tc, node);
+        if (right_num) {
+            tc[right_num].val += tc[tc[node].right].val;
+        }
+
+        // Then, the entire exploding pair is replaced with the regular number 0.
+        tc.replace_node(node, num);
+        tc[node].val = 0;
+        return true;
+    } else {
+        return try_explode(tc, tc[node].left, nest + 1) || try_explode(tc, tc[node].right, nest + 1);
+    }
 }
 
-bool try_split(tree_context& tc, size_t node) {
-    // If any pair is nested inside four pairs, the leftmost such pair explodes.
-    switch (tc.get_node(node).ty) {
+bool try_split(tree_context& tc, node_handle node) {
+    switch (tc[node].ty) {
     case num:
-        if (tc.get_node(node).val >= 10) {
-            double base_val = tc.get_node(node).val / 2.0;
+        if (tc[node].val >= 10) {
+            double base_val = tc[node].val / 2.0;
             int new_left = std::floor(base_val);
             int new_right = std::ceil(base_val);
 
-            size_t replace = tc.create_node(pair, tc.get_node(node).parent);
-            if (tc.nodes[tc.get_node(node).parent].left == node) {
-                tc.nodes[tc.get_node(node).parent].left = replace;
-            } else {
-                tc.nodes[tc.get_node(node).parent].right = replace;
-            }
-            tc.nodes[replace].left = tc.create_node(num, replace);
-            tc.nodes[replace].right = tc.create_node(num, replace);
-            tc.nodes[tc.get_node(replace).left].val = new_left;
-            tc.nodes[tc.get_node(replace).right].val = new_right;
+            tc.replace_node(node, pair);
+            tc[node].left = tc.create_node(num, node);
+            tc[node].right = tc.create_node(num, node);
+            tc[tc[node].left].val = new_left;
+            tc[tc[node].right].val = new_right;
             return true;
         }
         break;
     case pair:
-        if (try_split(tc, tc.get_node(node).left))
-            return true;
-        if (try_split(tc, tc.get_node(node).right))
-            return true;
-        break;
+        return try_split(tc, tc[node].left) || try_split(tc, tc[node].right);
     }
     return false;
 }
 
-void reduce_tree(tree_context& tc, size_t root) {
+void reduce_tree(tree_context& tc, node_handle root) {
     while (true) {
-        // print_tree(tc, root);
-        // std::cout << "\n";
         if (!try_explode(tc, root)) {
             if (!try_split(tc, root)) {
                 break;
@@ -256,45 +256,56 @@ void reduce_tree(tree_context& tc, size_t root) {
     }
 }
 
+node_handle copy_tree(
+    const tree_context& source, tree_context& dest, node_handle source_handle, node_handle parent = {}) {
+    const auto& source_node = source[source_handle];
+    node_handle dest_handle = dest.create_node(source_node.ty, parent);
+    switch (source_node.ty) {
+    case num:
+        dest[dest_handle].val = source_node.val;
+        break;
+    case pair:
+        dest[dest_handle].left = copy_tree(source, dest, source_node.left, dest_handle);
+        dest[dest_handle].right = copy_tree(source, dest, source_node.right, dest_handle);
+        break;
+    }
+    return dest_handle;
+}
+
 int main(int argc, char* argv[]) {
     auto args = sr::parse_command_line(argc, argv);
 
     std::ifstream input(args.input_filename);
 
-    tree_context tc;
+    tree_context init_trees;
+    std::vector<node_handle> init_roots;
 
-    std::vector<size_t> roots;
-    std::vector<std::string> lines = sr::read_lines<std::string>(input, sr::ignore_empty);
+    for (auto& line : sr::lines(input)) {
+        std::string_view view(line);
+        init_roots.push_back(parse_one(init_trees, view));
+    }
 
     // part 1
-    for (auto& line : lines) {
-        std::string_view view(line);
-        roots.push_back(parse_one(tc, view, -1));
-        if (roots.size() == 2) {
-            size_t new_root = combine_nodes(tc, roots[0], roots[1]);
-            roots.clear();
-            roots.push_back(new_root);
-            reduce_tree(tc, new_root);
-        }
+    tree_context tc = init_trees;
+    node_handle left = init_roots[0];
+    for (size_t i = 1; i < init_roots.size(); ++i) {
+        left = combine_nodes(tc, left, init_roots[i]);
+        reduce_tree(tc, left);
     }
-    sr::solution(magnitude(tc, roots[0]));
+    sr::solution(magnitude(tc, left));
 
     // part 2
     int64_t max_mag = 0;
-    for (size_t i = 0; i < lines.size(); ++i) {
-        for (size_t j = 0; j < lines.size(); ++j) {
+    for (size_t i = 0; i < init_roots.size(); ++i) {
+        for (size_t j = 0; j < init_roots.size(); ++j) {
             if (i == j)
                 continue;
-            roots.clear();
             tc.clear();
-            std::string_view view;
-            view = lines[i];
-            roots.push_back(parse_one(tc, view, -1));
-            view = lines[j];
-            roots.push_back(parse_one(tc, view, -1));
-            size_t new_root = combine_nodes(tc, roots[0], roots[1]);
-            reduce_tree(tc, new_root);
-            max_mag = std::max(max_mag, magnitude(tc, new_root));
+            node_handle left = copy_tree(init_trees, tc, init_roots[i]);
+            node_handle right = copy_tree(init_trees, tc, init_roots[j]);
+            node_handle root = combine_nodes(tc, left, right);
+            reduce_tree(tc, root);
+            max_mag = std::max(max_mag, magnitude(tc, root));
         }
     }
     sr::solution(max_mag);
