@@ -15,7 +15,7 @@ struct entry {
     std::vector<std::string> outputs;
 
     int count_unique_outputs() const {
-        return ranges::count_if(outputs, [](auto&& s) {
+        return (int)ranges::count_if(outputs, [](auto&& s) {
             return is_unique_size(s.size());
         });
     }
@@ -90,7 +90,7 @@ struct entry {
                     segment_assoc[3] = sig;
                 } else if (!ranges::includes(sig, segment_assoc[1]) && !ranges::includes(sig, segment_assoc[4]) &&
                            !ranges::includes(sig, segment_assoc[7]) && !ranges::includes(sig, segment_assoc[8])) {
-                    int four_common = ranges::count_if(sig, [&](auto ch) {
+                    int four_common = (int)ranges::count_if(sig, [&](auto ch) {
                         return ranges::find(segment_assoc[4], ch) != segment_assoc[4].end();
                     });
 

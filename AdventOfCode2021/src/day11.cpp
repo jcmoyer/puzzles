@@ -16,11 +16,11 @@ public:
         flashable.reserve(octopi.size());
     }
 
-    int tick() {
+    size_t tick() {
         flashed.clear();
         flashable.clear();
 
-        int count = 0;
+        size_t count = 0;
 
         for (int& e : octopi)
             ++e;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     world w(to_int_map(char_tilemap));
 
     // part 1
-    int flashes = 0;
+    size_t flashes = 0;
     for (int i = 0; i < 100; ++i) {
         flashes += w.tick();
     }

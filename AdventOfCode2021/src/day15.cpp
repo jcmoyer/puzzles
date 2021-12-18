@@ -48,17 +48,17 @@ int main(int argc, char* argv[]) {
     sr::solution(solve(risk_map));
 
     risk_map_type big_risk_map(map.width() * 5, map.height() * 5);
-    for (int y = 0; y < 5; ++y) {
-        for (int x = 0; x < 5; ++x) {
-            int subarea_min_x = x * map.width();
-            int subarea_max_x = subarea_min_x + map.width();
-            int subarea_min_y = y * map.height();
-            int subarea_max_y = subarea_min_y + map.height();
-            int risk_bonus = x + y;
-            for (int sy = subarea_min_y; sy < subarea_max_y; ++sy) {
-                for (int sx = subarea_min_x; sx < subarea_max_x; ++sx) {
-                    int src = risk_map.at(sx - subarea_min_x, sy - subarea_min_y);
-                    int val = src + risk_bonus;
+    for (size_t y = 0; y < 5; ++y) {
+        for (size_t x = 0; x < 5; ++x) {
+            size_t subarea_min_x = x * map.width();
+            size_t subarea_max_x = subarea_min_x + map.width();
+            size_t subarea_min_y = y * map.height();
+            size_t subarea_max_y = subarea_min_y + map.height();
+            uint8_t risk_bonus = static_cast<uint8_t>(x + y);
+            for (size_t sy = subarea_min_y; sy < subarea_max_y; ++sy) {
+                for (size_t sx = subarea_min_x; sx < subarea_max_x; ++sx) {
+                    uint8_t src = risk_map.at(sx - subarea_min_x, sy - subarea_min_y);
+                    uint8_t val = src + risk_bonus;
                     if (val > 9) {
                         val %= 10;
                         val += 1;
