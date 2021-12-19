@@ -4,6 +4,7 @@
 #include <numeric>
 
 #include <sr/sr.hpp>
+#include <sr/xxhash.h>
 
 // standard form:
 //
@@ -144,6 +145,20 @@ struct scanner {
     }
 };
 
+struct solve_key {
+    size_t solved_id;
+    size_t unsolved_id;
+    rotation rot;
+    constexpr auto operator<=>(const solve_key&) const = default;
+};
+
+template <>
+struct std::hash<solve_key> {
+    size_t operator()(const solve_key& k) const {
+        return XXH3_64bits(&k, sizeof(k));
+    }
+};
+
 int main(int argc, char* argv[]) {
     auto args = sr::parse_command_line(argc, argv);
     std::vector<scanner> scanners;
@@ -170,6 +185,8 @@ int main(int argc, char* argv[]) {
     for (size_t i = 1; i < scanners.size(); ++i)
         unsolved.push_back(i);
 
+    std::unordered_set<solve_key> tried;
+
     while (unsolved.size()) {
     solve_next:
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -179,6 +196,10 @@ int main(int argc, char* argv[]) {
                 scanner& solved_scanner = scanners[solved[solved_ix]];
                 const auto& ds = solved_scanner.compute_distances(xr_yu_zf);
                 for (int rot = 0; rot < rotation_count; ++rot) {
+                    solve_key key{solved_scanner.id, unsolved_scanner.id, (rotation)rot};
+                    if (tried.contains(key))
+                        continue;
+                    tried.insert(key);
                     const auto& du = unsolved_scanner.compute_distances((rotation)rot);
                     for (int dsy = 0; dsy < ds.height(); ++dsy) {
                         int common_dist = 0;
