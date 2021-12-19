@@ -53,7 +53,7 @@ enum rotation {
 };
 static_assert(rotation_count == 24);
 
-sr::vec3i rotate(sr::vec3i v, rotation r) {
+[[nodiscard]] sr::vec3i rotate(const sr::vec3i& v, rotation r) {
     switch (r) {
         // Y-up
     case xr_yu_zf: // standard form; assume vector starts in this form
@@ -118,23 +118,29 @@ std::ostream& operator<<(std::ostream& stream, const sr::vec3i& v) {
 }
 
 struct scanner {
-    int id;
+    size_t id;
     std::vector<sr::vec3i> beacons;
     rotation solved_rotation;
     sr::vec3i solved_position{};
+    sr::array2d<sr::vec3i> distance_maps[rotation_count];
 
     void reorient(rotation r) {
         for (auto& vec : beacons)
             vec = rotate(vec, r);
         solved_rotation = r;
+        // IMPORTANT: solved orientation needs cache invalidated!
+        // otherwise the solver will try to match unsolved scanners with the old orientation!
+        distance_maps[xr_yu_zf].resize(0, 0);
     }
 
-    auto compute_distances(rotation r) const {
-        sr::array2d<sr::vec3i> distances(beacons.size(), beacons.size());
-        for (size_t i = 0; i < beacons.size(); ++i)
-            for (size_t j = 0; j < beacons.size(); ++j)
-                distances.at(i, j) = rotate(beacons[i], r) - rotate(beacons[j], r);
-        return distances;
+    const sr::array2d<sr::vec3i>& compute_distances(rotation r) {
+        if (distance_maps[r].size() == 0) {
+            distance_maps[r].resize(beacons.size(), beacons.size());
+            for (size_t i = 0; i < beacons.size(); ++i)
+                for (size_t j = 0; j < beacons.size(); ++j)
+                    distance_maps[r].at(i, j) = rotate(beacons[i], r) - rotate(beacons[j], r);
+        }
+        return distance_maps[r];
     }
 };
 
@@ -157,62 +163,63 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::unordered_set<size_t> solved;
-    solved.insert(0);
+    std::vector<size_t> solved;
+    solved.push_back(0);
 
-    std::unordered_set<size_t> unsolved;
+    std::vector<size_t> unsolved;
     for (size_t i = 1; i < scanners.size(); ++i)
-        unsolved.insert(i);
+        unsolved.push_back(i);
 
     while (unsolved.size()) {
     solve_next:
         auto t0 = std::chrono::high_resolution_clock::now();
-        for (size_t i : unsolved) {
-            for (size_t j : solved) {
-                auto ds = scanners[j].compute_distances(xr_yu_zf);
+        for (size_t unsolved_ix = 0; unsolved_ix < unsolved.size(); ++unsolved_ix) {
+            for (size_t solved_ix = 0; solved_ix < solved.size(); ++solved_ix) {
+                scanner& unsolved_scanner = scanners[unsolved[unsolved_ix]];
+                scanner& solved_scanner = scanners[solved[solved_ix]];
+                const auto& ds = solved_scanner.compute_distances(xr_yu_zf);
                 for (int rot = 0; rot < rotation_count; ++rot) {
-                    auto du = scanners[i].compute_distances((rotation)rot);
-                    for (int dsx = 0; dsx < ds.width(); ++dsx) {
+                    const auto& du = unsolved_scanner.compute_distances((rotation)rot);
+                    for (int dsy = 0; dsy < ds.height(); ++dsy) {
                         int common_dist = 0;
-                        for (int dsy = 0; dsy < ds.height(); ++dsy) {
+                        for (int dsx = 0; dsx < ds.width(); ++dsx) {
                             if (dsx == dsy)
                                 continue;
-                            sr::vec3i dsd = ds.at(dsx, dsy);
-                            for (int dux = 0; dux < du.width(); ++dux) {
-                                for (int duy = 0; duy < du.height(); ++duy) {
+                            const sr::vec3i& dsd = ds.at(dsx, dsy);
+                            for (int duy = 0; duy < du.height(); ++duy) {
+                                for (int dux = 0; dux < du.width(); ++dux) {
                                     if (dux == duy)
                                         continue;
-                                    sr::vec3i dud = du.at(dux, duy);
+                                    const sr::vec3i& dud = du.at(dux, duy);
                                     if (dsd == dud) {
                                         ++common_dist;
+                                        // 11 because the point being examined has distance 0,0,0
                                         if (common_dist >= 11) {
                                             auto oriented_solved_beacon =
-                                                scanners[j].solved_position + scanners[j].beacons[dsx];
-                                            auto nonoriented_unsolved_beacon = scanners[i].beacons[dux];
+                                                solved_scanner.solved_position + solved_scanner.beacons[dsx];
                                             auto oriented_unsolved_beacon =
-                                                rotate(scanners[i].beacons[dux], (rotation)rot);
-                                            scanners[i].solved_position =
+                                                rotate(unsolved_scanner.beacons[dux], (rotation)rot);
+                                            unsolved_scanner.solved_position =
                                                 oriented_solved_beacon - oriented_unsolved_beacon;
+                                            solved.push_back(unsolved[unsolved_ix]);
+                                            std::iter_swap(unsolved.begin() + unsolved_ix, unsolved.end() - 1);
+                                            unsolved.pop_back();
+                                            unsolved_scanner.reorient((rotation)rot);
+                                            auto t1 = std::chrono::high_resolution_clock::now();
+                                            std::cerr << "solved " << unsolved_scanner.id << " (" << solved.size()
+                                                      << "/" << unsolved.size() + solved.size() << ") in "
+                                                      << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0)
+                                                             .count()
+                                                      << "ms\n";
+                                            goto solve_next;
                                         }
                                     }
                                 }
                             }
                         }
-                        // 11 because the point being examined has distance 0,0,0
-                        if (common_dist >= 12 - 1) {
-                            scanners[i].reorient((rotation)rot);
-                            unsolved.erase(i);
-                            solved.insert(i);
-                            auto t1 = std::chrono::high_resolution_clock::now();
-                            std::cout << "solved " << i << " in "
-                                      << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
-                                      << "ms\n";
-                            goto solve_next;
-                        }
                     }
                 }
             }
-            std::cout << "cannot solve " << i << " yet\n";
         }
     }
 
