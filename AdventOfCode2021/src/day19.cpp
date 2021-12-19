@@ -254,7 +254,7 @@ int main(int argc, char* argv[]) {
 
     size_t max_distance = 0;
     for (size_t i = 0; i < scanners.size(); ++i)
-        for (size_t j = i; j < scanners.size(); ++j)
+        for (size_t j = i + 1; j < scanners.size(); ++j)
             max_distance = std::max(
                 max_distance, (size_t)sr::manhattan(scanners[i].solved_position, scanners[j].solved_position));
     sr::solution(max_distance);
