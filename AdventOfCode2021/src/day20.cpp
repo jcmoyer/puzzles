@@ -1,7 +1,3 @@
-#include <fmt/format.h>
-#include <fstream>
-#include <numeric>
-
 #include <sr/sr.hpp>
 
 struct image_bounds {
@@ -35,7 +31,7 @@ public:
         for (int yo = -1; yo <= 1; ++yo) {
             for (int xo = -1; xo <= 1; ++xo) {
                 index <<= 1;
-                index |= is_light(p + sr::vec2i{xo, yo});
+                index |= static_cast<uint32_t>(is_light(p + sr::vec2i{xo, yo}));
             }
         }
         return index;
@@ -95,23 +91,26 @@ int main(int argc, char* argv[]) {
         filter.push_back(ch == '#');
     }
 
+    // keep two images and reuse storage
+    image images[2];
+    size_t dest = 1;
+
     // part 1
-    image working_image = init_image;
+    images[0] = init_image;
     for (int i = 0; i < 2; ++i) {
-        image new_image;
-        working_image.enhance(filter, new_image);
-        working_image = new_image;
+        images[!dest].enhance(filter, images[dest]);
+        dest = !dest;
     }
-    sr::solution(working_image.count_lit());
+    sr::solution(images[!dest].count_lit());
 
     // part 2
-    working_image = init_image;
+    images[0] = init_image;
+    dest = 1;
     for (int i = 0; i < 50; ++i) {
-        image new_image;
-        working_image.enhance(filter, new_image);
-        working_image = new_image;
+        images[!dest].enhance(filter, images[dest]);
+        dest = !dest;
     }
-    sr::solution(working_image.count_lit());
+    sr::solution(images[!dest].count_lit());
 
     return 0;
 }
