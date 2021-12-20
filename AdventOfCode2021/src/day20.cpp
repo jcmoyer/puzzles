@@ -1,3 +1,5 @@
+#include <memory_resource>
+
 #include <sr/sr.hpp>
 
 struct image_bounds {
@@ -10,9 +12,9 @@ struct image_bounds {
 
 class image {
 public:
-    image() {}
+    explicit image(std::pmr::memory_resource* mr) : pixels(mr) {}
 
-    image(const sr::array2d<char>& data) {
+    void set_data(const sr::array2d<char>& data) {
         for (int y = 0; y < data.height(); ++y) {
             for (int x = 0; x < data.width(); ++x) {
                 if (data.at(x, y) == '#')
@@ -84,10 +86,36 @@ public:
     }
 
 private:
-    std::unordered_set<sr::vec2i> pixels;
+    std::pmr::unordered_set<sr::vec2i> pixels;
     // whether infinite space is light or dark
     bool space_bit = false;
     image_bounds bounds{};
+};
+
+class image_double_buffer {
+public:
+    explicit image_double_buffer(std::pmr::memory_resource* mr) : images{image(mr), image(mr)} {
+        // based on typical solution outputs
+        images[0].reserve(20000);
+        images[1].reserve(20000);
+    }
+
+    void enhance(const sr::dynamic_bitset& filter) {
+        current_image().enhance(filter, next_image());
+        next = !next;
+    }
+
+    image& current_image() {
+        return images[!next];
+    }
+
+    image& next_image() {
+        return images[next];
+    }
+
+private:
+    image images[2];
+    size_t next = 1;
 };
 
 int main(int argc, char* argv[]) {
@@ -107,28 +135,19 @@ int main(int argc, char* argv[]) {
         filter.push_back(ch == '#');
     }
 
-    // keep two images and reuse storage
-    image images[2]{
-        image(image_data),
-        image(),
-    };
-    images[0].reserve(20000);
-    images[1].reserve(20000);
-    size_t dest = 1;
+    std::pmr::monotonic_buffer_resource arena;
+    image_double_buffer buf(&arena);
+    buf.current_image().set_data(image_data);
 
     // part 1
-    for (int i = 0; i < 2; ++i) {
-        images[!dest].enhance(filter, images[dest]);
-        dest = !dest;
-    }
-    sr::solution(images[!dest].count_lit());
+    for (int i = 0; i < 2; ++i)
+        buf.enhance(filter);
+    sr::solution(buf.current_image().count_lit());
 
     // part 2
-    for (int i = 0; i < 48; ++i) {
-        images[!dest].enhance(filter, images[dest]);
-        dest = !dest;
-    }
-    sr::solution(images[!dest].count_lit());
+    for (int i = 0; i < 48; ++i)
+        buf.enhance(filter);
+    sr::solution(buf.current_image().count_lit());
 
     return 0;
 }
