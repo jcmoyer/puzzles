@@ -57,7 +57,8 @@ public:
     }
 
     void enhance(const sr::dynamic_bitset& filter, image& output) const {
-        output.space_bit = !space_bit;
+        const size_t space_bit_transition = space_bit ? 0b111'111'111 : 0;
+        output.space_bit = filter.get(space_bit_transition);
         image_bounds b = sim_bounds();
         for (int y = b.min.y(); y <= b.max.y(); ++y) {
             for (int x = b.min.x(); x <= b.max.x(); ++x) {
@@ -69,7 +70,7 @@ public:
 
 private:
     std::unordered_map<sr::vec2i, bool> pixels;
-    // whether infinite space is light or dark; assumes filter[0] is #
+    // whether infinite space is light or dark
     bool space_bit = false;
 };
 
