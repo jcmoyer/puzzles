@@ -108,6 +108,7 @@ subwins play_dirac(game_state st, std::unordered_map<game_state, subwins>& dirac
     }
 
     dirac_wins[st] = total;
+    return total;
 }
 
 int main(int argc, char* argv[]) {
