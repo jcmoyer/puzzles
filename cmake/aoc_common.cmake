@@ -2,6 +2,7 @@ set(PYTHON_BIN python CACHE STRING "name of python binary to use for the test ru
 
 find_package(sr CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(z3)
 
 enable_testing()
 
@@ -16,6 +17,11 @@ function(aoc_add_day n)
     target_link_libraries("day${n}" sr::sr fmt::fmt)
     set_property(TARGET "day${n}" PROPERTY CXX_STANDARD 20)
     install(TARGETS "day${n}" RUNTIME DESTINATION .)
+
+    if("${ARGV}" MATCHES "LINK_Z3")
+        target_include_directories("day${n}" PRIVATE "${Z3_CXX_INCLUDE_DIRS}")
+        target_link_libraries("day${n}" "${Z3_LIBRARIES}")
+    endif()
 
     if(NOT "${ARGV}" MATCHES "NO_TEST")
         add_test(
