@@ -2,12 +2,16 @@
 
 #include <sr/sr.hpp>
 
+// it is intended that these functions be used in a context where a negative value is expected, so they must return a
+// signed integer
 [[nodiscard]] int side_x(size_t side_id) {
     assert(side_id <= 1);
     if (side_id == 0)
         return 1;
     else if (side_id == 1)
         return 11;
+    // explicitly undefined if side_id not in 0..1
+    return -1;
 }
 
 [[nodiscard]] int room_x(size_t room_id) {
@@ -22,7 +26,7 @@
     return 1;
 }
 
-[[nodiscard]] int energy_per_step(uint8_t ch) {
+[[nodiscard]] size_t energy_per_step(uint8_t ch) {
     switch (ch) {
     case 'A':
         return 1;
@@ -384,7 +388,7 @@ struct world_explorer {
         assert(who != 0);
         assert(state.is_hallway_vacant(hall_id));
 
-        int dist = (int)y_dist_hall + std::abs(room_x(room_id) - hall_x(hall_id));
+        size_t dist = y_dist_hall + (size_t)std::abs(room_x(room_id) - hall_x(hall_id));
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, 0);
@@ -400,7 +404,7 @@ struct world_explorer {
         size_t y_dist;
         uint8_t slot = state.next_room_empty_slot(room_id, y_dist);
 
-        int dist = std::abs(hall_x(hall_id) - room_x(room_id)) + y_dist;
+        size_t dist = (size_t)std::abs(hall_x(hall_id) - room_x(room_id)) + y_dist;
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, who);
@@ -419,7 +423,7 @@ struct world_explorer {
         size_t dst_hall_dist;
         uint8_t dst_slot = state.next_room_empty_slot(room_dst, dst_hall_dist);
 
-        int dist = std::abs(room_x(room_src) - room_x(room_dst)) + src_hall_dist + dst_hall_dist;
+        size_t dist = (size_t)std::abs(room_x(room_src) - room_x(room_dst)) + src_hall_dist + dst_hall_dist;
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_src, src_slot, 0);
@@ -434,7 +438,7 @@ struct world_explorer {
         assert(who != 0);
         assert(!state.is_sideroom_occupied(side_id));
 
-        int dist = room_hall_dist + std::abs(room_x(room_id) - side_x(side_id));
+        size_t dist = room_hall_dist + (size_t)std::abs(room_x(room_id) - side_x(side_id));
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, 0);
@@ -450,7 +454,7 @@ struct world_explorer {
         assert(state.is_sideroom_occupied(sideroom_src));
         assert(!state.is_room_full(room_dst));
 
-        int dist = room_hall_dist + std::abs(room_x(room_dst) - side_x(sideroom_src));
+        size_t dist = room_hall_dist + (size_t)std::abs(room_x(room_dst) - side_x(sideroom_src));
         energy_used += dist * energy_per_step(who);
 
         state.set_side(sideroom_src, 0);
@@ -618,8 +622,8 @@ int main(int argc, char* argv[]) {
 
     // part 1
     world_explorer<world_state<2>> ws1;
-    for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 4; ++j) {
+    for (size_t i = 0; i < 2; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
             ws1.state.set_room(j, i, amphipods[i * 4 + j]);
         }
     }
@@ -633,8 +637,8 @@ int main(int argc, char* argv[]) {
     amphipods.insert(4, "DCBADBAC");
 
     world_explorer<world_state<4>> ws;
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
+    for (size_t i = 0; i < 4; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
             ws.state.set_room(j, i, amphipods[i * 4 + j]);
         }
     }
