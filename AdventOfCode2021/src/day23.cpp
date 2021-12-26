@@ -720,25 +720,35 @@ struct std::hash<world_explorer<State>> {
 
 template <typename State>
 void solve(world_explorer<State> ws0) {
-    std::unordered_set<world_explorer<State>> seen;
-    std::deque<world_explorer<State>> worlds;
+    std::unordered_map<world_explorer<State>, size_t> seen;
+    std::vector<world_explorer<State>> worlds;
     worlds.push_back(ws0);
     size_t best_score = -1;
+
+    constexpr auto energy_heap = [](const world_explorer<State>& w0, const world_explorer<State>& w1) {
+        return w0.energy_used > w1.energy_used;
+    };
 
     std::deque<world_explorer<State>> world_buf;
     while (worlds.size()) {
         world_explorer<State> ws = worlds.front();
-        worlds.pop_front();
-        seen.insert(ws);
+        std::ranges::pop_heap(worlds, energy_heap);
+        worlds.pop_back();
 
-        // std::cout << ws << "\n";
-        // std::cin.get();
+        if (auto it = seen.find(ws); it != seen.end()) {
+            if (ws.energy_used < it->second) {
+                it->second = ws.energy_used;
+            } else {
+                // prune this world
+                continue;
+            }
+        } else {
+            seen.insert(std::make_pair(ws, ws.energy_used));
+        }
 
         if (ws.is_goal()) {
             if (ws.energy_used < best_score) {
                 best_score = ws.energy_used;
-                /*sr::solution(best_score);
-                std::cout << ws << "\n";*/
             }
             continue;
         }
@@ -746,9 +756,8 @@ void solve(world_explorer<State> ws0) {
         if (ws.energy_used <= best_score) {
             ws.get_adjacent_states(world_buf);
             for (auto& w : world_buf) {
-                if (!seen.contains(w)) {
-                    worlds.push_back(w);
-                }
+                worlds.push_back(w);
+                std::ranges::push_heap(worlds, energy_heap);
             }
             world_buf.clear();
         }
