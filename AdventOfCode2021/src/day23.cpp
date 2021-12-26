@@ -144,14 +144,9 @@ struct world_state {
     // convenience functions
     //=========================================================================
 
-    [[nodiscard]] uint8_t hallway_occupant(size_t hall_id) const {
-        assert(hall_id < sizeof(halls));
-        return halls[hall_id];
-    }
-
     [[nodiscard]] bool is_hallway_vacant(size_t hall_id) const {
         assert(hall_id <= sizeof(halls));
-        return hallway_occupant(hall_id) == 0;
+        return get_hall(hall_id) == 0;
     }
 
     [[nodiscard]] bool is_room_full(size_t room_id) const {
@@ -259,13 +254,13 @@ struct world_state {
     [[nodiscard]] bool can_hall_room(size_t hall_id, size_t room_id) const {
         if (is_hallway_vacant(hall_id))
             return false;
-        if (!is_room_destination_for(room_id, hallway_occupant(hall_id)))
+        if (!is_room_destination_for(room_id, get_hall(hall_id)))
             return false;
 
         auto rdest = room_occupants(room_id);
         if (rdest.count() == slot_count) {
             return false;
-        } else if (!rdest.all_occupants_are(hallway_occupant(hall_id))) {
+        } else if (!rdest.all_occupants_are(get_hall(hall_id))) {
             return false;
         }
 
