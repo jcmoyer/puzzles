@@ -1,3 +1,4 @@
+#include <bitset>
 #include <fstream>
 
 #include <sr/sr.hpp>
@@ -161,6 +162,150 @@ struct world_state {
     [[nodiscard]] amphipod get_side(size_t side_id) const {
         assert(side_id <= 1);
         return sides[side_id];
+    }
+};
+
+template <size_t RoomSlotCount>
+struct small_world_state {
+    constexpr static size_t slot_count = RoomSlotCount;
+
+    template <size_t RoomSlotCount>
+    struct room_int {};
+    template <>
+    struct room_int<2> {
+        using type = uint32_t;
+    };
+    template <>
+    struct room_int<4> {
+        using type = uint64_t;
+    };
+
+    typename room_int<RoomSlotCount>::type room_bits{};
+    uint32_t rest_bits{};
+
+    constexpr auto operator<=>(const small_world_state&) const = default;
+
+    //=========================================================================
+    // field accessors
+    //=========================================================================
+    void set_room(size_t room_id, uint8_t slot, amphipod who) {
+        const uint64_t shift = room_id * 3 * slot_count + slot * 3;
+        const uint64_t mask = 0b111ull << shift;
+        const uint64_t whobits = ((uint64_t)who) << shift;
+        room_bits = (room_bits & (~mask)) | whobits;
+    }
+
+    [[nodiscard]] amphipod get_room(size_t room_id, uint8_t slot) const {
+        const uint64_t shift = room_id * 3 * slot_count + slot * 3;
+        const uint64_t mask = 0b111ull << shift;
+        return static_cast<amphipod>((room_bits & mask) >> shift);
+    }
+
+    void set_hall(size_t hall_id, amphipod who) {
+        const uint64_t shift = hall_id * 3;
+        const uint64_t mask = 0b111ull << shift;
+        const uint64_t whobits = ((uint64_t)who) << shift;
+        rest_bits = (rest_bits & (~mask)) | whobits;
+    }
+
+    [[nodiscard]] amphipod get_hall(size_t hall_id) const {
+        const uint64_t shift = hall_id * 3;
+        const uint64_t mask = 0b111ull << shift;
+        return static_cast<amphipod>((rest_bits & mask) >> shift);
+    }
+
+    void set_side(size_t side_id, amphipod who) {
+        const uint64_t shift = 18 + side_id * 3;
+        const uint64_t mask = 0b111ull << shift;
+        const uint64_t whobits = ((uint64_t)who) << shift;
+        rest_bits = (rest_bits & (~mask)) | whobits;
+    }
+
+    [[nodiscard]] amphipod get_side(size_t side_id) const {
+        const uint64_t shift = 18 + side_id * 3;
+        const uint64_t mask = 0b111ull << shift;
+        return static_cast<amphipod>((rest_bits & mask) >> shift);
+    }
+};
+
+template <size_t RoomSlotCount>
+struct small_world_array_state {
+    constexpr static size_t slot_count = RoomSlotCount;
+    constexpr static size_t total_slot_count = 4 * RoomSlotCount;
+
+    constexpr static size_t room_start = 0;
+    constexpr static size_t room_bit_count = total_slot_count;
+
+    constexpr static size_t hall_start = room_start + room_bit_count;
+    constexpr static size_t hall_bit_count = 5;
+
+    constexpr static size_t sideroom_start = hall_start + hall_bit_count;
+    constexpr static size_t sideroom_bit_count = 2;
+
+    constexpr static size_t total_bit_count = room_bit_count + hall_bit_count + sideroom_bit_count;
+
+    std::bitset<total_bit_count> bits[4];
+
+    constexpr auto operator<=>(const small_world_array_state&) const = default;
+
+    //=========================================================================
+    // field accessors
+    //=========================================================================
+    void set_room(size_t room_id, uint8_t slot, amphipod who) {
+        const size_t pos = room_start + room_id * slot_count + slot;
+        bits[0].set(pos, false);
+        bits[1].set(pos, false);
+        bits[2].set(pos, false);
+        bits[3].set(pos, false);
+        if (who != amphipod::none)
+            bits[(size_t)who - 1].set(pos, true);
+    }
+
+    [[nodiscard]] amphipod get_room(size_t room_id, uint8_t slot) const {
+        const size_t pos = room_start + room_id * slot_count + slot;
+        for (int i = 0; i < 4; ++i) {
+            if (bits[i].test(pos))
+                return (amphipod)(i + 1);
+        }
+        return amphipod::none;
+    }
+
+    void set_hall(size_t hall_id, amphipod who) {
+        const size_t pos = hall_start + hall_id;
+        bits[0].set(pos, false);
+        bits[1].set(pos, false);
+        bits[2].set(pos, false);
+        bits[3].set(pos, false);
+        if (who != amphipod::none)
+            bits[(size_t)who - 1].set(pos, true);
+    }
+
+    [[nodiscard]] amphipod get_hall(size_t hall_id) const {
+        const size_t pos = hall_start + hall_id;
+        for (int i = 0; i < 4; ++i) {
+            if (bits[i].test(pos))
+                return (amphipod)(i + 1);
+        }
+        return amphipod::none;
+    }
+
+    void set_side(size_t side_id, amphipod who) {
+        const size_t pos = sideroom_start + side_id;
+        bits[0].set(pos, false);
+        bits[1].set(pos, false);
+        bits[2].set(pos, false);
+        bits[3].set(pos, false);
+        if (who != amphipod::none)
+            bits[(size_t)who - 1].set(pos, true);
+    }
+
+    [[nodiscard]] amphipod get_side(size_t side_id) const {
+        const size_t pos = sideroom_start + side_id;
+        for (int i = 0; i < 4; ++i) {
+            if (bits[i].test(pos))
+                return (amphipod)(i + 1);
+        }
+        return amphipod::none;
     }
 };
 
