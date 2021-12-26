@@ -442,13 +442,11 @@ struct world_explorer {
     }
 
     bool is_goal() const {
-        auto r0 = room_occupants(0);
-        auto r1 = room_occupants(1);
-        auto r2 = room_occupants(2);
-        auto r3 = room_occupants(3);
-        return r0.all_occupants_are(amphipod::a) && r1.all_occupants_are(amphipod::b) &&
-               r2.all_occupants_are(amphipod::c) && r3.all_occupants_are(amphipod::d) && r0.full() && r1.full() &&
-               r2.full() && r3.full();
+        for (int i = 0; i < 4; ++i)
+            for (int j = 0; j < State::slot_count; ++j)
+                if (state.get_room(i, j) != amphipod_for_room(i))
+                    return false;
+        return true;
     }
 
     bool operator==(const world_explorer& rhs) const {
