@@ -84,6 +84,20 @@ enum class amphipod : uint8_t {
     return false;
 }
 
+[[nodiscard]] amphipod amphipod_for_room(size_t room_id) {
+    switch (room_id) {
+    case 0:
+        return amphipod::a;
+    case 1:
+        return amphipod::b;
+    case 2:
+        return amphipod::c;
+    case 3:
+        return amphipod::d;
+    }
+    return amphipod::none;
+}
+
 [[nodiscard]] bool is_sideroom_left(size_t side_id) {
     return side_id == 0;
 }
@@ -465,6 +479,17 @@ struct world_explorer {
         throw std::runtime_error("no occupant in room");
     }
 
+    [[nodiscard]] bool is_bottommost_resident(size_t room_id) const {
+        amphipod want = amphipod_for_room(room_id);
+        int slot = next_room_occupant_slot(room_id);
+        for (; slot < State::slot_count; ++slot) {
+            if (state.get_room(room_id, slot) != want) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     [[nodiscard]] uint8_t next_room_empty_slot(size_t room_id) const {
         // very important that we take the LAST empty slot first!
         // took a lot of time to debug this...
@@ -535,6 +560,10 @@ struct world_explorer {
             return false;
         }
 
+        if (is_bottommost_resident(room_id)) {
+            return false;
+        }
+
         // check for hallway blockage
         if (is_hall_left_of_room(room_id, hall_id)) {
             size_t start = hall_id;
@@ -601,6 +630,10 @@ struct world_explorer {
             return false;
         }
 
+        if (is_bottommost_resident(room_src)) {
+            return false;
+        }
+
         // check for hallway blockage
         if (room_src < room_dst) {
             size_t start = hall_id_right_of_room(room_src);
@@ -623,6 +656,10 @@ struct world_explorer {
 
         auto rsrc = room_occupants(room_id);
         if (rsrc.count() == 0) {
+            return false;
+        }
+
+        if (is_bottommost_resident(room_id)) {
             return false;
         }
 
