@@ -1,5 +1,6 @@
 #include <bitset>
 #include <fstream>
+#include <memory_resource>
 
 #include <sr/sr.hpp>
 
@@ -719,17 +720,18 @@ struct std::hash<world_explorer<State>> {
 };
 
 template <typename State>
-void solve(world_explorer<State> ws0) {
-    std::unordered_map<world_explorer<State>, size_t> seen;
-    std::vector<world_explorer<State>> worlds;
-    worlds.push_back(ws0);
+void solve(world_explorer<State> ws0, std::pmr::monotonic_buffer_resource* mr) {
+    std::pmr::unordered_map<world_explorer<State>, size_t> seen(mr);
+    seen.reserve(150000);
+    std::pmr::vector<world_explorer<State>> worlds(mr);
+    worlds.reserve(50000);
+    worlds.emplace_back(std::move(ws0));
     size_t best_score = -1;
 
     constexpr auto energy_heap = [](const world_explorer<State>& w0, const world_explorer<State>& w1) {
         return w0.energy_used > w1.energy_used;
     };
 
-    std::deque<world_explorer<State>> world_buf;
     while (worlds.size()) {
         world_explorer<State> ws = worlds.front();
         std::ranges::pop_heap(worlds, energy_heap);
@@ -754,12 +756,12 @@ void solve(world_explorer<State> ws0) {
         }
 
         if (ws.energy_used <= best_score) {
-            ws.get_adjacent_states(world_buf);
-            for (auto& w : world_buf) {
-                worlds.push_back(w);
-                std::ranges::push_heap(worlds, energy_heap);
+            size_t heap_size = worlds.size();
+            ws.get_adjacent_states(worlds);
+            while (heap_size <= worlds.size()) {
+                std::push_heap(worlds.begin(), worlds.begin() + heap_size, energy_heap);
+                ++heap_size;
             }
-            world_buf.clear();
         }
     }
 
@@ -767,6 +769,7 @@ void solve(world_explorer<State> ws0) {
 }
 
 int main(int argc, char* argv[]) {
+    std::pmr::monotonic_buffer_resource arena;
     auto args = sr::parse_command_line(argc, argv);
 
     // example input
@@ -777,9 +780,9 @@ int main(int argc, char* argv[]) {
     //   #A#D#C#A#
     //   #########
 
-    std::string amphipods;
+    std::pmr::string amphipods(&arena);
     amphipods.reserve(16);
-    std::string buf;
+    std::pmr::string buf(&arena);
     while (std::getline(args.get_input_stream(), buf)) {
         for (char ch : buf) {
             if (ch >= 'A' && ch <= 'D') {
@@ -795,7 +798,7 @@ int main(int argc, char* argv[]) {
             ws1.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
-    solve(ws1);
+    solve(std::move(ws1), &arena);
 
     // part 2 inserts the following rows between the existing ones:
     //
@@ -810,7 +813,7 @@ int main(int argc, char* argv[]) {
             ws.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
-    solve(ws);
+    solve(std::move(ws), &arena);
 
     return 0;
 }
