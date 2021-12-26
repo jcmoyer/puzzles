@@ -2,6 +2,29 @@
 
 #include <sr/sr.hpp>
 
+enum class amphipod : uint8_t {
+    none = 0,
+    a = 1,
+    b = 2,
+    c = 3,
+    d = 4,
+};
+
+[[nodiscard]] amphipod to_amphipod(char ch) {
+    switch (ch) {
+    case 'A':
+        return amphipod::a;
+    case 'B':
+        return amphipod::b;
+    case 'C':
+        return amphipod::c;
+    case 'D':
+        return amphipod::d;
+    default:
+        throw std::runtime_error("invalid ch");
+    }
+}
+
 // it is intended that these functions be used in a context where a negative value is expected, so they must return a
 // signed integer
 [[nodiscard]] int side_x(size_t side_id) {
@@ -31,15 +54,15 @@
     return slot + 1;
 }
 
-[[nodiscard]] size_t energy_per_step(uint8_t ch) {
+[[nodiscard]] size_t energy_per_step(amphipod ch) {
     switch (ch) {
-    case 'A':
+    case amphipod::a:
         return 1;
-    case 'B':
+    case amphipod::b:
         return 10;
-    case 'C':
+    case amphipod::c:
         return 100;
-    case 'D':
+    case amphipod::d:
         return 1000;
     default:
         assert(false);
@@ -47,14 +70,14 @@
     }
 }
 
-[[nodiscard]] bool is_room_destination_for(size_t room_id, uint8_t occupant) {
-    if (room_id == 0 && occupant == 'A')
+[[nodiscard]] bool is_room_destination_for(size_t room_id, amphipod occupant) {
+    if (room_id == 0 && occupant == amphipod::a)
         return true;
-    if (room_id == 1 && occupant == 'B')
+    if (room_id == 1 && occupant == amphipod::b)
         return true;
-    if (room_id == 2 && occupant == 'C')
+    if (room_id == 2 && occupant == amphipod::c)
         return true;
-    if (room_id == 3 && occupant == 'D')
+    if (room_id == 3 && occupant == amphipod::d)
         return true;
     return false;
 }
@@ -95,9 +118,9 @@ struct world_state {
     //
     // there are 15 locations in part 1 and 23 locations in part 2
 
-    uint8_t rooms[4 * RoomSlotCount]{};
-    uint8_t halls[5]{};
-    uint8_t sides[2]{};
+    amphipod rooms[4 * RoomSlotCount]{};
+    amphipod halls[5]{};
+    amphipod sides[2]{};
 
     constexpr auto operator<=>(const world_state&) const = default;
 
@@ -108,34 +131,34 @@ struct world_state {
     // callers should use these accessor functions since the underlying representation may change
     // getters do not return references here because storage optimizations may store data in non-addressable bits
 
-    void set_room(size_t room_id, uint8_t slot, uint8_t who) {
+    void set_room(size_t room_id, uint8_t slot, amphipod who) {
         assert(room_id <= 3);
         assert(slot < slot_count);
         rooms[room_id * slot_count + slot] = who;
     }
 
-    [[nodiscard]] uint8_t get_room(size_t room_id, uint8_t slot) const {
+    [[nodiscard]] amphipod get_room(size_t room_id, uint8_t slot) const {
         assert(room_id <= 3);
         assert(slot < slot_count);
         return rooms[room_id * slot_count + slot];
     }
 
-    void set_hall(size_t hall_id, uint8_t who) {
+    void set_hall(size_t hall_id, amphipod who) {
         assert(hall_id <= 4);
         halls[hall_id] = who;
     }
 
-    [[nodiscard]] uint8_t get_hall(size_t hall_id) const {
+    [[nodiscard]] amphipod get_hall(size_t hall_id) const {
         assert(hall_id <= 4);
         return halls[hall_id];
     }
 
-    void set_side(size_t side_id, uint8_t who) {
+    void set_side(size_t side_id, amphipod who) {
         assert(side_id <= 1);
         sides[side_id] = who;
     }
 
-    [[nodiscard]] uint8_t get_side(size_t side_id) const {
+    [[nodiscard]] amphipod get_side(size_t side_id) const {
         assert(side_id <= 1);
         return sides[side_id];
     }
@@ -148,20 +171,20 @@ struct world_explorer {
 
     void move_occupant_room_hall(size_t room_id, size_t hall_id) {
         uint8_t slot = next_room_occupant_slot(room_id);
-        uint8_t who = state.get_room(room_id, slot);
-        assert(who != 0);
+        amphipod who = state.get_room(room_id, slot);
+        assert(who != amphipod::none);
         assert(is_hallway_vacant(hall_id));
 
         size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_id) - hall_x(hall_id));
         energy_used += dist * energy_per_step(who);
 
-        state.set_room(room_id, slot, 0);
+        state.set_room(room_id, slot, amphipod::none);
         state.set_hall(hall_id, who);
     }
 
     void move_occupant_hall_room(size_t hall_id, size_t room_id) {
-        uint8_t who = state.get_hall(hall_id);
-        assert(who != 0);
+        amphipod who = state.get_hall(hall_id);
+        assert(who != amphipod::none);
         assert(!is_hallway_vacant(hall_id));
         assert(!is_room_full(room_id));
 
@@ -171,14 +194,14 @@ struct world_explorer {
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, who);
-        state.set_hall(hall_id, 0);
+        state.set_hall(hall_id, amphipod::none);
     }
 
     void move_occupant_room_room(size_t room_src, size_t room_dst) {
         uint8_t src_slot = next_room_occupant_slot(room_src);
-        uint8_t who = state.get_room(room_src, src_slot);
+        amphipod who = state.get_room(room_src, src_slot);
 
-        assert(who != 0);
+        assert(who != amphipod::none);
         assert(!is_room_full(room_dst));
         assert(is_room_destination_for(room_dst, who));
 
@@ -188,36 +211,36 @@ struct world_explorer {
                       slot_hall_ydist(dst_slot);
         energy_used += dist * energy_per_step(who);
 
-        state.set_room(room_src, src_slot, 0);
+        state.set_room(room_src, src_slot, amphipod::none);
         state.set_room(room_dst, dst_slot, who);
     }
 
     void move_occupant_room_sideroom(size_t room_id, size_t side_id) {
         uint8_t slot = next_room_occupant_slot(room_id);
-        uint8_t who = state.get_room(room_id, slot);
+        amphipod who = state.get_room(room_id, slot);
 
-        assert(who != 0);
+        assert(who != amphipod::none);
         assert(!is_sideroom_occupied(side_id));
 
         size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_id) - side_x(side_id));
         energy_used += dist * energy_per_step(who);
 
-        state.set_room(room_id, slot, 0);
+        state.set_room(room_id, slot, amphipod::none);
         state.set_side(side_id, who);
     }
 
     void move_occupant_sideroom_room(size_t sideroom_src, size_t room_dst) {
         uint8_t slot = next_room_empty_slot(room_dst);
-        uint8_t who = state.get_side(sideroom_src);
+        amphipod who = state.get_side(sideroom_src);
 
-        assert(who != 0);
+        assert(who != amphipod::none);
         assert(is_sideroom_occupied(sideroom_src));
         assert(!is_room_full(room_dst));
 
         size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_dst) - side_x(sideroom_src));
         energy_used += dist * energy_per_step(who);
 
-        state.set_side(sideroom_src, 0);
+        state.set_side(sideroom_src, amphipod::none);
         state.set_room(room_dst, slot, who);
     }
 
@@ -263,8 +286,9 @@ struct world_explorer {
         auto r1 = room_occupants(1);
         auto r2 = room_occupants(2);
         auto r3 = room_occupants(3);
-        return r0.all_occupants_are('A') && r1.all_occupants_are('B') && r2.all_occupants_are('C') &&
-               r3.all_occupants_are('D') && r0.full() && r1.full() && r2.full() && r3.full();
+        return r0.all_occupants_are(amphipod::a) && r1.all_occupants_are(amphipod::b) &&
+               r2.all_occupants_are(amphipod::c) && r3.all_occupants_are(amphipod::d) && r0.full() && r1.full() &&
+               r2.full() && r3.full();
     }
 
     bool operator==(const world_explorer& rhs) const {
@@ -276,19 +300,19 @@ struct world_explorer {
     //=========================================================================
 
     [[nodiscard]] bool is_hallway_vacant(size_t hall_id) const {
-        return state.get_hall(hall_id) == 0;
+        return state.get_hall(hall_id) == amphipod::none;
     }
 
     [[nodiscard]] bool is_room_full(size_t room_id) const {
         for (int i = 0; i < State::slot_count; ++i)
-            if (state.get_room(room_id, i) == 0)
+            if (state.get_room(room_id, i) == amphipod::none)
                 return false;
         return true;
     }
 
     [[nodiscard]] uint8_t next_room_occupant_slot(size_t room_id) const {
         for (int slot = 0; slot < State::slot_count; ++slot) {
-            if (state.get_room(room_id, slot) != 0) {
+            if (state.get_room(room_id, slot) != amphipod::none) {
                 return slot;
             }
         }
@@ -299,7 +323,7 @@ struct world_explorer {
         // very important that we take the LAST empty slot first!
         // took a lot of time to debug this...
         for (int slot = State::slot_count - 1; slot >= 0; --slot) {
-            if (state.get_room(room_id, slot) == 0) {
+            if (state.get_room(room_id, slot) == amphipod::none) {
                 return slot;
             }
         }
@@ -307,7 +331,7 @@ struct world_explorer {
     }
 
     struct room_occupants_result {
-        uint8_t occupants[State::slot_count];
+        amphipod occupants[State::slot_count];
 
         auto operator<=>(const room_occupants_result&) const = default;
 
@@ -316,14 +340,14 @@ struct world_explorer {
         }
 
         size_t count() const {
-            return std::ranges::count_if(occupants, [](uint8_t who) {
-                return who != 0;
+            return std::ranges::count_if(occupants, [](amphipod who) {
+                return who != amphipod::none;
             });
         }
 
-        bool all_occupants_are(uint8_t occ) const {
-            for (uint8_t o : occupants) {
-                if (o != 0 && occ != o) {
+        bool all_occupants_are(amphipod occ) const {
+            for (amphipod o : occupants) {
+                if (o != amphipod::none && occ != o) {
                     return false;
                 }
             }
@@ -348,7 +372,7 @@ struct world_explorer {
     }
 
     [[nodiscard]] bool is_sideroom_occupied(size_t side_id) const {
-        return state.get_side(side_id) != 0;
+        return state.get_side(side_id) != amphipod::none;
     }
 
     [[nodiscard]] bool is_sideroom_vacant(size_t side_id) const {
@@ -422,7 +446,7 @@ struct world_explorer {
             return false;
 
         uint8_t slot = next_room_occupant_slot(room_src);
-        uint8_t who = state.get_room(room_src, slot);
+        amphipod who = state.get_room(room_src, slot);
 
         auto rdest = room_occupants(room_dst);
         if (rdest.count() == State::slot_count) {
@@ -614,7 +638,7 @@ int main(int argc, char* argv[]) {
     world_explorer<world_state<2>> ws1;
     for (size_t i = 0; i < 2; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            ws1.state.set_room(j, i, amphipods[i * 4 + j]);
+            ws1.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
     solve(ws1);
@@ -629,7 +653,7 @@ int main(int argc, char* argv[]) {
     world_explorer<world_state<4>> ws;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            ws.state.set_room(j, i, amphipods[i * 4 + j]);
+            ws.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
     solve(ws);
