@@ -406,7 +406,6 @@ struct world_explorer {
 
     template <typename Seq>
     void get_adjacent_states(Seq& buf) {
-        // moving from hallway to room, room to hallway
         for (size_t room = 0; room < 4; ++room) {
             for (size_t hall = 0; hall < 5; ++hall) {
                 if (can_room_hall(room, hall)) {
@@ -426,16 +425,6 @@ struct world_explorer {
                 if (can_sideroom_room(sideroom, room)) {
                     world_explorer& ws = buf.emplace_back(*this);
                     ws.move_occupant_sideroom_room(sideroom, room);
-                }
-            }
-        }
-
-        // moving from room to room
-        for (size_t room_src = 0; room_src < 4; ++room_src) {
-            for (size_t room_dst = 0; room_dst < 4; ++room_dst) {
-                if (can_room_room(room_src, room_dst)) {
-                    world_explorer& ws = buf.emplace_back(*this);
-                    ws.move_occupant_room_room(room_src, room_dst);
                 }
             }
         }
