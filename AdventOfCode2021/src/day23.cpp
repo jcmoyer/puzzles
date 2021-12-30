@@ -450,13 +450,6 @@ struct world_explorer {
         return state.get_hall(hall_id) == amphipod::none;
     }
 
-    [[nodiscard]] bool is_room_full(size_t room_id) const {
-        for (int i = 0; i < State::slot_count; ++i)
-            if (state.get_room(room_id, i) == amphipod::none)
-                return false;
-        return true;
-    }
-
     [[nodiscard]] uint8_t next_room_occupant_slot(size_t room_id) const {
         for (int slot = 0; slot < State::slot_count; ++slot) {
             if (state.get_room(room_id, slot) != amphipod::none) {
@@ -521,6 +514,14 @@ struct world_explorer {
         return res;
     }
 
+    [[nodiscard]] bool is_room_empty(size_t room_id) const {
+        return state.get_room(room_id, State::slot_count - 1) == amphipod::none;
+    }
+
+    [[nodiscard]] bool is_room_full(size_t room_id) const {
+        return state.get_room(room_id, 0) != amphipod::none;
+    }
+
     bool is_hallway_pathable(size_t hall_from, size_t hall_to) const {
         for (size_t i = std::min(hall_from, hall_to); i <= std::max(hall_from, hall_to); ++i) {
             if (!is_hallway_vacant(i))
@@ -542,8 +543,7 @@ struct world_explorer {
     //=========================================================================
 
     [[nodiscard]] bool can_room_hall(size_t room_id, size_t hall_id) const {
-        auto rsrc = room_occupants(room_id);
-        if (rsrc.count() == 0) {
+        if (is_room_empty(room_id)) {
             return false;
         }
 
@@ -573,10 +573,9 @@ struct world_explorer {
         if (!is_room_destination_for(room_id, state.get_hall(hall_id)))
             return false;
 
-        auto rdest = room_occupants(room_id);
-        if (rdest.count() == State::slot_count) {
+        if (is_room_full(room_id)) {
             return false;
-        } else if (!rdest.all_occupants_are(state.get_hall(hall_id))) {
+        } else if (!room_occupants(room_id).all_occupants_are(state.get_hall(hall_id))) {
             return false;
         }
 
@@ -604,16 +603,15 @@ struct world_explorer {
     [[nodiscard]] bool can_room_room(size_t room_src, size_t room_dst) const {
         if (room_src == room_dst)
             return false;
-        if (room_occupants(room_src).count() == 0)
+        if (is_room_empty(room_src))
             return false;
 
         uint8_t slot = next_room_occupant_slot(room_src);
         amphipod who = state.get_room(room_src, slot);
 
-        auto rdest = room_occupants(room_dst);
-        if (rdest.count() == State::slot_count) {
+        if (is_room_full(room_dst)) {
             return false;
-        } else if (!rdest.all_occupants_are(who)) {
+        } else if (!room_occupants(room_dst).all_occupants_are(who)) {
             return false;
         }
 
@@ -641,8 +639,7 @@ struct world_explorer {
         if (is_sideroom_occupied(side_dest))
             return false;
 
-        auto rsrc = room_occupants(room_id);
-        if (rsrc.count() == 0) {
+        if (is_room_empty(room_id)) {
             return false;
         }
 
@@ -672,10 +669,9 @@ struct world_explorer {
         if (!is_room_destination_for(room_id, state.get_side(side_id)))
             return false;
 
-        auto rdest = room_occupants(room_id);
-        if (rdest.count() == State::slot_count) {
+        if (is_room_full(room_id)) {
             return false;
-        } else if (!rdest.all_occupants_are(state.get_side(side_id))) {
+        } else if (!room_occupants(room_id).all_occupants_are(state.get_side(side_id))) {
             return false;
         }
 
