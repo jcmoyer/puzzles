@@ -1,5 +1,3 @@
-#include <bitset>
-#include <fstream>
 #include <memory_resource>
 
 #include <sr/sr.hpp>
@@ -38,7 +36,6 @@ enum class amphipod : uint8_t {
     case amphipod::d:
         return 1000;
     default:
-        assert(false);
         throw std::runtime_error("invalid ch");
     }
 }
@@ -77,6 +74,15 @@ enum class amphipod : uint8_t {
     return room_id + 2;
 }
 
+// map of distance from first room slot to hallway
+constexpr size_t dist_map_rh[4][7] = {
+    {3, 2, 2, 4, 6, 8, 9},
+    {5, 4, 2, 2, 4, 6, 7},
+    {7, 6, 4, 2, 2, 4, 5},
+    {9, 8, 6, 4, 2, 2, 3},
+};
+
+// map of room to hallway leftness
 constexpr bool left_map_rh[4][7] = {
     // clang-format off
     {true, true, false, false, false, false, false},
@@ -133,21 +139,6 @@ struct world_state {
     }
 };
 
-// example input
-//
-// #############
-// #...........#
-// ###B#C#B#D###
-//   #A#D#C#A#
-//   #########
-
-constexpr size_t dist_map_rh[4][7] = {
-    {3, 2, 2, 4, 6, 8, 9},
-    {5, 4, 2, 2, 4, 6, 7},
-    {7, 6, 4, 2, 2, 4, 5},
-    {9, 8, 6, 4, 2, 2, 3},
-};
-
 template <typename State>
 struct world_explorer {
     State state{};
@@ -197,11 +188,10 @@ struct world_explorer {
         }
     }
 
-    bool is_goal() const {
-        for (int i = 0; i < 4; ++i)
-            for (int j = 0; j < State::slot_count; ++j)
-                if (state.get_room(i, j) != amphipod_for_room(i))
-                    return false;
+    [[nodiscard]] bool is_goal() const {
+        for (size_t i = 0; i < 4; ++i)
+            if (!is_room_full(i) || !all_occupants_are(i, amphipod_for_room(i)))
+                return false;
         return true;
     }
 
@@ -218,7 +208,7 @@ struct world_explorer {
     }
 
     [[nodiscard]] uint8_t next_room_occupant_slot(size_t room_id) const {
-        for (int slot = 0; slot < State::slot_count; ++slot) {
+        for (uint8_t slot = 0; slot < State::slot_count; ++slot) {
             if (state.get_room(room_id, slot) != amphipod::none) {
                 return slot;
             }
@@ -228,7 +218,7 @@ struct world_explorer {
 
     [[nodiscard]] bool is_bottommost_resident(size_t room_id) const {
         amphipod want = amphipod_for_room(room_id);
-        int slot = next_room_occupant_slot(room_id);
+        uint8_t slot = next_room_occupant_slot(room_id);
         for (; slot < State::slot_count; ++slot) {
             if (state.get_room(room_id, slot) != want) {
                 return false;
@@ -240,7 +230,7 @@ struct world_explorer {
     [[nodiscard]] uint8_t next_room_empty_slot(size_t room_id) const {
         // very important that we take the LAST empty slot first!
         // took a lot of time to debug this...
-        for (int slot = State::slot_count - 1; slot >= 0; --slot) {
+        for (uint8_t slot = State::slot_count - 1; slot < State::slot_count; --slot) {
             if (state.get_room(room_id, slot) == amphipod::none) {
                 return slot;
             }
@@ -248,7 +238,7 @@ struct world_explorer {
         throw std::runtime_error("room full");
     }
 
-    bool all_occupants_are(size_t room_id, amphipod occ) const {
+    [[nodiscard]] bool all_occupants_are(size_t room_id, amphipod occ) const {
         for (size_t i = 0; i < State::slot_count; ++i) {
             amphipod a = state.get_room(room_id, i);
             if (a != amphipod::none && occ != a) {
@@ -264,14 +254,6 @@ struct world_explorer {
 
     [[nodiscard]] bool is_room_full(size_t room_id) const {
         return state.get_room(room_id, 0) != amphipod::none;
-    }
-
-    bool is_hallway_pathable(size_t hall_from, size_t hall_to) const {
-        for (size_t i = std::min(hall_from, hall_to); i <= std::max(hall_from, hall_to); ++i) {
-            if (!is_hallway_vacant(i))
-                return false;
-        }
-        return true;
     }
 
     //=========================================================================
@@ -321,7 +303,6 @@ struct world_explorer {
 
         // check for hallway blockage
         if (is_hall_left_of_room(room_id, hall_id)) {
-            // edge case: can't use is_hallway_pathable because when start > end we want to skip the pathing check
             size_t start = hall_id + 1;
             size_t end = hall_id_left_of_room(room_id);
             for (size_t i = start; i <= end; ++i) {
@@ -340,40 +321,6 @@ struct world_explorer {
         return true;
     }
 };
-//
-// template <typename State>
-// std::ostream& operator<<(std::ostream& stream, const world_explorer<State>& ws) {
-//    sr::array2d<char> space(13, 5 + State::slot_count, '#');
-//    for (int i = 1; i < 12; ++i)
-//        space.at(i, 1) = '.';
-//    for (int x = 3; x < 10; x += 2) {
-//        for (int y = 0; y < 2; ++y) {
-//            space.at(x, 2 + y) = '.';
-//        }
-//    }
-//    for (int i = 0; i < 7; ++i) {
-//        int x = hall_x(i);
-//        int y = 1;
-//        space.at(x, y) = ws.state.get_hall(i);
-//    }
-//
-//    for (int i = 0; i < 4; ++i) {
-//        for (int j = 0; j < State::slot_count; ++j) {
-//            int x = room_x(i);
-//            int y = 2 + j;
-//            space.at(x, y) = ws.state.get_room(i, j);
-//        }
-//    }
-//
-//    for (int y = 0; y < space.height(); ++y) {
-//        for (int x = 0; x < space.width(); ++x) {
-//            char ch = space.at(x, y);
-//            stream << ch;
-//        }
-//        stream << "\n";
-//    }
-//    return stream;
-//}
 
 template <typename State>
 struct std::hash<world_explorer<State>> {
@@ -383,7 +330,7 @@ struct std::hash<world_explorer<State>> {
 };
 
 template <typename State>
-void solve(world_explorer<State> ws0, std::pmr::monotonic_buffer_resource* mr) {
+size_t solve(world_explorer<State> ws0, std::pmr::monotonic_buffer_resource* mr) {
     std::pmr::unordered_map<world_explorer<State>, size_t> seen(mr);
     seen.reserve(150000);
     std::pmr::vector<world_explorer<State>> worlds(mr);
@@ -408,27 +355,24 @@ void solve(world_explorer<State> ws0, std::pmr::monotonic_buffer_resource* mr) {
                 continue;
             }
         } else {
-            seen.insert(std::make_pair(ws, ws.energy_used));
-        }
-
-        if (ws.is_goal()) {
-            if (ws.energy_used < best_score) {
-                best_score = ws.energy_used;
-            }
-            continue;
+            seen.emplace(std::make_pair(ws, ws.energy_used));
         }
 
         if (ws.energy_used <= best_score) {
-            size_t heap_size = worlds.size();
-            ws.get_adjacent_states(worlds);
-            while (heap_size <= worlds.size()) {
-                std::push_heap(worlds.begin(), worlds.begin() + heap_size, energy_heap);
-                ++heap_size;
+            if (ws.is_goal()) {
+                best_score = ws.energy_used;
+                continue;
+            } else {
+                size_t heap_size = worlds.size() + 1;
+                ws.get_adjacent_states(worlds);
+                for (; heap_size <= worlds.size(); ++heap_size) {
+                    std::push_heap(worlds.begin(), worlds.begin() + heap_size, energy_heap);
+                }
             }
         }
     }
 
-    sr::solution(best_score);
+    return best_score;
 }
 
 int main(int argc, char* argv[]) {
@@ -461,7 +405,7 @@ int main(int argc, char* argv[]) {
             ws1.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
-    solve(std::move(ws1), &arena);
+    sr::solution(solve(std::move(ws1), &arena));
 
     // part 2 inserts the following rows between the existing ones:
     //
@@ -470,13 +414,13 @@ int main(int argc, char* argv[]) {
 
     amphipods.insert(4, "DCBADBAC");
 
-    world_explorer<world_state<4>> ws;
+    world_explorer<world_state<4>> ws2;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            ws.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
+            ws2.state.set_room(j, i, to_amphipod(amphipods[i * 4 + j]));
         }
     }
-    solve(std::move(ws), &arena);
+    sr::solution(solve(std::move(ws2), &arena));
 
     return 0;
 }
