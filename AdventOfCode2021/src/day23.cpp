@@ -27,35 +27,6 @@ enum class amphipod : uint8_t {
     }
 }
 
-// it is intended that these functions be used in a context where a negative value is expected, so they must return a
-// signed integer
-[[nodiscard]] int side_x(size_t side_id) {
-    assert(side_id <= 1);
-    if (side_id == 0)
-        return 1;
-    else if (side_id == 1)
-        return 11;
-    // explicitly undefined if side_id not in 0..1
-    return -1;
-}
-
-[[nodiscard]] int room_x(size_t room_id) {
-    return 3 + (int)room_id * 2;
-}
-
-[[nodiscard]] int hall_x(size_t hall_id) {
-    return 2 + (int)hall_id * 2;
-}
-
-[[nodiscard]] int hall_y() {
-    return 1;
-}
-
-// distance is always positive
-[[nodiscard]] size_t slot_hall_ydist(uint8_t slot) {
-    return slot + 1;
-}
-
 [[nodiscard]] size_t energy_per_step(amphipod ch) {
     switch (ch) {
     case amphipod::a:
@@ -98,24 +69,29 @@ enum class amphipod : uint8_t {
     return amphipod::none;
 }
 
-[[nodiscard]] bool is_sideroom_left(size_t side_id) {
-    return side_id == 0;
-}
-
 [[nodiscard]] size_t hall_id_left_of_room(size_t room_id) {
-    return room_id;
-}
-
-[[nodiscard]] size_t hall_id_right_of_room(size_t room_id) {
     return room_id + 1;
 }
 
+[[nodiscard]] size_t hall_id_right_of_room(size_t room_id) {
+    return room_id + 2;
+}
+
+constexpr bool left_map_rh[4][7] = {
+    // clang-format off
+    {true, true, false, false, false, false, false},
+    {true, true, true,  false, false, false, false},
+    {true, true, true,  true,  false, false, false},
+    {true, true, true,  true,  true,  false, false},
+    // clang-format on
+};
+
 [[nodiscard]] bool is_hall_left_of_room(size_t room, size_t hall) {
-    return hall <= room;
+    return left_map_rh[room][hall];
 }
 
 [[nodiscard]] bool is_hall_right_of_room(size_t room, size_t hall) {
-    return hall > room;
+    return !is_hall_left_of_room(room, hall);
 }
 
 template <size_t RoomSlotCount>
@@ -135,8 +111,7 @@ struct world_state {
     // there are 15 locations in part 1 and 23 locations in part 2
 
     amphipod rooms[4 * RoomSlotCount]{};
-    amphipod halls[5]{};
-    amphipod sides[2]{};
+    amphipod halls[7]{};
 
     constexpr auto operator<=>(const world_state&) const = default;
 
@@ -160,23 +135,13 @@ struct world_state {
     }
 
     void set_hall(size_t hall_id, amphipod who) {
-        assert(hall_id <= 4);
+        assert(hall_id < 7);
         halls[hall_id] = who;
     }
 
     [[nodiscard]] amphipod get_hall(size_t hall_id) const {
-        assert(hall_id <= 4);
+        assert(hall_id < 7);
         return halls[hall_id];
-    }
-
-    void set_side(size_t side_id, amphipod who) {
-        assert(side_id <= 1);
-        sides[side_id] = who;
-    }
-
-    [[nodiscard]] amphipod get_side(size_t side_id) const {
-        assert(side_id <= 1);
-        return sides[side_id];
     }
 };
 
@@ -324,6 +289,21 @@ struct small_world_array_state {
     }
 };
 
+// example input
+//
+// #############
+// #...........#
+// ###B#C#B#D###
+//   #A#D#C#A#
+//   #########
+
+constexpr size_t dist_map_rh[4][7] = {
+    {3, 2, 2, 4, 6, 8, 9},
+    {5, 4, 2, 2, 4, 6, 7},
+    {7, 6, 4, 2, 2, 4, 5},
+    {9, 8, 6, 4, 2, 2, 3},
+};
+
 template <typename State>
 struct world_explorer {
     State state{};
@@ -335,7 +315,7 @@ struct world_explorer {
         assert(who != amphipod::none);
         assert(is_hallway_vacant(hall_id));
 
-        size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_id) - hall_x(hall_id));
+        size_t dist = dist_map_rh[room_id][hall_id] + slot;
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, amphipod::none);
@@ -350,64 +330,17 @@ struct world_explorer {
 
         uint8_t slot = next_room_empty_slot(room_id);
 
-        size_t dist = (size_t)std::abs(hall_x(hall_id) - room_x(room_id)) + slot_hall_ydist(slot);
+        size_t dist = dist_map_rh[room_id][hall_id] + slot;
         energy_used += dist * energy_per_step(who);
 
         state.set_room(room_id, slot, who);
         state.set_hall(hall_id, amphipod::none);
     }
 
-    void move_occupant_room_room(size_t room_src, size_t room_dst) {
-        uint8_t src_slot = next_room_occupant_slot(room_src);
-        amphipod who = state.get_room(room_src, src_slot);
-
-        assert(who != amphipod::none);
-        assert(!is_room_full(room_dst));
-        assert(is_room_destination_for(room_dst, who));
-
-        uint8_t dst_slot = next_room_empty_slot(room_dst);
-
-        size_t dist = (size_t)std::abs(room_x(room_src) - room_x(room_dst)) + slot_hall_ydist(src_slot) +
-                      slot_hall_ydist(dst_slot);
-        energy_used += dist * energy_per_step(who);
-
-        state.set_room(room_src, src_slot, amphipod::none);
-        state.set_room(room_dst, dst_slot, who);
-    }
-
-    void move_occupant_room_sideroom(size_t room_id, size_t side_id) {
-        uint8_t slot = next_room_occupant_slot(room_id);
-        amphipod who = state.get_room(room_id, slot);
-
-        assert(who != amphipod::none);
-        assert(!is_sideroom_occupied(side_id));
-
-        size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_id) - side_x(side_id));
-        energy_used += dist * energy_per_step(who);
-
-        state.set_room(room_id, slot, amphipod::none);
-        state.set_side(side_id, who);
-    }
-
-    void move_occupant_sideroom_room(size_t sideroom_src, size_t room_dst) {
-        uint8_t slot = next_room_empty_slot(room_dst);
-        amphipod who = state.get_side(sideroom_src);
-
-        assert(who != amphipod::none);
-        assert(is_sideroom_occupied(sideroom_src));
-        assert(!is_room_full(room_dst));
-
-        size_t dist = slot_hall_ydist(slot) + (size_t)std::abs(room_x(room_dst) - side_x(sideroom_src));
-        energy_used += dist * energy_per_step(who);
-
-        state.set_side(sideroom_src, amphipod::none);
-        state.set_room(room_dst, slot, who);
-    }
-
     template <typename Seq>
     void get_adjacent_states(Seq& buf) {
         for (size_t room = 0; room < 4; ++room) {
-            for (size_t hall = 0; hall < 5; ++hall) {
+            for (size_t hall = 0; hall < 7; ++hall) {
                 if (can_room_hall(room, hall)) {
                     world_explorer& ws = buf.emplace_back(*this);
                     ws.move_occupant_room_hall(room, hall);
@@ -415,16 +348,6 @@ struct world_explorer {
                 if (can_hall_room(hall, room)) {
                     world_explorer& ws = buf.emplace_back(*this);
                     ws.move_occupant_hall_room(hall, room);
-                }
-            }
-            for (size_t sideroom = 0; sideroom < 2; ++sideroom) {
-                if (can_room_sideroom(room, sideroom)) {
-                    world_explorer& ws = buf.emplace_back(*this);
-                    ws.move_occupant_room_sideroom(room, sideroom);
-                }
-                if (can_sideroom_room(sideroom, room)) {
-                    world_explorer& ws = buf.emplace_back(*this);
-                    ws.move_occupant_sideroom_room(sideroom, room);
                 }
             }
         }
@@ -481,37 +404,14 @@ struct world_explorer {
         throw std::runtime_error("room full");
     }
 
-    struct room_occupants_result {
-        amphipod occupants[State::slot_count];
-
-        auto operator<=>(const room_occupants_result&) const = default;
-
-        bool full() const {
-            return count() == State::slot_count;
-        }
-
-        size_t count() const {
-            return std::ranges::count_if(occupants, [](amphipod who) {
-                return who != amphipod::none;
-            });
-        }
-
-        bool all_occupants_are(amphipod occ) const {
-            for (amphipod o : occupants) {
-                if (o != amphipod::none && occ != o) {
-                    return false;
-                }
+    bool all_occupants_are(size_t room_id, amphipod occ) const {
+        for (size_t i = 0; i < State::slot_count; ++i) {
+            amphipod a = state.get_room(room_id, i);
+            if (a != amphipod::none && occ != a) {
+                return false;
             }
-            return true;
         }
-    };
-
-    [[nodiscard]] room_occupants_result room_occupants(size_t room_id) const {
-        room_occupants_result res;
-        for (int i = 0; i < State::slot_count; ++i) {
-            res.occupants[i] = state.get_room(room_id, i);
-        }
-        return res;
+        return true;
     }
 
     [[nodiscard]] bool is_room_empty(size_t room_id) const {
@@ -528,14 +428,6 @@ struct world_explorer {
                 return false;
         }
         return true;
-    }
-
-    [[nodiscard]] bool is_sideroom_occupied(size_t side_id) const {
-        return state.get_side(side_id) != amphipod::none;
-    }
-
-    [[nodiscard]] bool is_sideroom_vacant(size_t side_id) const {
-        return !is_sideroom_occupied(side_id);
     }
 
     //=========================================================================
@@ -555,13 +447,17 @@ struct world_explorer {
         if (is_hall_left_of_room(room_id, hall_id)) {
             size_t start = hall_id;
             size_t end = hall_id_left_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
+            for (size_t i = start; i <= end; ++i) {
+                if (!is_hallway_vacant(i))
+                    return false;
+            }
         } else {
             size_t start = hall_id;
             size_t end = hall_id_right_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
+            for (size_t i = end; i <= start; ++i) {
+                if (!is_hallway_vacant(i))
+                    return false;
+            }
         }
 
         return true;
@@ -575,7 +471,7 @@ struct world_explorer {
 
         if (is_room_full(room_id)) {
             return false;
-        } else if (!room_occupants(room_id).all_occupants_are(state.get_hall(hall_id))) {
+        } else if (!all_occupants_are(room_id, state.get_hall(hall_id))) {
             return false;
         }
 
@@ -599,138 +495,41 @@ struct world_explorer {
 
         return true;
     }
-
-    [[nodiscard]] bool can_room_room(size_t room_src, size_t room_dst) const {
-        if (room_src == room_dst)
-            return false;
-        if (is_room_empty(room_src))
-            return false;
-
-        uint8_t slot = next_room_occupant_slot(room_src);
-        amphipod who = state.get_room(room_src, slot);
-
-        if (is_room_full(room_dst)) {
-            return false;
-        } else if (!room_occupants(room_dst).all_occupants_are(who)) {
-            return false;
-        }
-
-        if (is_bottommost_resident(room_src)) {
-            return false;
-        }
-
-        // check for hallway blockage
-        if (room_src < room_dst) {
-            size_t start = hall_id_right_of_room(room_src);
-            size_t end = hall_id_left_of_room(room_dst);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        } else {
-            size_t start = hall_id_left_of_room(room_src);
-            size_t end = hall_id_right_of_room(room_dst);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        }
-
-        return is_room_destination_for(room_dst, who);
-    }
-
-    [[nodiscard]] bool can_room_sideroom(size_t room_id, size_t side_dest) const {
-        if (is_sideroom_occupied(side_dest))
-            return false;
-
-        if (is_room_empty(room_id)) {
-            return false;
-        }
-
-        if (is_bottommost_resident(room_id)) {
-            return false;
-        }
-
-        // check for hallway blockage
-        if (is_sideroom_left(side_dest)) {
-            size_t start = 0;
-            size_t end = hall_id_left_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        } else {
-            size_t start = 4;
-            size_t end = hall_id_right_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        }
-
-        return true;
-    }
-
-    [[nodiscard]] bool can_sideroom_room(size_t side_id, size_t room_id) const {
-        if (!is_sideroom_occupied(side_id))
-            return false;
-        if (!is_room_destination_for(room_id, state.get_side(side_id)))
-            return false;
-
-        if (is_room_full(room_id)) {
-            return false;
-        } else if (!room_occupants(room_id).all_occupants_are(state.get_side(side_id))) {
-            return false;
-        }
-
-        // check for hallway blockage
-        if (is_sideroom_left(side_id)) {
-            size_t start = 0;
-            size_t end = hall_id_left_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        } else {
-            size_t start = 4;
-            size_t end = hall_id_right_of_room(room_id);
-            if (!is_hallway_pathable(start, end))
-                return false;
-        }
-
-        return true;
-    }
 };
-
-template <typename State>
-std::ostream& operator<<(std::ostream& stream, const world_explorer<State>& ws) {
-    sr::array2d<char> space(13, 5 + State::slot_count, '#');
-    for (int i = 1; i < 12; ++i)
-        space.at(i, 1) = '.';
-    for (int x = 3; x < 10; x += 2) {
-        for (int y = 0; y < 2; ++y) {
-            space.at(x, 2 + y) = '.';
-        }
-    }
-    for (int i = 0; i < 5; ++i) {
-        int x = hall_x(i);
-        int y = 1;
-        space.at(x, y) = ws.state.get_hall(i);
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < State::slot_count; ++j) {
-            int x = room_x(i);
-            int y = 2 + j;
-            space.at(x, y) = ws.state.get_room(i, j);
-        }
-    }
-
-    for (int i = 0; i < 2; ++i) {
-        int x = side_x(i);
-        int y = 1;
-        space.at(x, y) = ws.state.get_side(i);
-    }
-
-    for (int y = 0; y < space.height(); ++y) {
-        for (int x = 0; x < space.width(); ++x) {
-            char ch = space.at(x, y);
-            stream << ch;
-        }
-        stream << "\n";
-    }
-    return stream;
-}
+//
+// template <typename State>
+// std::ostream& operator<<(std::ostream& stream, const world_explorer<State>& ws) {
+//    sr::array2d<char> space(13, 5 + State::slot_count, '#');
+//    for (int i = 1; i < 12; ++i)
+//        space.at(i, 1) = '.';
+//    for (int x = 3; x < 10; x += 2) {
+//        for (int y = 0; y < 2; ++y) {
+//            space.at(x, 2 + y) = '.';
+//        }
+//    }
+//    for (int i = 0; i < 7; ++i) {
+//        int x = hall_x(i);
+//        int y = 1;
+//        space.at(x, y) = ws.state.get_hall(i);
+//    }
+//
+//    for (int i = 0; i < 4; ++i) {
+//        for (int j = 0; j < State::slot_count; ++j) {
+//            int x = room_x(i);
+//            int y = 2 + j;
+//            space.at(x, y) = ws.state.get_room(i, j);
+//        }
+//    }
+//
+//    for (int y = 0; y < space.height(); ++y) {
+//        for (int x = 0; x < space.width(); ++x) {
+//            char ch = space.at(x, y);
+//            stream << ch;
+//        }
+//        stream << "\n";
+//    }
+//    return stream;
+//}
 
 template <typename State>
 struct std::hash<world_explorer<State>> {
