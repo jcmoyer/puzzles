@@ -1,0 +1,47 @@
+const std = @import("std");
+
+const year = 2022;
+
+pub fn build(b: *std.build.Builder) void {
+    const target = b.standardTargetOptions(.{});
+    const mode = b.standardReleaseOptions();
+
+    var day: usize = 1;
+    while (day <= 25) : (day += 1) {
+        const day_name = b.fmt("day{d:0>2}", .{day});
+        const src_name = b.fmt("src/{s}.zig", .{day_name});
+        const exe = b.addExecutable(day_name, src_name);
+        exe.setTarget(target);
+        exe.setBuildMode(mode);
+        exe.install();
+
+        const year_str = b.fmt("{d}", .{year});
+        const day_str = b.fmt("{d}", .{day});
+        const get_input = b.addSystemCommand(&[_][]const u8{
+            "python",
+            "../scripts/aoctool.py",
+            "get-input",
+            year_str,
+            day_str,
+        });
+        // TODO: maybe could get this from aoctool script
+        const input_name = b.fmt("test/{s}-input.txt", .{day_name});
+
+        const run_cmd = exe.run();
+        run_cmd.addArg(input_name);
+
+        const run_step_name = b.fmt("run-{s}", .{day_name});
+        const run_step_desc = b.fmt("Fetch input and run {s}", .{day_name});
+        const run_step = b.step(run_step_name, run_step_desc);
+        run_step.dependOn(&get_input.step);
+        run_step.dependOn(&run_cmd.step);
+
+        const tests = b.addTest(src_name);
+        tests.setTarget(target);
+        tests.setBuildMode(mode);
+        const test_step_name = b.fmt("test-{s}", .{day_name});
+        const test_step_desc = b.fmt("Run tests for {s}", .{day_name});
+        const test_step = b.step(test_step_name, test_step_desc);
+        test_step.dependOn(&tests.step);
+    }
+}

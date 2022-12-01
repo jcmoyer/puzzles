@@ -1,2 +1,9 @@
 CMakeSettings.json
 .vs/
+
+# see scripts/aoctool.py
+session.txt
+
+# zig build artifacts
+zig-cache/
+zig-out/
