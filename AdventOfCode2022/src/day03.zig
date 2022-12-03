@@ -76,7 +76,7 @@ const RucksackList = struct {
         }
 
         return RucksackList{
-            .rucksacks = rs.toOwnedSlice(allocator),
+            .rucksacks = try rs.toOwnedSlice(allocator),
         };
     }
 

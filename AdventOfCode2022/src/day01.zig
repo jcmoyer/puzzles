@@ -68,7 +68,7 @@ const ElfList = struct {
             if (stripped_line.len == 0) {
                 // commit elf
                 var elf = Elf{
-                    .calorie_entries = entry_buf.toOwnedSlice(allocator),
+                    .calorie_entries = try entry_buf.toOwnedSlice(allocator),
                 };
                 try elves.append(allocator, elf);
                 entry_buf = .{};
@@ -81,14 +81,14 @@ const ElfList = struct {
         if (entry_buf.items.len != 0) {
             // last elf in input
             var elf = Elf{
-                .calorie_entries = entry_buf.toOwnedSlice(allocator),
+                .calorie_entries = try entry_buf.toOwnedSlice(allocator),
             };
             try elves.append(allocator, elf);
             entry_buf = .{};
         }
 
         return ElfList{
-            .elves = elves.toOwnedSlice(allocator),
+            .elves = try elves.toOwnedSlice(allocator),
         };
     }
 

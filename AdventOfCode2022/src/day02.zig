@@ -140,13 +140,13 @@ const GameList = struct {
             const stripped_line = std.mem.trimRight(u8, line, "\r\n");
             var iter = std.mem.tokenize(u8, stripped_line, " ");
 
-            var game = try games.addOne();
+            var game = try games.addOne(allocator);
             game.elf = try Play.parse(iter.next().?[0]);
             game.you = try Play.parse(iter.next().?[0]);
         }
 
         return GameList{
-            .games = games.toOwnedSlice(allocator),
+            .games = try games.toOwnedSlice(allocator),
         };
     }
 };
