@@ -4,8 +4,8 @@ const Allocator = std.mem.Allocator;
 pub const PuzzleSolverState = struct {
     arena: std.heap.ArenaAllocator,
     allocator: Allocator,
-    input_file: std.fs.File,
-    input_file_reader: std.io.BufferedReader(4096, std.fs.File.Reader),
+    input_text: []const u8,
+    input_reader: std.io.FixedBufferStream([]const u8),
 
     fn createWithFilename(allocator: Allocator, filename: []const u8) !*PuzzleSolverState {
         var self = try allocator.create(PuzzleSolverState);
@@ -13,22 +13,22 @@ pub const PuzzleSolverState = struct {
         self.allocator = self.arena.allocator();
         errdefer self.arena.deinit();
 
-        self.input_file = try std.fs.cwd().openFile(filename, .{});
-        errdefer self.input_file.close();
+        var file = try std.fs.cwd().openFile(filename, .{});
+        defer file.close();
 
-        self.input_file_reader = std.io.bufferedReader(self.input_file.reader());
+        self.input_text = try file.readToEndAlloc(self.allocator, 1024 * 1024);
+        self.input_reader = std.io.fixedBufferStream(self.input_text);
 
         return self;
     }
 
     fn destroy(self: *PuzzleSolverState, allocator: Allocator) void {
         self.arena.deinit();
-        self.input_file.close();
         allocator.destroy(self);
     }
 
-    pub fn getPuzzleInputReader(self: *PuzzleSolverState) std.io.BufferedReader(4096, std.fs.File.Reader).Reader {
-        return self.input_file_reader.reader();
+    pub fn getPuzzleInputReader(self: *PuzzleSolverState) @TypeOf(self.input_reader.reader()) {
+        return self.input_reader.reader();
     }
 
     pub fn solution(self: *PuzzleSolverState, val: anytype) !void {
