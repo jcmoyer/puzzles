@@ -97,20 +97,35 @@ const PythonTestRunnerStep = struct {
 
     fn make(step: *Step) anyerror!void {
         var self = @fieldParentPtr(PythonTestRunnerStep, "step", step);
+        const test_cmd = &[_][]const u8{
+            "python",
+            "../scripts/test_runner.py",
+            self.exe_step.getOutputSource().generated.getPath(),
+            self.input_filename,
+            self.output_filename,
+        };
+        std.debug.print("test_runner {s}...", .{self.exe_step.name});
+
+        var timer = try std.time.Timer.start();
         const result = try std.ChildProcess.exec(.{
             .allocator = self.builder.allocator,
-            .argv = &[_][]const u8{
-                "python",
-                "../scripts/test_runner.py",
-                self.exe_step.getOutputSource().generated.getPath(),
-                self.input_filename,
-                self.output_filename,
-            },
+            .argv = test_cmd,
         });
-        if (result.term.Exited != 0) {
-            std.debug.print("{s}\n", .{result.stdout});
-            std.debug.print("{s}\n", .{result.stderr});
-            return error.BadTestExitCode;
+        const elapsed = timer.read();
+
+        if (result.term == .Exited) {
+            const status = result.term.Exited;
+            const msg = if (status == 0) "pass" else "***fail***";
+
+            std.debug.print("{s} {d}ms\n", .{ msg, elapsed / std.time.ns_per_ms });
+
+            if (status != 0) {
+                std.debug.print("\tstdout:\n```\n{s}\n```\n", .{result.stdout});
+                std.debug.print("\tstderr:\n```\n{s}\n```\n", .{result.stderr});
+            }
+        } else {
+            std.debug.print("\t*** Test {s}: exited with {any}\n", .{ self.exe_step.name, result.term });
+            return error.UnexpectedChildProcessResult;
         }
     }
 };
