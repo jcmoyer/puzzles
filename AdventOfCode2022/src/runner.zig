@@ -35,10 +35,10 @@ pub const PuzzleSolverState = struct {
         _ = self;
         const writer = std.io.getStdOut().writer();
 
-        if (@TypeOf(val) == []const u8) {
-            try writer.print("{s}\n", .{val});
-        } else {
+        if (@typeInfo(@TypeOf(val)) == .Int) {
             try writer.print("{d}\n", .{val});
+        } else {
+            try writer.print("{s}\n", .{val});
         }
     }
 };
