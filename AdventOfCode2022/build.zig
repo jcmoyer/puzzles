@@ -7,6 +7,8 @@ pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
+    const all_tests = b.step("test-all", "Run tests for all days");
+
     var day: usize = 1;
     while (day <= 25) : (day += 1) {
         const day_name = b.fmt("day{d:0>2}", .{day});
@@ -55,6 +57,7 @@ pub fn build(b: *std.build.Builder) void {
         const test_step_desc = b.fmt("Run tests for {s}", .{day_name});
         const test_step = b.step(test_step_name, test_step_desc);
         test_step.dependOn(&tests.step);
+        all_tests.dependOn(&tests.step);
 
         std.fs.cwd().access(output_name, .{}) catch |err| {
             if (err == error.FileNotFound) {
@@ -68,6 +71,7 @@ pub fn build(b: *std.build.Builder) void {
 
         const test_runner = PythonTestRunnerStep.init(b, exe, input_name, output_name);
         test_step.dependOn(&test_runner.step);
+        all_tests.dependOn(&test_runner.step);
     }
 }
 
