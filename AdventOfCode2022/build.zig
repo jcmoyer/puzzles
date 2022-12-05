@@ -30,15 +30,15 @@ pub fn build(b: *std.build.Builder) void {
 
         const year_str = b.fmt("{d}", .{year});
         const day_str = b.fmt("{d}", .{day});
+        const input_name = b.fmt("test/{s}-input.txt", .{day_name});
         const get_input = b.addSystemCommand(&[_][]const u8{
             "python",
             "../scripts/aoctool.py",
             "get-input",
             year_str,
             day_str,
+            input_name,
         });
-        // TODO: maybe could get this from aoctool script
-        const input_name = b.fmt("test/{s}-input.txt", .{day_name});
         const output_name = b.fmt("test/{s}-output.txt", .{day_name});
 
         const run_cmd = exe.run();

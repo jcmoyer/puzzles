@@ -16,8 +16,7 @@ def get_session_token():
         p = p.parent
 
 
-def get_input(year, day):
-    local_path = f"test/day{day:02}-input.txt"
+def get_input(year, day, local_path):
     # don't hit the website if we already have the input
     if os.path.exists(local_path):
         sys.exit(0)
@@ -41,12 +40,13 @@ def main():
         sys.exit(1)
 
     if sys.argv[1] == "get-input":
-        if len(sys.argv) != 4:
-            print("Not enough arguments. Usage: aoctool get-input <year> <day>")
+        if len(sys.argv) != 5:
+            print("Not enough arguments. Usage: aoctool get-input <year> <day> <localpath>")
             sys.exit(1)
         year = int(sys.argv[2])
         day = int(sys.argv[3])
-        get_input(year, day)
+        local_path = sys.argv[4]
+        get_input(year, day, local_path)
 
 
 if __name__ == "__main__":
