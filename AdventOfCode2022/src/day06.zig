@@ -10,14 +10,15 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     try ps.solution(s.part2);
 }
 
-const CharSet = u64;
+const CharSet = u26;
 
-fn putCharSet(set: *CharSet, str: []const u8) void {
-    var new_set: CharSet = 0;
+fn toCharSetLower(str: []const u8) CharSet {
+    var set: CharSet = 0;
     for (str) |ch| {
-        new_set |= (@as(u64, 1) << @intCast(u6, ch - 'a'));
+        std.debug.assert(std.ascii.isLower(ch));
+        set |= (@as(u26, 1) << @intCast(u5, ch - 'a'));
     }
-    set.* = new_set;
+    return set;
 }
 
 const Solution = struct {
@@ -26,9 +27,7 @@ const Solution = struct {
     part2: usize = no_solution,
 
     fn isPacketStart(packet: []const u8, packet_width: usize) bool {
-        var set: CharSet = 0;
-        putCharSet(&set, packet[0..packet_width]);
-        return @popCount(set) == packet_width;
+        return @popCount(toCharSetLower(packet[0..packet_width])) == packet_width;
     }
 
     fn calcFromString(str: []const u8) Solution {
