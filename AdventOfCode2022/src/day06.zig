@@ -12,11 +12,23 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
 
 const CharSet = u26;
 
+const lut: [256]u26 = blk: {
+    var array: [256]u26 = undefined;
+    for (array) |_, i| {
+        if (std.ascii.isLower(i)) {
+            array[i] = 1 << (i - 'a');
+        } else {
+            array[i] = 0;
+        }
+    }
+    break :blk array;
+};
+
 fn toCharSetLower(str: []const u8) CharSet {
     var set: CharSet = 0;
     for (str) |ch| {
         std.debug.assert(std.ascii.isLower(ch));
-        set |= (@as(u26, 1) << @intCast(u5, ch - 'a'));
+        set |= lut[ch];
     }
     return set;
 }
