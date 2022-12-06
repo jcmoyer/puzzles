@@ -24,13 +24,15 @@ const lut: [256]u26 = blk: {
     break :blk array;
 };
 
-fn toCharSetLower(str: []const u8) CharSet {
+fn toCharSetLower(str: []const u8, comptime dupe_check: bool) CharSet {
     var set: CharSet = 0;
     for (str) |ch| {
         std.debug.assert(std.ascii.isLower(ch));
         // bail on first duplicate
-        if (set & lut[ch] > 0) {
-            return 0;
+        if (dupe_check) {
+            if (set & lut[ch] > 0) {
+                return 0;
+            }
         }
         set |= lut[ch];
     }
@@ -42,18 +44,18 @@ const Solution = struct {
     part1: usize = no_solution,
     part2: usize = no_solution,
 
-    fn isPacketStart(packet: []const u8, packet_width: usize) bool {
-        return @popCount(toCharSetLower(packet[0..packet_width])) == packet_width;
+    fn isPacketStart(packet: []const u8, packet_width: usize, comptime dupe_check: bool) bool {
+        return @popCount(toCharSetLower(packet[0..packet_width], dupe_check)) == packet_width;
     }
 
     fn calcFromString(str: []const u8) Solution {
         var sol = Solution{};
         for (str) |_, start| {
             const slice = str[start..];
-            if (sol.part1 == no_solution and isPacketStart(slice, 4)) {
+            if (sol.part1 == no_solution and isPacketStart(slice, 4, false)) {
                 sol.part1 = start + 4;
             }
-            if (sol.part1 != no_solution and sol.part2 == no_solution and isPacketStart(slice, 14)) {
+            if (sol.part1 != no_solution and sol.part2 == no_solution and isPacketStart(slice, 14, true)) {
                 sol.part2 = start + 14;
             }
             if (sol.part1 != no_solution and sol.part2 != no_solution) {
