@@ -19,7 +19,7 @@ def get_session_token():
 def get_input(year, day, local_path):
     # don't hit the website if we already have the input
     if os.path.exists(local_path):
-        sys.exit(0)
+        return None
     # e.g.: https://adventofcode.com/2022/day/1/input
     input_url = f"https://adventofcode.com/{year}/day/{day}/input"
     # https://www.reddit.com/r/adventofcode/comments/z9dhtd/please_include_your_contact_info_in_the_useragent/
@@ -32,6 +32,19 @@ def get_input(year, day, local_path):
         sys.exit(1)
     with open(local_path, "w") as f:
         f.write(req.text)
+    return req.text
+
+
+def get_input_text(year, day, local_path=None):
+    """Programmatic interface to get_input."""
+    if local_path is None:
+        local_path = f"{year}-{day:>02}-input.txt"
+    maybe_io_text = get_input(year, day, local_path)
+    if maybe_io_text:
+        return maybe_io_text
+    else:
+        with open(local_path) as f:
+            return f.read()
 
 
 def main():
@@ -41,7 +54,9 @@ def main():
 
     if sys.argv[1] == "get-input":
         if len(sys.argv) != 5:
-            print("Not enough arguments. Usage: aoctool get-input <year> <day> <localpath>")
+            print(
+                "Not enough arguments. Usage: aoctool get-input <year> <day> <localpath>"
+            )
             sys.exit(1)
         year = int(sys.argv[2])
         day = int(sys.argv[3])
