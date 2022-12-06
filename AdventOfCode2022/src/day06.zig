@@ -28,6 +28,10 @@ fn toCharSetLower(str: []const u8) CharSet {
     var set: CharSet = 0;
     for (str) |ch| {
         std.debug.assert(std.ascii.isLower(ch));
+        // bail on first duplicate
+        if (set & lut[ch] > 0) {
+            return 0;
+        }
         set |= lut[ch];
     }
     return set;
