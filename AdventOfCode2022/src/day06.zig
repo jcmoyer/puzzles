@@ -53,7 +53,7 @@ const Solution = struct {
             if (sol.part1 == no_solution and isPacketStart(slice, 4)) {
                 sol.part1 = start + 4;
             }
-            if (sol.part2 == no_solution and isPacketStart(slice, 14)) {
+            if (sol.part1 != no_solution and sol.part2 == no_solution and isPacketStart(slice, 14)) {
                 sol.part2 = start + 14;
             }
             if (sol.part1 != no_solution and sol.part2 != no_solution) {
