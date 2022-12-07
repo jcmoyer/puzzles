@@ -10,61 +10,69 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     try ps.solution(s.part2);
 }
 
-const CharSet = u26;
-
-const lut: [256]u26 = blk: {
-    var array: [256]u26 = undefined;
-    for (array) |_, i| {
-        if (std.ascii.isLower(i)) {
-            array[i] = 1 << (i - 'a');
-        } else {
-            array[i] = 0;
-        }
-    }
-    break :blk array;
-};
-
-fn toCharSetLower(str: []const u8, comptime dupe_check: bool) CharSet {
-    var set: CharSet = 0;
-    for (str) |ch| {
-        std.debug.assert(std.ascii.isLower(ch));
-        // bail on first duplicate
-        if (dupe_check) {
-            if (set & lut[ch] > 0) {
-                return 0;
-            }
-        }
-        set |= lut[ch];
-    }
-    return set;
-}
-
 const Solution = struct {
-    const no_solution = std.math.maxInt(usize);
-    part1: usize = no_solution,
-    part2: usize = no_solution,
+    part1: usize = 0,
+    part2: usize = 0,
 
-    fn isPacketStart(packet: []const u8, packet_width: usize, comptime dupe_check: bool) bool {
-        return @popCount(toCharSetLower(packet[0..packet_width], dupe_check)) == packet_width;
-    }
+    fn calcFromString(s: []const u8) Solution {
+        var result = Solution{};
 
-    fn calcFromString(str: []const u8) Solution {
-        var sol = Solution{};
-        for (str) |_, start| {
-            const slice = str[start..];
-            if (sol.part1 == no_solution and isPacketStart(slice, 4, false)) {
-                sol.part1 = start + 4;
+        var start: usize = 0;
+        p1: while (start < s.len - 4) : (start += 1) {
+            const v = @as(@Vector(4, u8), s[start .. start + 4][0..4].*);
+            comptime var i: u8 = 0;
+            inline while (i < 4) : (i += 1) {
+                const vi = @splat(4, v[i]);
+                if (@popCount(@bitCast(u4, vi == v)) >= 2) {
+                    continue :p1;
+                }
             }
-            if (sol.part1 != no_solution and sol.part2 == no_solution and isPacketStart(slice, 14, true)) {
-                sol.part2 = start + 14;
-            }
-            if (sol.part1 != no_solution and sol.part2 != no_solution) {
-                break;
-            }
+            result.part1 = start + 4;
+            break;
         }
-        return sol;
+        p2: while (start < s.len - 14) : (start += 1) {
+            const v = @as(@Vector(14, u8), s[start .. start + 14][0..14].*);
+            comptime var i: u8 = 0;
+            inline while (i < 14) : (i += 1) {
+                const vi = @splat(14, v[i]);
+                if (@popCount(@bitCast(u14, vi == v)) >= 2) {
+                    continue :p2;
+                }
+            }
+            result.part2 = start + 14;
+            break;
+        }
+        return result;
     }
 };
+
+// another possible implementation
+// pub fn solve(ps: *runner.PuzzleSolverState) !void {
+//     var masks: [4096]u32 align(32) = undefined;
+
+//     var start: usize = 0;
+//     while (start < 4096) : (start += 1) {
+//         masks[start] = @as(u32, 1) << @intCast(u5, ps.input_text[start] & 0b11111);
+//     }
+//     start = 0;
+
+//     while (start < 4096 - 4) : (start += 1) {
+//         const v = @as(@Vector(4, u32), masks[start .. start + 4][0..4].*);
+//         const b = @reduce(.Or, v);
+//         if (@popCount(b) == 4) {
+//             try ps.solution(start + 4);
+//             break;
+//         }
+//     }
+//     while (start < 4096 - 14) : (start += 1) {
+//         const v = @as(@Vector(14, u32), masks[start .. start + 14][0..14].*);
+//         const b = @reduce(.Or, v);
+//         if (@popCount(b) == 14) {
+//             try ps.solution(start + 14);
+//             break;
+//         }
+//     }
+// }
 
 const example_input =
     \\mjqjpqmgbljsphdztnvjfqwrcgsmlb
