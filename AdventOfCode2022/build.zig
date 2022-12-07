@@ -43,6 +43,9 @@ pub fn build(b: *std.build.Builder) void {
 
         const run_cmd = exe.run();
         run_cmd.addArg(input_name);
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
 
         const run_step_name = b.fmt("run-{s}", .{day_name});
         const run_step_desc = b.fmt("Fetch input and run {s}", .{day_name});
