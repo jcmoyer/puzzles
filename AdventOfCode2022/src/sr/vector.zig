@@ -30,6 +30,18 @@ pub fn Vec2(comptime T: type) type {
             return .{ .x = a.x * s, .y = a.y * s };
         }
 
+        /// Rounds towards zero.
+        pub fn divTrunc(a: Self, s: T) Self {
+            return .{ .x = @divTrunc(a.x, s), .y = @divTrunc(a.y, s) };
+        }
+
+        pub fn clamp(a: Self, min: T, max: T) Self {
+            return .{
+                .x = std.math.clamp(a.x, min, max),
+                .y = std.math.clamp(a.y, min, max),
+            };
+        }
+
         pub fn toArray(a: Self) [size]ScalarType {
             return .{ a.x, a.y };
         }

@@ -43,24 +43,15 @@ const Rope = struct {
             var diff = head.sub(tail.*);
             const ax = try std.math.absInt(diff.x);
             const ay = try std.math.absInt(diff.y);
-            if (try touching(head.*, tail.*)) {} else if ((ax == 2 and ay == 0) or (ax == 0 and ay == 2)) {
-                // TODO implement div op
-                diff.x = @divTrunc(diff.x, 2);
-                diff.y = @divTrunc(diff.y, 2);
-                tail.* = tail.add(diff);
+            if (ax <= 1 and ay <= 1) {
+                // touching
+                continue;
+            } else if ((ax == 2 and ay == 0) or (ax == 0 and ay == 2)) {
+                // movement along a row or column
+                tail.* = tail.add(diff.divTrunc(2));
             } else {
-                var move_vec = sr.Vec2i{};
-                if (head.x > tail.x) {
-                    move_vec.x = 1;
-                } else if (head.x < tail.x) {
-                    move_vec.x = -1;
-                }
-                if (head.y > tail.y) {
-                    move_vec.y = 1;
-                } else if (head.y < tail.y) {
-                    move_vec.y = -1;
-                }
-                tail.* = tail.add(move_vec);
+                // movement along a diagonal
+                tail.* = tail.add(diff.clamp(-1, 1));
             }
         }
 
@@ -73,28 +64,11 @@ const Rope = struct {
             try self.moveHead(dir);
         }
     }
-
-    fn touching(head: sr.Vec2i, tail: sr.Vec2i) !bool {
-        var diff = head.sub(tail);
-        const ax = try std.math.absInt(diff.x);
-        const ay = try std.math.absInt(diff.y);
-        return ax <= 1 and ay <= 1;
-    }
 };
 
 const Solution = struct {
     part1: usize,
     part2: usize,
-
-    fn parseDirection(ch: u8) !sr.Direction {
-        return switch (ch) {
-            'U' => .north,
-            'L' => .west,
-            'R' => .east,
-            'D' => .south,
-            else => error.InvalidCharacter,
-        };
-    }
 
     fn calcFromString(allocator: Allocator, str: []const u8) !Solution {
         var rope1 = try Rope.initCount(allocator, 2);
@@ -105,7 +79,7 @@ const Solution = struct {
         var it = std.mem.tokenize(u8, str, " \r\n");
         while (true) {
             const dir_str = it.next() orelse break;
-            const dir = try parseDirection(dir_str[0]);
+            const dir = try sr.Direction.parseLRUD(dir_str[0]);
             const amt_str = it.next().?;
             const amt_int = try std.fmt.parseInt(usize, amt_str, 10);
 

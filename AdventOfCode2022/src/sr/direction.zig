@@ -44,4 +44,18 @@ pub const Direction = enum {
             .west => .{ .x = -1, .y = 0 },
         };
     }
+
+    pub fn parseLRUD(ch: u8) !Direction {
+        return switch (ch) {
+            'L',
+            'l',
+            => .west,
+            'R',
+            'r',
+            => .east,
+            'U', 'u' => .north,
+            'D', 'd' => .south,
+            else => error.InvalidCharacter,
+        };
+    }
 };
