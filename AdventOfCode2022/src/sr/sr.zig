@@ -350,3 +350,12 @@ fn Iterator2D(comptime T: type) type {
 pub fn iterate2D(comptime T: type, start: Vec2(T), end: Vec2(T)) Iterator2D(T) {
     return .{ .start = start, .end = end, .current = start };
 }
+
+pub fn formatArrayMultiline(array: Array2D(u8), line_width: usize, writer: anytype) !void {
+    const line_count = try std.math.divExact(usize, array.data.len, line_width);
+    var i: usize = 0;
+    while (i < line_count) : (i += 1) {
+        _ = try writer.write(array.data[i * line_width .. i * line_width + line_width]);
+        _ = try writer.write("\n");
+    }
+}
