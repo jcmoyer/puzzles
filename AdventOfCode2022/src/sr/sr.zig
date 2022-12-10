@@ -152,8 +152,8 @@ pub fn iterateLines(allocator: Allocator, reader: anytype) LinesIterator(@TypeOf
 }
 
 pub fn readTilemap(allocator: Allocator, reader: anytype) !Array2D(u8) {
-    var array = Array2D(u8).init(allocator);
-    errdefer array.deinit();
+    var array = Array2D(u8){};
+    errdefer array.deinit(allocator);
 
     var lines = try readLines(allocator, reader);
     defer lines.deinit();
@@ -165,7 +165,7 @@ pub fn readTilemap(allocator: Allocator, reader: anytype) !Array2D(u8) {
     const width = lines.lines[0].len;
     const height = lines.lines.len;
 
-    try array.resize(width, height);
+    try array.resize(allocator, width, height);
 
     for (lines.lines) |line, y| {
         if (line.len != width) {
@@ -188,7 +188,7 @@ test "readTilemap" {
     var reader = stream.reader();
 
     var arr = try readTilemap(std.testing.allocator, reader);
-    defer arr.deinit();
+    defer arr.deinit(std.testing.allocator);
 
     try std.testing.expectEqual(@as(usize, 4), arr.width);
     try std.testing.expectEqual(@as(usize, 3), arr.height);

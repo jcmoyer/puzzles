@@ -79,7 +79,7 @@ const Solution = struct {
 
     fn calcFromStream(allocator: Allocator, reader: anytype) !Solution {
         var tm = try sr.readTilemap(allocator, reader);
-        defer tm.deinit();
+        defer tm.deinit(allocator);
 
         var y: usize = 0;
         var x: usize = 0;

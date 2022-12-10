@@ -7,29 +7,23 @@ pub fn Array2D(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        allocator: Allocator,
-        data: []T,
-        width: usize,
-        height: usize,
+        data: []T = &[_]T{},
+        width: usize = 0,
+        height: usize = 0,
 
-        pub fn init(allocator: Allocator) Self {
-            return Self{
-                .allocator = allocator,
-                .data = &[_]T{},
-                .width = 0,
-                .height = 0,
-            };
+        pub fn deinit(self: *Self, allocator: Allocator) void {
+            allocator.free(self.data);
         }
 
-        pub fn deinit(self: *Self) void {
-            self.allocator.free(self.data);
+        pub fn fill(self: *Self, value: T) void {
+            std.mem.set(T, self.data, value);
         }
 
-        pub fn resize(self: *Self, width: usize, height: usize) !void {
-            self.deinit();
+        pub fn resize(self: *Self, allocator: Allocator, width: usize, height: usize) !void {
+            self.deinit(allocator);
             self.width = width;
             self.height = height;
-            self.data = try self.allocator.alloc(T, width * height);
+            self.data = try allocator.alloc(T, width * height);
         }
 
         pub fn at(self: *Self, x: usize, y: usize) *T {
