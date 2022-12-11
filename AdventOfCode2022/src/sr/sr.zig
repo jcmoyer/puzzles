@@ -359,3 +359,44 @@ pub fn formatArrayMultiline(array: Array2D(u8), line_width: usize, writer: anyty
         _ = try writer.write("\n");
     }
 }
+
+pub const SliceLinesIterator = struct {
+    slice: []const u8,
+    index: usize = 0,
+
+    pub fn next(self: *SliceLinesIterator) ?[]const u8 {
+        if (self.index == self.slice.len) {
+            return null;
+        } else if (std.mem.indexOfScalarPos(u8, self.slice, self.index, '\n')) |next_eol| {
+            defer self.index = next_eol + 1;
+            if (next_eol -% 1 < self.slice.len and self.slice[next_eol - 1] == '\r') {
+                return self.slice[self.index .. next_eol - 1];
+            } else {
+                return self.slice[self.index..next_eol];
+            }
+        } else {
+            defer self.index = self.slice.len;
+            return self.slice[self.index..];
+        }
+    }
+};
+
+pub fn sliceLines(slice: []const u8) SliceLinesIterator {
+    return SliceLinesIterator{ .slice = slice };
+}
+
+test "SliceLinesIterator" {
+    {
+        var it = SliceLinesIterator{ .slice = "hello\r\nworld\n\nwowsers\n\r\r\n" };
+        try std.testing.expectEqualStrings("hello", it.next().?);
+        try std.testing.expectEqualStrings("world", it.next().?);
+        try std.testing.expectEqualStrings("", it.next().?);
+        try std.testing.expectEqualStrings("wowsers", it.next().?);
+        try std.testing.expectEqualStrings("\r", it.next().?);
+        try std.testing.expect(it.next() == null);
+    }
+    {
+        var it = SliceLinesIterator{ .slice = "" };
+        try std.testing.expect(it.next() == null);
+    }
+}
