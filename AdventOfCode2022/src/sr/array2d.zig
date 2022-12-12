@@ -17,7 +17,7 @@ pub fn Array2D(comptime T: type) type {
             self.height = 0;
         }
 
-        pub fn fill(self: *Self, value: T) void {
+        pub fn fill(self: Self, value: T) void {
             std.mem.set(T, self.data, value);
         }
 
@@ -38,11 +38,11 @@ pub fn Array2D(comptime T: type) type {
             self.height = height;
         }
 
-        pub fn at(self: *Self, x: usize, y: usize) *T {
-            return &self.data[y * self.width + x];
+        pub fn at(self: Self, x: usize, y: usize) T {
+            return self.data[y * self.width + x];
         }
 
-        pub fn atConst(self: *const Self, x: usize, y: usize) *const T {
+        pub fn atPtr(self: Self, x: usize, y: usize) *T {
             return &self.data[y * self.width + x];
         }
 
@@ -50,16 +50,29 @@ pub fn Array2D(comptime T: type) type {
             return x < self.width and y < self.height;
         }
 
-        pub fn atVec(self: *Self, v: Vec2(usize)) *T {
+        pub fn inBoundsSigned(self: Self, x: isize, y: isize) bool {
+            return x >= 0 and y >= 0 and @intCast(usize, x) < self.width and @intCast(usize, y) < self.height;
+        }
+
+        pub fn atVec(self: Self, v: Vec2(usize)) T {
             return self.at(v.x, v.y);
         }
 
-        pub fn atVecConst(self: *const Self, v: Vec2(usize)) *const T {
-            return self.atConst(v.x, v.y);
+        pub fn atVecPtr(self: Self, v: Vec2(usize)) *T {
+            return self.atPtr(v.x, v.y);
         }
 
         pub fn inBoundsVec(self: Self, v: Vec2(usize)) bool {
             return self.inBounds(v.x, v.y);
+        }
+
+        pub fn inBoundsSignedVec(self: Self, v: Vec2(isize)) bool {
+            return self.inBoundsSigned(v.x, v.y);
+        }
+
+        pub fn rowSlice(self: Self, row: usize) []T {
+            const raw_ptr = self.atPtr(0, row);
+            return @ptrCast([*]T, raw_ptr)[0..self.width];
         }
 
         const RowIterator = struct {
@@ -67,9 +80,17 @@ pub fn Array2D(comptime T: type) type {
             row: usize,
             col: usize,
 
-            pub fn next(self: *RowIterator) ?*T {
+            pub fn next(self: *RowIterator) ?T {
+                if (self.nextPtr()) |ptr| {
+                    return ptr.*;
+                } else {
+                    return null;
+                }
+            }
+
+            pub fn nextPtr(self: *RowIterator) ?*T {
                 if (self.col < self.parent.width) {
-                    var val = self.parent.at(self.col, self.row);
+                    var val = self.parent.atPtr(self.col, self.row);
                     self.col += 1;
                     return val;
                 } else {
@@ -212,6 +233,14 @@ pub fn Array2D(comptime T: type) type {
                 last -= 1;
             }
         }
+
+        pub fn scalarIndex(self: Self, x: usize, y: usize) usize {
+            return self.width * y + x;
+        }
+
+        pub fn scalarIndexVec(self: Self, v: Vec2(usize)) usize {
+            return self.scalarIndex(v.x, v.y);
+        }
     };
 }
 
@@ -222,7 +251,7 @@ test "clone" {
     try a.resize(std.testing.allocator, 3, 2);
     defer a.deinit(std.testing.allocator);
     a.fill('a');
-    a.at(2, 1).* = 'b';
+    a.atPtr(2, 1).* = 'b';
 
     b = try a.clone(std.testing.allocator);
     defer b.deinit(std.testing.allocator);

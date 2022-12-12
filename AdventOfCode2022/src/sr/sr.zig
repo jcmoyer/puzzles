@@ -1,7 +1,14 @@
+pub const vector = @import("vector.zig");
+pub const Vec2 = vector.Vec2;
+pub const Vec2i = vector.Vec2i;
+pub const Vec2f = vector.Vec2f;
+pub const Vec2d = vector.Vec2d;
+pub const Vec2us = vector.Vec2us;
+pub const Vec2is = vector.Vec2is;
+pub const vectorCast = vector.vectorCast;
+pub const vectorEuclidean = vector.vectorEuclidean;
+
 pub const Scanner = @import("scanner.zig").Scanner;
-pub const Vec2 = @import("vector.zig").Vec2;
-pub const Vec2i = @import("vector.zig").Vec2i;
-pub const Vec2us = @import("vector.zig").Vec2us;
 pub const manhattan = @import("vector.zig").manhattan;
 pub const Direction = @import("direction.zig").Direction;
 pub const Turn = @import("direction.zig").Turn;
@@ -171,8 +178,7 @@ pub fn readTilemap(allocator: Allocator, reader: anytype) !Array2D(u8) {
         if (line.len != width) {
             return error.MismatchedWidth;
         }
-        var dest_row = @ptrCast([*]u8, array.at(0, y));
-        std.mem.copy(u8, dest_row[0..width], line);
+        std.mem.copy(u8, array.rowSlice(y), line);
     }
 
     return array;
@@ -195,10 +201,10 @@ test "readTilemap" {
 
     var row0 = arr.iterateRow(0);
 
-    try std.testing.expectEqual(@as(u8, '#'), row0.next().?.*);
-    try std.testing.expectEqual(@as(u8, '#'), row0.next().?.*);
-    try std.testing.expectEqual(@as(u8, '#'), row0.next().?.*);
-    try std.testing.expectEqual(@as(u8, '.'), row0.next().?.*);
+    try std.testing.expectEqual(@as(u8, '#'), row0.next().?);
+    try std.testing.expectEqual(@as(u8, '#'), row0.next().?);
+    try std.testing.expectEqual(@as(u8, '#'), row0.next().?);
+    try std.testing.expectEqual(@as(u8, '.'), row0.next().?);
 }
 
 fn FrequencyMap(comptime K: type) type {

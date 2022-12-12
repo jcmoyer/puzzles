@@ -54,7 +54,7 @@ const Screen = struct {
     }
 
     fn pixelOn(self: *Screen) void {
-        self.buffer.at(self.output_x, self.output_y).* = '#';
+        self.buffer.atPtr(self.output_x, self.output_y).* = '#';
     }
 
     fn toString(self: Screen) ![width * height + height]u8 {

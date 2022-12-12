@@ -7,71 +7,20 @@ pub const main = runner.defaultMain;
 
 const Direction = sr.Direction;
 const Tilemap = sr.Array2D(u8);
+const TileCoord = sr.Vec2us;
 
-fn isValidMove(tm: *const Tilemap, current: sr.Vec2i, dir: Direction) bool {
+fn isValidMove(tm: Tilemap, current: sr.Vec2i, dir: Direction) bool {
     const new = current.add(dir.toVector());
 
-    // bounds check
-    if (new.x < 0 or new.x >= @intCast(i32, tm.width) or new.y < 0 or new.y >= @intCast(i32, tm.height)) {
+    if (!tm.inBoundsSignedVec(new.cast(sr.Vec2is))) {
         return false;
     }
 
-    var s = tm.atConst(@intCast(usize, current.x), @intCast(usize, current.y)).*;
-    var d = tm.atConst(@intCast(usize, new.x), @intCast(usize, new.y)).*;
-
-    // treat S/E as a/z
-    if (s == 'S') {
-        s = 'a';
-    }
-    if (d == 'E') {
-        d = 'z';
-    }
-    if (s == 'E') {
-        s = 'z';
-    }
-    if (d == 'S') {
-        d = 'a';
-    }
+    var s = tm.atVec(current.cast(sr.Vec2us));
+    var d = tm.atVec(new.cast(sr.Vec2us));
 
     return d -| s <= 1;
 }
-
-pub const TileCoord = struct {
-    x: usize,
-    y: usize,
-
-    fn toVector(self: TileCoord) sr.Vec2i {
-        return sr.Vec2i{
-            .x = @intCast(i32, self.x),
-            .y = @intCast(i32, self.y),
-        };
-    }
-
-    pub fn toScalarCoord(self: TileCoord, ref_width: usize) usize {
-        return self.y * ref_width + self.x;
-    }
-
-    pub fn manhattan(a: TileCoord, b: TileCoord) usize {
-        const dx = @intCast(isize, a.x) - @intCast(isize, b.x);
-        const dy = @intCast(isize, a.y) - @intCast(isize, b.y);
-        return @intCast(usize, std.math.absInt(dx + dy) catch @panic("manhattan distance of TileCoords too big"));
-    }
-
-    pub fn euclideanDistance(a: TileCoord, b: TileCoord) f32 {
-        const dx = @intToFloat(f32, a.x) - @intToFloat(f32, b.x);
-        const dy = @intToFloat(f32, a.y) - @intToFloat(f32, b.y);
-        return std.math.sqrt(dx * dx + dy * dy);
-    }
-
-    pub fn offset(self: TileCoord, dir: Direction) TileCoord {
-        return switch (dir) {
-            .west => TileCoord{ .x = self.x -% 1, .y = self.y },
-            .east => TileCoord{ .x = self.x +% 1, .y = self.y },
-            .north => TileCoord{ .x = self.x, .y = self.y +% 1 },
-            .south => TileCoord{ .x = self.x, .y = self.y -% 1 },
-        };
-    }
-};
 
 const PathingCoords = struct {
     start: TileCoord,
@@ -202,20 +151,17 @@ const PathfindingState = struct {
     }
 
     fn orderFScore(ctx: Context, lhs: TileCoord, rhs: TileCoord) std.math.Order {
-        const w = ctx.map.width;
         return std.math.order(
-            ctx.score_map[lhs.toScalarCoord(w)].fscore,
-            ctx.score_map[rhs.toScalarCoord(w)].fscore,
+            ctx.score_map[ctx.map.scalarIndexVec(lhs)].fscore,
+            ctx.score_map[ctx.map.scalarIndexVec(rhs)].fscore,
         );
     }
 
-    fn findPath(self: *PathfindingState, coords: PathingCoords, map: *const Tilemap, cache: ?*PathfindingCache) !bool {
-        const width = map.width;
-
+    fn findPath(self: *PathfindingState, coords: PathingCoords, map: Tilemap, cache: ?*PathfindingCache) !bool {
         // sus, upstream interface needs some love
         self.frontier.len = 0;
         self.frontier.context = Context{
-            .map = map,
+            .map = &map,
             .score_map = self.score_map,
         };
 
@@ -225,7 +171,7 @@ const PathfindingState = struct {
         try self.frontier_set.put(self.allocator, coords.start, {});
         std.mem.set(Score, self.score_map, Score.infinity);
 
-        self.score_map[coords.start.toScalarCoord(map.width)] = .{
+        self.score_map[map.scalarIndexVec(coords.start)] = .{
             .fscore = 0,
             .gscore = 0,
             .from = undefined,
@@ -238,7 +184,7 @@ const PathfindingState = struct {
                     var coord = coords.end;
                     while (!std.meta.eql(coord, coords.start)) {
                         try self.result.append(self.allocator, coord);
-                        coord = self.score_map[coord.toScalarCoord(width)].from;
+                        coord = self.score_map[map.scalarIndexVec(coord)].from;
                     }
                     try self.result.append(self.allocator, coord);
                     std.mem.reverse(TileCoord, self.result.items);
@@ -251,13 +197,13 @@ const PathfindingState = struct {
             var d_int: u8 = 0;
             while (d_int < 4) : (d_int += 1) {
                 const dir = @intToEnum(Direction, d_int);
-                if (isValidMove(map, current.toVector(), dir)) {
+                if (isValidMove(map, current.cast(sr.Vec2i), dir)) {
                     // 1 here is the graph edge weight, basically hardcoding manhattan distance
-                    const tentative_score = self.score_map[current.toScalarCoord(width)].gscore + 1;
-                    const neighbor = current.offset(dir);
-                    const neighbor_score = self.score_map[neighbor.toScalarCoord(width)].gscore;
+                    const tentative_score = self.score_map[map.scalarIndexVec(current)].gscore + 1;
+                    const neighbor = current.offsetWrap(dir);
+                    const neighbor_score = self.score_map[map.scalarIndexVec(neighbor)].gscore;
                     if (tentative_score < neighbor_score) {
-                        self.score_map[neighbor.toScalarCoord(width)] = .{
+                        self.score_map[map.scalarIndexVec(neighbor)] = .{
                             .from = current,
                             .gscore = tentative_score,
                             .fscore = tentative_score + self.heuristic(neighbor, coords.end),
@@ -280,13 +226,16 @@ const PathfindingState = struct {
 
     fn heuristic(self: *PathfindingState, from: TileCoord, to: TileCoord) f32 {
         _ = self;
-        return from.euclideanDistance(to);
+        return sr.vectorEuclidean(from.cast(sr.Vec2f), to.cast(sr.Vec2f));
     }
 };
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
     var tm = try sr.readTilemap(ps.allocator, ps.getPuzzleInputReader());
+    const start_i = std.mem.indexOfScalar(u8, tm.data, 'S').?;
     const end_i = std.mem.indexOfScalar(u8, tm.data, 'E').?;
+    tm.data[start_i] = 'a';
+    tm.data[end_i] = 'z';
 
     const end_tc = TileCoord{
         .x = end_i % tm.width,
@@ -305,15 +254,14 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     while (y < tm.height) : (y += 1) {
         x = 0;
         while (x < tm.width) : (x += 1) {
-            const is_start_s = tm.atConst(x, y).* == 'S';
-            if (tm.atConst(x, y).* == 'a' or is_start_s) {
+            if (tm.at(x, y) == 'a') {
                 const start_tc = TileCoord{
                     .x = x,
                     .y = y,
                 };
-                if (try p.findPath(PathingCoords.init(start_tc, end_tc), &tm, &c)) {
+                if (try p.findPath(PathingCoords.init(start_tc, end_tc), tm, &c)) {
                     const path = c.get(PathingCoords.init(start_tc, end_tc));
-                    if (is_start_s) {
+                    if (tm.scalarIndex(x, y) == start_i) {
                         s = path.?.len - 1;
                     }
                     min = std.math.min(min, path.?.len - 1);
@@ -323,4 +271,8 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     }
     try ps.solution(s);
     try ps.solution(min);
+}
+
+test {
+    _ = sr;
 }

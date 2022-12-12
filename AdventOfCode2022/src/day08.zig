@@ -28,13 +28,13 @@ fn raycast(tm: *sr.Array2D(u8), pos: sr.Vec2us) RaycastResult {
 
     var ox: usize = 0;
     var oy: usize = 0;
-    const orig = tm.at(x, y).*;
+    const orig = tm.at(x, y);
 
     ox = x -% 1;
     oy = y;
     while (ox < x) : (ox -%= 1) {
         result.dist_left += 1;
-        if (tm.at(ox, oy).* >= orig) {
+        if (tm.at(ox, oy) >= orig) {
             result.num_visible_edges -= 1;
             break;
         }
@@ -44,7 +44,7 @@ fn raycast(tm: *sr.Array2D(u8), pos: sr.Vec2us) RaycastResult {
     oy = y;
     while (ox < tm.width) : (ox += 1) {
         result.dist_right += 1;
-        if (tm.at(ox, oy).* >= orig) {
+        if (tm.at(ox, oy) >= orig) {
             result.num_visible_edges -= 1;
             break;
         }
@@ -54,7 +54,7 @@ fn raycast(tm: *sr.Array2D(u8), pos: sr.Vec2us) RaycastResult {
     oy = y -% 1;
     while (oy < y) : (oy -%= 1) {
         result.dist_up += 1;
-        if (tm.at(ox, oy).* >= orig) {
+        if (tm.at(ox, oy) >= orig) {
             result.num_visible_edges -= 1;
             break;
         }
@@ -64,7 +64,7 @@ fn raycast(tm: *sr.Array2D(u8), pos: sr.Vec2us) RaycastResult {
     oy = y + 1;
     while (oy < tm.height) : (oy += 1) {
         result.dist_down += 1;
-        if (tm.at(ox, oy).* >= orig) {
+        if (tm.at(ox, oy) >= orig) {
             result.num_visible_edges -= 1;
             break;
         }

@@ -1,6 +1,8 @@
 const std = @import("std");
 const expectEqual = std.testing.expectEqual;
 
+const sr = @import("sr.zig");
+
 pub fn Vec2(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -45,35 +47,57 @@ pub fn Vec2(comptime T: type) type {
         pub fn toArray(a: Self) [size]ScalarType {
             return .{ a.x, a.y };
         }
+
+        pub fn cast(self: Self, comptime VectorT: type) VectorT {
+            return vectorCast(VectorT, self);
+        }
+
+        pub fn manhattan(a: Self, b: Self) !ScalarType {
+            return vectorManhattan(a, b);
+        }
+
+        pub fn euclidean(a: Self, b: Self) ScalarType {
+            return vectorEuclidean(a, b);
+        }
+
+        pub fn offsetWrap(self: Self, dir: sr.Direction) Self {
+            return switch (dir) {
+                .west => .{ .x = self.x -% 1, .y = self.y },
+                .east => .{ .x = self.x +% 1, .y = self.y },
+                .north => .{ .x = self.x, .y = self.y +% 1 },
+                .south => .{ .x = self.x, .y = self.y -% 1 },
+            };
+        }
     };
 }
 
 pub const Vec2i = Vec2(i32);
-pub const Vec2us = Vec2(usize);
 pub const Vec2f = Vec2(f32);
 pub const Vec2d = Vec2(f64);
+pub const Vec2us = Vec2(usize);
+pub const Vec2is = Vec2(isize);
 
-pub fn manhattan(a: anytype, b: anytype) @TypeOf(a).ScalarType {
+pub fn vectorManhattan(a: anytype, b: anytype) @TypeOf(a).ScalarType {
     const TypeA = @TypeOf(a);
     const TypeB = @TypeOf(b);
     const ScalarA = TypeA.ScalarType;
     const ScalarB = TypeB.ScalarType;
 
-    if (comptime ScalarA != ScalarB) {
+    if (ScalarA != ScalarB) {
         @compileError("incompatible scalar types");
     }
 
-    if (comptime TypeA.size != TypeB.size) {
+    if (TypeA.size != TypeB.size) {
         @compileError("incompatible vector sizes");
     }
 
-    if (comptime std.meta.trait.isIntegral(ScalarA) and std.meta.trait.isIntegral(ScalarB)) {
+    if (std.meta.trait.isIntegral(ScalarA)) {
         var sum: ScalarA = 0;
         inline for (@typeInfo(TypeA).Struct.fields) |field| {
             sum += std.math.absInt(@field(a, field.name) - @field(b, field.name)) catch unreachable;
         }
         return sum;
-    } else if (comptime std.meta.trait.isFloat(ScalarA) and std.meta.trait.isFloat(ScalarB)) {
+    } else if (std.meta.trait.isFloat(ScalarA)) {
         var sum: ScalarA = 0;
         inline for (@typeInfo(TypeA).Struct.fields) |field| {
             sum += std.math.absFloat(@field(a, field.name) - @field(b, field.name));
@@ -82,6 +106,32 @@ pub fn manhattan(a: anytype, b: anytype) @TypeOf(a).ScalarType {
     } else {
         @compileError("not implemented for this type");
     }
+}
+
+pub fn vectorEuclidean(a: anytype, b: anytype) @TypeOf(a).ScalarType {
+    const TypeA = @TypeOf(a);
+    const TypeB = @TypeOf(b);
+    const ScalarA = TypeA.ScalarType;
+    const ScalarB = TypeB.ScalarType;
+
+    if (ScalarA != ScalarB) {
+        @compileError("incompatible scalar types");
+    }
+
+    if (TypeA.size != TypeB.size) {
+        @compileError("incompatible vector sizes");
+    }
+
+    var sum: ScalarA = 0;
+    if (comptime std.meta.trait.isFloat(ScalarA)) {
+        inline for (@typeInfo(TypeA).Struct.fields) |field| {
+            const d = @floatCast(ScalarA, @field(a, field.name) - @field(b, field.name));
+            sum += d * d;
+        }
+    } else {
+        @compileError("vectorEuclidean not implemented for " ++ @typeName(TypeA));
+    }
+    return std.math.sqrt(sum);
 }
 
 pub fn vectorCast(comptime DestType: type, v: anytype) DestType {
