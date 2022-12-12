@@ -13,6 +13,8 @@ pub fn Array2D(comptime T: type) type {
 
         pub fn deinit(self: *Self, allocator: Allocator) void {
             allocator.free(self.data);
+            self.width = 0;
+            self.height = 0;
         }
 
         pub fn fill(self: *Self, value: T) void {
@@ -31,9 +33,9 @@ pub fn Array2D(comptime T: type) type {
 
         pub fn resize(self: *Self, allocator: Allocator, width: usize, height: usize) !void {
             self.deinit(allocator);
+            self.data = try allocator.alloc(T, width * height);
             self.width = width;
             self.height = height;
-            self.data = try allocator.alloc(T, width * height);
         }
 
         pub fn at(self: *Self, x: usize, y: usize) *T {
