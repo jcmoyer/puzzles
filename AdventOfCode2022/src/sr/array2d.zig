@@ -19,6 +19,16 @@ pub fn Array2D(comptime T: type) type {
             std.mem.set(T, self.data, value);
         }
 
+        pub fn clone(self: Self, allocator: Allocator) !Self {
+            var new_data = try allocator.alloc(T, self.data.len);
+            std.mem.copy(T, new_data, self.data);
+            return Self{
+                .data = new_data,
+                .width = self.width,
+                .height = self.height,
+            };
+        }
+
         pub fn resize(self: *Self, allocator: Allocator, width: usize, height: usize) !void {
             self.deinit(allocator);
             self.width = width;
@@ -201,4 +211,21 @@ pub fn Array2D(comptime T: type) type {
             }
         }
     };
+}
+
+test "clone" {
+    var a = Array2D(u8){};
+    var b = Array2D(u8){};
+
+    try a.resize(std.testing.allocator, 3, 2);
+    defer a.deinit(std.testing.allocator);
+    a.fill('a');
+    a.at(2, 1).* = 'b';
+
+    b = try a.clone(std.testing.allocator);
+    defer b.deinit(std.testing.allocator);
+
+    try std.testing.expectEqualSlices(u8, a.data, b.data);
+    try std.testing.expectEqual(a.width, b.width);
+    try std.testing.expectEqual(a.height, b.height);
 }

@@ -322,6 +322,7 @@ pub fn product(comptime T: type, slice: []const T) T {
 test {
     _ = @import("graph.zig");
     _ = @import("vector.zig");
+    _ = @import("array2d.zig");
 }
 
 fn Iterator2D(comptime T: type) type {
