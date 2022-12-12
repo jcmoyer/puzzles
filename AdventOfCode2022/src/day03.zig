@@ -115,22 +115,8 @@ const example_input =
     \\CrZsJsPPZsGzwwsLwLmpwMDw
 ;
 
-test "part 1" {
-    var allocator = std.testing.allocator;
-    var fbs = std.io.fixedBufferStream(example_input);
-    var reader = fbs.reader();
-
-    var rs = try RucksackList.loadFromStream(allocator, reader);
-    defer rs.deinit(allocator);
-    try std.testing.expectEqual(@as(u64, 157), rs.sumCommonPrio());
-}
-
-test "part 2" {
-    var allocator = std.testing.allocator;
-    var fbs = std.io.fixedBufferStream(example_input);
-    var reader = fbs.reader();
-
-    var rs = try RucksackList.loadFromStream(allocator, reader);
-    defer rs.deinit(allocator);
-    try std.testing.expectEqual(@as(u64, 70), rs.sumCommonPrio2());
+test "parts 1 and 2" {
+    const solutions = try runner.testSolver(@This(), example_input);
+    try std.testing.expectEqual(@as(u64, 157), solutions[0].integer);
+    try std.testing.expectEqual(@as(u64, 70), solutions[1].integer);
 }

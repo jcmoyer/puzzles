@@ -68,18 +68,8 @@ const example_input =
     \\10000
 ;
 
-test "part 1" {
-    var allocator = std.testing.allocator;
-    var elves = try ElfList.loadFromSlice(allocator, example_input);
-    defer elves.deinit(allocator);
-
-    try std.testing.expectEqual(@as(u64, 24000), elves.maxCalories());
-}
-
-test "part 2" {
-    var allocator = std.testing.allocator;
-    var elves = try ElfList.loadFromSlice(allocator, example_input);
-    defer elves.deinit(allocator);
-
-    try std.testing.expectEqual(@as(u64, 45000), elves.sumTopThree());
+test "parts 1 and 2" {
+    const solutions = try runner.testSolver(@This(), example_input);
+    try std.testing.expectEqual(@as(u64, 24000), solutions[0].integer);
+    try std.testing.expectEqual(@as(u64, 45000), solutions[1].integer);
 }

@@ -62,18 +62,8 @@ const example_input =
     \\C Z
 ;
 
-test "part 1" {
-    var fbs = std.io.fixedBufferStream(example_input);
-    var reader = fbs.reader();
-
-    const s = try Solution.calcFromStream(reader);
-    try std.testing.expectEqual(@as(u64, 15), s.sum1);
-}
-
-test "part 2" {
-    var fbs = std.io.fixedBufferStream(example_input);
-    var reader = fbs.reader();
-
-    const s = try Solution.calcFromStream(reader);
-    try std.testing.expectEqual(@as(u64, 12), s.sum2);
+test "parts 1 and 2" {
+    const solutions = try runner.testSolver(@This(), example_input);
+    try std.testing.expectEqual(@as(u64, 15), solutions[0].integer);
+    try std.testing.expectEqual(@as(u64, 12), solutions[1].integer);
 }

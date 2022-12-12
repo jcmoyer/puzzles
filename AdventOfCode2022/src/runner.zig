@@ -4,15 +4,50 @@ const argparse = @import("argparse.zig");
 const ArgParseState = argparse.ArgParseState;
 const root = @import("root");
 
+pub const PuzzleSolution = union(enum) {
+    integer: u64,
+    // TODO: implement this in a way that doesn't overly complicate testing
+    // text: []u8,
+};
+
 pub const PuzzleSolverState = struct {
+    const max_input_size = 1024 * 1024;
+
     arena: std.heap.ArenaAllocator,
     allocator: Allocator,
     // aligned for SIMD shenanigans
     input_text: []align(64) const u8,
     input_reader: std.io.FixedBufferStream([]align(64) const u8),
     times_solution_called: u32 = 0,
+    solutions: [2]PuzzleSolution,
     stdout: std.fs.File,
     stderr: std.fs.File,
+
+    fn createWithBuffer(allocator: Allocator, buffer: []const u8) !*PuzzleSolverState {
+        var self = try allocator.create(PuzzleSolverState);
+        self.* = .{
+            .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            .stdout = std.io.getStdOut(),
+            .stderr = std.io.getStdErr(),
+            // initialized below
+            .allocator = undefined,
+            .input_text = undefined,
+            .input_reader = undefined,
+            .solutions = undefined,
+        };
+        errdefer self.arena.deinit();
+
+        self.allocator = self.arena.allocator();
+
+        var input_text_storage = try self.allocator.alignedAlloc(u8, 64, max_input_size);
+        const input_text_size = buffer.len;
+        std.mem.copy(u8, input_text_storage, buffer);
+
+        self.input_text = input_text_storage[0..input_text_size];
+        self.input_reader = std.io.fixedBufferStream(self.input_text);
+
+        return self;
+    }
 
     fn createWithFilename(allocator: Allocator, filename: []const u8) !*PuzzleSolverState {
         var self = try allocator.create(PuzzleSolverState);
@@ -24,6 +59,7 @@ pub const PuzzleSolverState = struct {
             .allocator = undefined,
             .input_text = undefined,
             .input_reader = undefined,
+            .solutions = undefined,
         };
         errdefer self.arena.deinit();
 
@@ -32,7 +68,7 @@ pub const PuzzleSolverState = struct {
         var file = try std.fs.cwd().openFile(filename, .{});
         defer file.close();
 
-        var input_text_storage = try self.allocator.alignedAlloc(u8, 64, 1024 * 1024);
+        var input_text_storage = try self.allocator.alignedAlloc(u8, 64, max_input_size);
         const input_text_size = try file.readAll(input_text_storage);
 
         self.input_text = input_text_storage[0..input_text_size];
@@ -54,12 +90,15 @@ pub const PuzzleSolverState = struct {
         if (self.times_solution_called >= 2) {
             return;
         }
+        var ptr = &self.solutions[self.times_solution_called];
         const writer = std.io.getStdOut().writer();
 
         if (@typeInfo(@TypeOf(val)) == .Int) {
             try writer.print("{d}\n", .{val});
+            ptr.* = .{ .integer = @intCast(u64, val) };
         } else {
             try writer.print("{s}\n", .{val});
+            // ptr.* = .{.text= self.allocator.dupe(u8,val)};
         }
         self.times_solution_called += 1;
     }
@@ -136,6 +175,13 @@ pub fn defaultMain() !void {
     } else {
         try root.solve(ps);
     }
+}
+
+pub fn testSolver(module: anytype, input_text: []const u8) ![2]PuzzleSolution {
+    var ps = try PuzzleSolverState.createWithBuffer(std.testing.allocator, input_text);
+    defer ps.destroy(std.testing.allocator);
+    try module.solve(ps);
+    return ps.solutions;
 }
 
 fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
