@@ -10,19 +10,19 @@ pub const Scanner = struct {
         };
     }
 
-    pub fn readWhile(self: *Scanner, cond: fn (u8) bool) []const u8 {
+    pub fn readWhile(self: *Scanner, cond: *const fn (u8) bool) []const u8 {
         const first = self.pos;
         while (self.pos < self.buf.len and cond(self.buf[self.pos])) : (self.pos += 1) {}
         return self.buf[first..self.pos];
     }
 
-    pub fn readUntil(self: *Scanner, cond: fn (u8) bool) []const u8 {
+    pub fn readUntil(self: *Scanner, cond: *const fn (u8) bool) []const u8 {
         const first = self.pos;
         while (self.pos < self.buf.len and !cond(self.buf[self.pos])) : (self.pos += 1) {}
         return self.buf[first..self.pos];
     }
 
-    pub fn moveToNext(self: *Scanner, cond: fn (u8) bool) bool {
+    pub fn moveToNext(self: *Scanner, cond: *const fn (u8) bool) bool {
         while (self.pos < self.buf.len and !cond(self.buf[self.pos])) : (self.pos += 1) {}
         // either we found a char for which cond passed OR we reached the end
         // so there's no need to re-evaluate cond
@@ -60,7 +60,7 @@ pub const Scanner = struct {
         if (self.atEnd()) {
             return null;
         } else {
-            return self.buf[self.pos + 1];
+            return self.buf[self.pos];
         }
     }
 
@@ -79,12 +79,9 @@ pub const Scanner = struct {
         if (self.atEnd()) {
             return null;
         } else {
+            const ch = self.buf[self.pos];
             self.pos += 1;
-            if (self.atEnd()) {
-                return null;
-            } else {
-                return self.buf[self.pos];
-            }
+            return ch;
         }
     }
 
