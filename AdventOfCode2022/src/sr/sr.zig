@@ -329,6 +329,7 @@ test {
     _ = @import("graph.zig");
     _ = @import("vector.zig");
     _ = @import("array2d.zig");
+    _ = @import("scanner.zig");
 }
 
 fn Iterator2D(comptime T: type) type {
@@ -394,12 +395,13 @@ pub fn sliceLines(slice: []const u8) SliceLinesIterator {
 
 test "SliceLinesIterator" {
     {
-        var it = SliceLinesIterator{ .slice = "hello\r\nworld\n\nwowsers\n\r\r\n" };
+        var it = SliceLinesIterator{ .slice = "hello\r\nworld\n\nwowsers\n\r\r\nabc" };
         try std.testing.expectEqualStrings("hello", it.next().?);
         try std.testing.expectEqualStrings("world", it.next().?);
         try std.testing.expectEqualStrings("", it.next().?);
         try std.testing.expectEqualStrings("wowsers", it.next().?);
         try std.testing.expectEqualStrings("\r", it.next().?);
+        try std.testing.expectEqualStrings("abc", it.next().?);
         try std.testing.expect(it.next() == null);
     }
     {
