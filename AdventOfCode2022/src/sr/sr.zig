@@ -330,6 +330,7 @@ test {
     _ = @import("vector.zig");
     _ = @import("array2d.zig");
     _ = @import("scanner.zig");
+    _ = @import("parse.zig");
 }
 
 fn Iterator2D(comptime T: type) type {
