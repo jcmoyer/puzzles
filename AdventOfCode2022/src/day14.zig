@@ -122,7 +122,7 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
         var last_p: ?sr.Vec2i = null;
         while (numbers.next()) |pair| {
             var p = sr.Vec2i{};
-            if (try sr.parse("{d},{d}", pair, .{ &p.x, &p.y }) != true) {
+            if (!try sr.parse("{d},{d}", pair, .{ &p.x, &p.y })) {
                 return error.BadParse;
             }
             if (last_p) |last| {
@@ -141,10 +141,8 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
                 } else {
                     unreachable;
                 }
-                last_p = p;
-            } else {
-                last_p = p;
             }
+            last_p = p;
         }
     }
 
