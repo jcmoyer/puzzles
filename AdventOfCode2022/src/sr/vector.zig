@@ -91,16 +91,16 @@ pub fn vectorManhattan(a: anytype, b: anytype) @TypeOf(a).ScalarType {
         @compileError("incompatible vector sizes");
     }
 
-    if (std.meta.trait.isIntegral(ScalarA)) {
+    if (comptime std.meta.trait.isIntegral(ScalarA)) {
         var sum: ScalarA = 0;
         inline for (@typeInfo(TypeA).Struct.fields) |field| {
             sum += std.math.absInt(@field(a, field.name) - @field(b, field.name)) catch unreachable;
         }
         return sum;
-    } else if (std.meta.trait.isFloat(ScalarA)) {
+    } else if (comptime std.meta.trait.isFloat(ScalarA)) {
         var sum: ScalarA = 0;
         inline for (@typeInfo(TypeA).Struct.fields) |field| {
-            sum += std.math.absFloat(@field(a, field.name) - @field(b, field.name));
+            sum += std.math.fabs(@field(a, field.name) - @field(b, field.name));
         }
         return sum;
     } else {
