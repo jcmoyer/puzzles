@@ -12,23 +12,27 @@ const Sensor = struct {
     nearest_distance: isize,
 };
 
-/// iteratively reduce ranges
-fn reduceRanges(ranges: *std.ArrayList(Range)) void {
+/// Iteratively reduce ranges by checking for overlaps and merging.
+fn reduceRanges(ranges: []Range) []Range {
+    var working_size = ranges.len;
     var last_ranges_size: usize = 0;
-    while (last_ranges_size != ranges.items.len) {
-        last_ranges_size = ranges.items.len;
+    while (last_ranges_size != working_size) {
+        last_ranges_size = working_size;
         var i: usize = 0;
-        next_range: while (i < ranges.items.len) : (i += 1) {
+        while (i < working_size) : (i += 1) {
             var j: usize = i + 1;
-            while (j < ranges.items.len) : (j += 1) {
-                if (ranges.items[i].overlaps(ranges.items[j])) {
-                    ranges.items[i] = ranges.items[i].merge(ranges.items[j]);
-                    _ = ranges.swapRemove(j);
-                    break :next_range;
+            while (j < working_size) {
+                if (ranges[i].overlaps(ranges[j])) {
+                    ranges[i] = ranges[i].merge(ranges[j]);
+                    ranges[j] = ranges[working_size - 1];
+                    working_size -= 1;
+                } else {
+                    j += 1;
                 }
             }
         }
     }
+    return ranges[0..working_size];
 }
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
@@ -57,37 +61,53 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
 
     var y: isize = 0;
     while (y <= 4000000) : (y += 1) {
-        var ranges = std.ArrayList(Range).init(ps.allocator);
-        next_sensor: for (sensors.items) |*s| {
+        var ranges_list = std.ArrayListUnmanaged(Range){};
+        for (sensors.items) |*s| {
+            // If we have a sensor S, with a distance to beacon B = 3:
+            //
+            //        #
+            //       ###
+            //      ####B
+            //     ###S###
+            //      #####
+            //       ###
+            //        #
+            //
+            // Note that with manhattan distance, each step away from the sensor
+            // along the Y axis shrinks the width of the sensor diamond by one
+            // on the left and right sides.
+            //
+            // At dy=0 (the same Y as the sensor), the left and right sides
+            // have width equal to the manhattan distance.
+            //
+            // At dy=1, they have width equal to the manhattan distance minus 1,
+            // and so on.
+            //
+            // Since the diamond must be centered on the sensor, we can find a
+            // line that represents a horizontal slice of the diamond `dy` units
+            // away on the Y axis:
             const dy = try std.math.absInt(s.pos.y - y);
-            var left: isize = s.pos.x - s.nearest_distance;
-            var right: isize = s.pos.x + s.nearest_distance;
-            left += dy;
-            right -= dy;
-            if (right - left >= 0) {
-                const new_r = Range{ .min = left, .max = right };
-                for (ranges.items) |*r| {
-                    if (r.overlaps(new_r)) {
-                        r.* = r.merge(new_r);
-                        continue :next_sensor;
-                    }
-                    if (r.contains(new_r)) {
-                        continue :next_sensor;
-                    }
-                }
-                try ranges.append(new_r);
+            const range = Range{
+                .min = s.pos.x - s.nearest_distance + dy,
+                .max = s.pos.x + s.nearest_distance - dy,
+            };
+            // If the line has a negative width, it is out of range for this sensor.
+            if (range.width() > 0) {
+                try ranges_list.append(ps.allocator, range);
             }
         }
+        // Then we can merge all lines that overlap.
+        const ranges = reduceRanges(ranges_list.items);
 
-        reduceRanges(&ranges);
-
+        // Part 1 is simply a measurement of the width of all lines at Y=2000000
+        // minus the number of unique beacons on that line.
         if (y == 2000000) {
-            for (ranges.items) |mr| {
-                sum_p1 += mr.width();
+            for (ranges) |r| {
+                sum_p1 += r.width();
             }
             for (beacons.keys()) |b| {
-                for (ranges.items) |mr| {
-                    if (b.y == 2000000 and mr.containsScalar(b.x)) {
+                for (ranges) |r| {
+                    if (b.y == 2000000 and r.containsScalar(b.x)) {
                         sum_p1 -= 1;
                     }
                 }
@@ -97,11 +117,16 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
                 break;
             }
         }
-        if (ranges.items.len == 2) {
-            const x = if (ranges.items[0].max < ranges.items[1].min)
-                ranges.items[0].max + 1
+        // Part 2 states there is only a single point in the range
+        // [0..4000000],[0..4000000] that is not covered by a sensor, so if we
+        // found two lines at this Y, there is a gap between them of one unit.
+        // That gap must be the solution. For every other Y, there should only
+        // be one line that covers the entire range [0..4000000],Y.
+        if (ranges.len == 2) {
+            const x = if (ranges[0].max < ranges[1].min)
+                ranges[0].max + 1
             else
-                ranges.items[0].min - 1;
+                ranges[0].min - 1;
             ans_p2 = x * 4000000 + y;
             // early out
             if (sum_p1 != 0) {
