@@ -1,13 +1,23 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const sr = @import("sr/sr.zig");
 
 const runner = @import("runner.zig");
 pub const main = runner.defaultMain;
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
-    const s = try Solution.calcFromStream(ps.getPuzzleInputReader());
-    try ps.solution(s.sum1);
-    try ps.solution(s.sum2);
+    var part1: u64 = 0;
+    var part2: u64 = 0;
+    var lines = sr.sliceLines(ps.input_text);
+    while (lines.next()) |line| {
+        var game_id: u8 = 0;
+        game_id += line[0] - 'A';
+        game_id += 3 * (line[2] - 'X');
+        part1 += lut_part1[game_id];
+        part2 += lut_part2[game_id];
+    }
+    try ps.solution(part1);
+    try ps.solution(part2);
 }
 
 const lut_part1 = [_]u32{
@@ -32,28 +42,6 @@ const lut_part2 = [_]u32{
     2 + 6,
     3 + 6,
     1 + 6,
-};
-
-const Solution = struct {
-    sum1: u32 = 0,
-    sum2: u32 = 0,
-
-    fn calcFromStream(reader: anytype) !Solution {
-        var buf: [256]u8 = undefined;
-        var solution = Solution{};
-
-        while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
-            const stripped_line = std.mem.trimRight(u8, line, "\r\n");
-
-            var game_id: u8 = 0;
-            game_id += stripped_line[0] - 'A';
-            game_id += 3 * (stripped_line[2] - 'X');
-            solution.sum1 += lut_part1[game_id];
-            solution.sum2 += lut_part2[game_id];
-        }
-
-        return solution;
-    }
 };
 
 const example_input =

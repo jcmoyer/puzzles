@@ -1,11 +1,12 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const sr = @import("sr/sr.zig");
 
 const runner = @import("runner.zig");
 pub const main = runner.defaultMain;
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
-    var rs = try RucksackList.loadFromStream(ps.allocator, ps.getPuzzleInputReader());
+    var rs = try RucksackList.loadFromString(ps.allocator, ps.input_text);
     try ps.solution(rs.sumCommonPrio());
     try ps.solution(rs.sumCommonPrio2());
 }
@@ -58,13 +59,12 @@ const RucksackList = struct {
         allocator.free(self.rucksacks);
     }
 
-    fn loadFromStream(allocator: Allocator, reader: anytype) !RucksackList {
-        var buf: [256]u8 = undefined;
-
+    fn loadFromString(allocator: Allocator, str: []const u8) !RucksackList {
         var rs = std.ArrayListUnmanaged(Rucksack){};
         errdefer rs.deinit(allocator);
 
-        while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+        var lines = sr.sliceLines(str);
+        while (lines.next()) |line| {
             const stripped_line = std.mem.trimRight(u8, line, "\r\n");
             const compartment_len = stripped_line.len / 2;
             std.debug.assert(stripped_line.len % 2 == 0);
