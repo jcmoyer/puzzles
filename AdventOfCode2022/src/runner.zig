@@ -220,9 +220,15 @@ fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
         }
     }
 
+    std.sort.sort(u64, time_buffer.items, {}, std.sort.asc(u64));
+    const median_ns = if (time_buffer.items.len % 2 == 0)
+        (time_buffer.items[time_buffer.items.len / 2 - 1] + time_buffer.items[time_buffer.items.len / 2]) / 2
+    else
+        time_buffer.items[time_buffer.items.len / 2];
+
     try stderr.print("runs:                   {d}\n", .{runs});
     try stderr.print("average elapsed:        {d}ns\n", .{total_ns_elapsed / runs});
-    try stderr.print("median elapsed:         {d}ns\n", .{time_buffer.items[time_buffer.items.len / 2]});
+    try stderr.print("median elapsed:         {d}ns\n", .{median_ns});
     try stderr.print("total elapsed:          {d}ms\n", .{(total_ns_elapsed / std.time.ns_per_ms)});
 
     const bytes_processed = runs * ps.input_text.len;
