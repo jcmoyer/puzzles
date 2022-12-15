@@ -181,16 +181,13 @@ pub const ResettableArenaAllocator = struct {
                 first_node.data.len = total_size;
             } else {
                 // manual realloc
-                const new_ptr = self.child_allocator.rawAlloc(total_size, @alignOf(BufNode), @returnAddress());
-                if (new_ptr == null) {
-                    // we failed to preheat the arena properly, signal this to the user.
-                    return false;
-                }
+                // if rawAlloc returns null we failed to preheat the arena properly, signal this to the user.
+                const new_ptr = self.child_allocator.rawAlloc(total_size, @alignOf(BufNode), @returnAddress()) orelse return false;
                 self.child_allocator.rawFree(first_node.data, @alignOf(BufNode), @returnAddress());
 
                 const node = @ptrCast(*BufNode, @alignCast(@alignOf(BufNode), new_ptr));
                 node.* = BufNode{
-                    .data = new_ptr.?[0..total_size],
+                    .data = new_ptr[0..total_size],
                 };
                 self.state.buffer_list.first = node;
             }
