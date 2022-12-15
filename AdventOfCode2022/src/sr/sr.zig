@@ -410,3 +410,35 @@ test "SliceLinesIterator" {
         try std.testing.expect(it.next() == null);
     }
 }
+
+pub fn InclusiveRange1D(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        min: T,
+        max: T,
+
+        pub fn contains(self: Self, other: Self) bool {
+            return self.min <= other.min and other.max <= self.max;
+        }
+
+        pub fn containsScalar(self: Self, other: T) bool {
+            return self.min <= other and other <= self.max;
+        }
+
+        pub fn overlaps(self: Self, other: Self) bool {
+            return self.containsScalar(other.min) or self.containsScalar(other.max) or other.containsScalar(self.min) or other.containsScalar(self.max);
+        }
+
+        pub fn width(self: Self) isize {
+            return self.max - self.min + 1;
+        }
+
+        pub fn merge(self: Self, other: Self) Self {
+            return Self{
+                .min = std.math.min(self.min, other.min),
+                .max = std.math.max(self.max, other.max),
+            };
+        }
+    };
+}

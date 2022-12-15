@@ -5,37 +5,11 @@ const sr = @import("sr/sr.zig");
 const runner = @import("runner.zig");
 pub const main = runner.defaultMain;
 
+const Range = sr.InclusiveRange1D(isize);
+
 const Sensor = struct {
     pos: sr.Vec2is,
     nearest_distance: isize,
-};
-
-const Range = struct {
-    min: isize,
-    max: isize,
-
-    fn contains(self: Range, other: Range) bool {
-        return self.min <= other.min and other.max <= self.max;
-    }
-
-    fn containsScalar(self: Range, other: isize) bool {
-        return self.min <= other and other <= self.max;
-    }
-
-    fn overlaps(self: Range, other: Range) bool {
-        return self.containsScalar(other.min) or self.containsScalar(other.max) or other.containsScalar(self.min) or other.containsScalar(self.max);
-    }
-
-    fn width(self: Range) isize {
-        return self.max - self.min + 1;
-    }
-
-    fn merge(self: Range, other: Range) Range {
-        return Range{
-            .min = std.math.min(self.min, other.min),
-            .max = std.math.max(self.max, other.max),
-        };
-    }
 };
 
 /// iteratively reduce ranges

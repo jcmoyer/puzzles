@@ -1,31 +1,17 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const sr = @import("sr/sr.zig");
 
 const runner = @import("runner.zig");
 pub const main = runner.defaultMain;
+
+const Range = sr.InclusiveRange1D(u32);
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
     const s = try Solution.calcFromStream(ps.getPuzzleInputReader());
     try ps.solution(s.sum1);
     try ps.solution(s.sum2);
 }
-
-const Range = struct {
-    min: u32,
-    max: u32,
-
-    fn contains(self: Range, other: Range) bool {
-        return self.min <= other.min and self.max >= other.max;
-    }
-
-    fn containsScalar(self: Range, other: u32) bool {
-        return other >= self.min and other <= self.max;
-    }
-
-    fn overlaps(self: Range, other: Range) bool {
-        return self.containsScalar(other.min) or self.containsScalar(other.max);
-    }
-};
 
 const Solution = struct {
     sum1: u32 = 0,
@@ -55,7 +41,7 @@ const Solution = struct {
             if (r1.contains(r2) or r2.contains(r1)) {
                 solution.sum1 += 1;
             }
-            if (r1.overlaps(r2) or r2.overlaps(r1)) {
+            if (r1.overlaps(r2)) {
                 solution.sum2 += 1;
             }
         }
