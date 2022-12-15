@@ -226,12 +226,31 @@ fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
     else
         time_buffer.items[time_buffer.items.len / 2];
 
+    const avg_rescaled = rescaleTime(total_ns_elapsed / runs);
+    const med_rescaled = rescaleTime(median_ns);
+    const total_rescaled = rescaleTime(total_ns_elapsed);
+
     try stderr.print("runs:                   {d}\n", .{runs});
-    try stderr.print("average elapsed:        {d}ns\n", .{total_ns_elapsed / runs});
-    try stderr.print("median elapsed:         {d}ns\n", .{median_ns});
-    try stderr.print("total elapsed:          {d}ms\n", .{(total_ns_elapsed / std.time.ns_per_ms)});
+    try stderr.print("average elapsed:        {d}{s}\n", .{ avg_rescaled.amount, avg_rescaled.unit });
+    try stderr.print("median elapsed:         {d}{s}\n", .{ med_rescaled.amount, med_rescaled.unit });
+    try stderr.print("total elapsed:          {d}{s}\n", .{ total_rescaled.amount, total_rescaled.unit });
 
     const bytes_processed = runs * ps.input_text.len;
     try stderr.print("processed:              {:.2}\n", .{(std.fmt.fmtIntSizeBin(bytes_processed))});
     try stderr.print("throughput:             {:.2}/s\n", .{(std.fmt.fmtIntSizeBin(bytes_processed / (total_ns_elapsed / std.time.ns_per_s)))});
+}
+
+const ScaledTime = struct {
+    amount: u64,
+    unit: []const u8,
+};
+
+fn rescaleTime(ns: u64) ScaledTime {
+    if (ns / std.time.ns_per_ms >= 100) {
+        return ScaledTime{ .amount = ns / std.time.ns_per_ms, .unit = "ms" };
+    }
+    if (ns / std.time.ns_per_us >= 100) {
+        return ScaledTime{ .amount = ns / std.time.ns_per_us, .unit = "us" };
+    }
+    return ScaledTime{ .amount = ns, .unit = "ns" };
 }
