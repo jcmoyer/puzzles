@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const argparse = @import("argparse.zig");
 const ArgParseState = argparse.ArgParseState;
 const root = @import("root");
+const ResettableArenaAllocator = @import("resettable_arena_allocator.zig").ResettableArenaAllocator;
 
 pub const PuzzleSolution = union(enum) {
     integer: u64,
@@ -13,10 +14,11 @@ pub const PuzzleSolution = union(enum) {
 pub const PuzzleSolverState = struct {
     const max_input_size = 1024 * 1024;
 
-    arena: std.heap.ArenaAllocator,
+    arena: ResettableArenaAllocator,
     allocator: Allocator,
     // aligned for SIMD shenanigans
     input_text: []align(64) const u8,
+    input_text_storage: []align(64) u8,
     input_reader: std.io.FixedBufferStream([]align(64) const u8),
     times_solution_called: u32 = 0,
     solutions: [2]PuzzleSolution,
@@ -26,7 +28,7 @@ pub const PuzzleSolverState = struct {
     fn createWithBuffer(allocator: Allocator, buffer: []const u8) !*PuzzleSolverState {
         var self = try allocator.create(PuzzleSolverState);
         self.* = .{
-            .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            .arena = ResettableArenaAllocator.init(std.heap.page_allocator),
             .stdout = std.io.getStdOut(),
             .stderr = std.io.getStdErr(),
             // initialized below
@@ -39,11 +41,13 @@ pub const PuzzleSolverState = struct {
 
         self.allocator = self.arena.allocator();
 
-        var input_text_storage = try self.allocator.alignedAlloc(u8, 64, max_input_size);
+        // input text allocated with parent allocator since arena may be reset
+        self.input_text_storage = try allocator.alignedAlloc(u8, 64, max_input_size);
+        errdefer allocator.free(self.input_text_storage);
         const input_text_size = buffer.len;
-        std.mem.copy(u8, input_text_storage, buffer);
+        std.mem.copy(u8, self.input_text_storage, buffer);
 
-        self.input_text = input_text_storage[0..input_text_size];
+        self.input_text = self.input_text_storage[0..input_text_size];
         self.input_reader = std.io.fixedBufferStream(self.input_text);
 
         return self;
@@ -52,12 +56,13 @@ pub const PuzzleSolverState = struct {
     fn createWithFilename(allocator: Allocator, filename: []const u8) !*PuzzleSolverState {
         var self = try allocator.create(PuzzleSolverState);
         self.* = .{
-            .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            .arena = ResettableArenaAllocator.init(std.heap.page_allocator),
             .stdout = std.io.getStdOut(),
             .stderr = std.io.getStdErr(),
             // initialized below
             .allocator = undefined,
             .input_text = undefined,
+            .input_text_storage = undefined,
             .input_reader = undefined,
             .solutions = undefined,
         };
@@ -68,10 +73,12 @@ pub const PuzzleSolverState = struct {
         var file = try std.fs.cwd().openFile(filename, .{});
         defer file.close();
 
-        var input_text_storage = try self.allocator.alignedAlloc(u8, 64, max_input_size);
-        const input_text_size = try file.readAll(input_text_storage);
+        // input text allocated with parent allocator since arena may be reset
+        self.input_text_storage = try allocator.alignedAlloc(u8, 64, max_input_size);
+        errdefer allocator.free(self.input_text_storage);
+        const input_text_size = try file.readAll(self.input_text_storage);
 
-        self.input_text = input_text_storage[0..input_text_size];
+        self.input_text = self.input_text_storage[0..input_text_size];
         self.input_reader = std.io.fixedBufferStream(self.input_text);
 
         return self;
@@ -79,6 +86,7 @@ pub const PuzzleSolverState = struct {
 
     fn destroy(self: *PuzzleSolverState, allocator: Allocator) void {
         self.arena.deinit();
+        allocator.free(self.input_text_storage);
         allocator.destroy(self);
     }
 
@@ -185,6 +193,7 @@ pub fn testSolver(module: anytype, input_text: []const u8) ![2]PuzzleSolution {
 }
 
 fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
+    const stderr = ps.stderr.writer();
     const sec = 5;
 
     var time_buffer = std.ArrayListUnmanaged(u64){};
@@ -194,6 +203,10 @@ fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
     var runs: usize = 0;
     var total_ns_elapsed: u64 = 0;
     while (true) {
+        if (ps.arena.reset(.retain_capacity) == false) {
+            try stderr.print("failed to reset arena\n", .{});
+            break;
+        }
         ps.input_reader.reset();
         timer.reset();
         try root.solve(ps);
@@ -205,7 +218,7 @@ fn runBenchmark(gpa: Allocator, ps: *PuzzleSolverState) !void {
             break;
         }
     }
-    const stderr = ps.stderr.writer();
+
     try stderr.print("runs:                   {d}\n", .{runs});
     try stderr.print("average elapsed:        {d}ns\n", .{total_ns_elapsed / runs});
     try stderr.print("median elapsed:         {d}ns\n", .{time_buffer.items[time_buffer.items.len / 2]});
