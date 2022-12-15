@@ -34,6 +34,7 @@ pub const PuzzleSolverState = struct {
             // initialized below
             .allocator = undefined,
             .input_text = undefined,
+            .input_text_storage = undefined,
             .input_reader = undefined,
             .solutions = undefined,
         };
