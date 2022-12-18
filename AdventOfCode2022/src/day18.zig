@@ -16,10 +16,13 @@ const dirs = [6]V3{
 };
 
 fn isEdge(pos: V3) bool {
-    return pos.x == 0 or pos.y == 0 or pos.z == 0 or pos.x == 20 or pos.y == 20 or pos.z == 20;
+    return pos.x <= 0 or pos.y <= 0 or pos.z <= 0 or pos.x >= 20 or pos.y >= 20 or pos.z >= 20;
 }
 
-fn anyPathToEdge(allocator: Allocator, start: V3, cubes: std.AutoArrayHashMap(V3, void)) !bool {
+fn anyPathToEdge(allocator: Allocator, start: V3, cubes: std.AutoArrayHashMap(V3, void), cache: *std.AutoArrayHashMap(V3, bool)) !bool {
+    if (cache.get(start)) |val| {
+        return val;
+    }
     var look = std.ArrayList(V3).init(allocator);
     try look.append(start);
     var seen = std.AutoArrayHashMap(V3, void).init(allocator);
@@ -37,16 +40,23 @@ fn anyPathToEdge(allocator: Allocator, start: V3, cubes: std.AutoArrayHashMap(V3
             if (cubes.contains(adj)) {
                 continue;
             }
-            if (isEdge(adj)) {
+            if (cache.contains(adj) or isEdge(adj)) {
+                for (seen.keys()) |v| {
+                    try cache.put(v, true);
+                }
                 return true;
             }
             try look.append(adj);
         }
     }
+    for (seen.keys()) |v| {
+        try cache.put(v, false);
+    }
     return false;
 }
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
+    var cache = std.AutoArrayHashMap(V3, bool).init(ps.allocator);
     var cubes = std.AutoArrayHashMap(V3, void).init(ps.allocator);
     var lines = sr.sliceLines(ps.input_text);
     while (lines.next()) |line| {
@@ -62,7 +72,7 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
             if (cubes.contains(v)) {
                 area1 -= 1;
                 area2 -= 1;
-            } else if (!try anyPathToEdge(ps.allocator, v, cubes)) {
+            } else if (!try anyPathToEdge(ps.allocator, v, cubes, &cache)) {
                 area2 -= 1;
             }
         }
