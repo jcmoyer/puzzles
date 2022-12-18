@@ -71,6 +71,70 @@ pub fn Vec2(comptime T: type) type {
     };
 }
 
+pub fn Vec3(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        pub const ScalarType = T;
+        pub const size = 3;
+
+        x: T = 0,
+        y: T = 0,
+        z: T = 0,
+
+        pub fn init(x: T, y: T, z: T) Self {
+            return .{
+                .x = x,
+                .y = y,
+                .z = z,
+            };
+        }
+
+        pub fn add(a: Self, b: Self) Self {
+            return .{ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z };
+        }
+
+        pub fn addWrap(a: Self, b: Self) Self {
+            return .{ .x = a.x +% b.x, .y = a.y +% b.y, .z = a.z +% b.z };
+        }
+
+        pub fn sub(a: Self, b: Self) Self {
+            return .{ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z };
+        }
+
+        pub fn subWrap(a: Self, b: Self) Self {
+            return .{ .x = a.x -% b.x, .y = a.y -% b.y, .z = a.z -% b.z };
+        }
+
+        pub fn mul(a: Self, s: T) Self {
+            return .{ .x = a.x * s, .y = a.y * s, .z = a.z * s };
+        }
+
+        pub fn clamp(a: Self, min: T, max: T) Self {
+            return .{
+                .x = std.math.clamp(a.x, min, max),
+                .y = std.math.clamp(a.y, min, max),
+                .z = std.math.clamp(a.z, min, max),
+            };
+        }
+
+        pub fn toArray(a: Self) [size]ScalarType {
+            return .{ a.x, a.y, a.z };
+        }
+
+        pub fn cast(self: Self, comptime VectorT: type) VectorT {
+            return vectorCast(VectorT, self);
+        }
+
+        pub fn manhattan(a: Self, b: Self) !ScalarType {
+            return vectorManhattan(a, b);
+        }
+
+        pub fn euclidean(a: Self, b: Self) ScalarType {
+            return vectorEuclidean(a, b);
+        }
+    };
+}
+
 pub const Vec2i = Vec2(i32);
 pub const Vec2f = Vec2(f32);
 pub const Vec2d = Vec2(f64);
