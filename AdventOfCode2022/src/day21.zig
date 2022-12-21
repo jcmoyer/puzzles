@@ -20,12 +20,14 @@ const Node = union(enum) {
     sub: Binop,
     mul: Binop,
     div: Binop,
+    // only used in part 2
+    variable: i64,
     eq: Binop,
 
     fn eval(self: Node, ctx: ExprTree) i64 {
         return switch (self) {
             .undef => @panic("eval undef node"),
-            .constant => |k| k,
+            .constant, .variable => |k| k,
             .add => |op| ctx.getNodeByHandle(op.left).eval(ctx) + ctx.getNodeByHandle(op.right).eval(ctx),
             .sub => |op| ctx.getNodeByHandle(op.left).eval(ctx) - ctx.getNodeByHandle(op.right).eval(ctx),
             .mul => |op| ctx.getNodeByHandle(op.left).eval(ctx) * ctx.getNodeByHandle(op.right).eval(ctx),
@@ -38,6 +40,7 @@ const Node = union(enum) {
         return switch (self) {
             .undef => @panic("undef not a binop"),
             .constant => @panic("constant not a binop"),
+            .variable => @panic("variable not a binop"),
             inline else => |x| x,
         };
     }
@@ -46,6 +49,7 @@ const Node = union(enum) {
         return switch (self) {
             .undef => null,
             .constant => null,
+            .variable => null,
             inline else => |x| x,
         };
     }
@@ -62,6 +66,7 @@ const Node = union(enum) {
         return switch (self) {
             .undef => '?',
             .constant => 'k',
+            .variable => 'v',
             .add => '+',
             .sub => '-',
             .mul => '*',
@@ -123,12 +128,10 @@ const ExprTree = struct {
     }
 
     fn hasChild(self: ExprTree, parent: NodeHandle, child: NodeHandle) bool {
-        if (parent == child) {
-            return true;
-        }
         var node = self.getNodeByHandle(parent);
         return switch (node.*) {
             .undef => false,
+            .variable => false,
             .constant => false,
             inline else => {
                 if (node.left() == child) {
@@ -144,7 +147,7 @@ const ExprTree = struct {
 
     fn simplify(self: ExprTree, start: NodeHandle) !void {
         var humn = self.getHandleByName("humn"[0..4].*);
-        if (self.getNodeByHandle(start) == self.getNodeByHandle(humn)) {
+        if (start == humn) {
             return;
         }
         if (self.getNodeByHandle(start).* == .undef) {
@@ -153,25 +156,34 @@ const ExprTree = struct {
         if (self.getNodeByHandle(start).* == .constant) {
             return;
         }
+        var binop = self.getNodeByHandle(start).asBinop();
         if (!self.hasChild(start, humn)) {
             const k = self.getNodeByHandle(start).eval(self);
             self.getNodeByHandle(start).* = .{ .constant = k };
+            std.debug.print("fold\n", .{});
             return;
         }
-        var binop = self.getNodeByHandle(start).asBinop();
-        if (self.hasChild(binop.left, humn)) {
+        if (binop.left == humn or self.hasChild(binop.left, humn)) {
             try self.simplify(binop.left);
         } else {
             const k = self.getNodeByHandle(binop.left).eval(self);
             self.getNodeByHandle(binop.left).* = .{ .constant = k };
         }
-        if (self.hasChild(binop.right, humn)) {
+        if (binop.right == humn or self.hasChild(binop.right, humn)) {
             try self.simplify(binop.right);
         } else {
             const k = self.getNodeByHandle(binop.right).eval(self);
             self.getNodeByHandle(binop.right).* = .{ .constant = k };
         }
     }
+
+    // fn foldConstants(self: ExprTree, start: NodeHandle) !void {
+    //     // constant folding
+    //     if (self.getNodeByHandle(binop.left).* == .constant and self.getNodeByHandle(binop.right).* == .constant) {
+    //         std.debug.print("want to fold\n",.{});
+    //         return;
+    //     }
+    // }
 };
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
@@ -223,7 +235,6 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     var root = t.getHandleByName("root"[0..4].*);
     var humn = t.getHandleByName("humn"[0..4].*);
     try t.simplify(root);
-    try printTree(t, root);
 
     try ps.solution(t.getNodeByHandle(root).eval(t));
 
@@ -235,13 +246,16 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
         },
     };
     var humn_ptr = t.getNodeByHandle(humn);
-    humn_ptr.* = .{ .constant = 0 };
+    humn_ptr.* = .{ .variable = 0 };
     var root_ptr = t.getNodeByHandle(root);
+
+    try t.simplify(root);
+    try printTree(t, root);
 
     // TODO: proper general purpose solution, solved this using python+z3 instead
     var i: usize = 3848301405000;
     while (true) {
-        humn_ptr.constant = @intCast(i64, i);
+        humn_ptr.variable = @intCast(i64, i);
         if (root_ptr.eval(t) == 1) {
             try ps.solution(i);
             break;
@@ -260,12 +274,30 @@ fn printTree(t: ExprTree, start: NodeHandle) !void {
 
     switch (node.*) {
         .undef => _ = try w.write("(?)"),
+        .variable => |k| try w.print("<variable bound to {d}>\n", .{k}),
         .constant => |k| try w.print("{d}\n", .{k}),
         inline else => |op| {
-            try w.print("{s} {c} {s}", .{ t.getName(op.left), node.asChar(), t.getName(op.right) });
-            try w.writeByte('\n');
-            try printTree(t, op.left);
-            try printTree(t, op.right);
+            // inline constants instead of referencing them
+            const nc = node.asChar();
+            const left = t.getNodeByHandle(op.left).*;
+            const right = t.getNodeByHandle(op.right).*;
+            if (left == .constant and right == .constant) {
+                try w.print("{d} {c} {d}", .{ left.constant, nc, right.constant });
+                try w.writeByte('\n');
+            } else if (left == .constant) {
+                try w.print("{d} {c} {s}", .{ left.constant, nc, t.getName(op.right) });
+                try w.writeByte('\n');
+                try printTree(t, op.right);
+            } else if (right == .constant) {
+                try w.print("{s} {c} {d}", .{ t.getName(op.left), nc, right.constant });
+                try w.writeByte('\n');
+                try printTree(t, op.left);
+            } else {
+                try w.print("{s} {c} {s}", .{ t.getName(op.left), nc, t.getName(op.right) });
+                try w.writeByte('\n');
+                try printTree(t, op.left);
+                try printTree(t, op.right);
+            }
         },
     }
 }
