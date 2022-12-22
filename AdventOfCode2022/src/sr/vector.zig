@@ -12,6 +12,13 @@ pub fn Vec2(comptime T: type) type {
         x: T = 0,
         y: T = 0,
 
+        pub fn init(x: T, y: T) Self {
+            return .{
+                .x = x,
+                .y = y,
+            };
+        }
+
         pub fn add(a: Self, b: Self) Self {
             return .{ .x = a.x + b.x, .y = a.y + b.y };
         }

@@ -325,14 +325,6 @@ pub fn product(comptime T: type, slice: []const T) T {
     return t;
 }
 
-test {
-    _ = @import("graph.zig");
-    _ = @import("vector.zig");
-    _ = @import("array2d.zig");
-    _ = @import("scanner.zig");
-    _ = @import("parse.zig");
-}
-
 fn Iterator2D(comptime T: type) type {
     return struct {
         const Self = @This();
