@@ -8,6 +8,7 @@ pub const main = runner.defaultMain;
 const Graph = struct {
     nodes: std.ArrayListUnmanaged(Node) = .{},
     name_to_index: std.StringArrayHashMapUnmanaged(usize) = .{},
+    dist_map: sr.Array2D(u16) = .{},
 
     fn getOrPut(self: *Graph, allocator: Allocator, name: []const u8) !usize {
         const gop = try self.name_to_index.getOrPut(allocator, name);
@@ -33,18 +34,124 @@ const Graph = struct {
         try self.nodes.items[src].edges.append(dst);
     }
 
+    fn getNamedNode(self: Graph, name: []const u8) usize {
+        const index = self.name_to_index.get(name) orelse @panic("node not in graph");
+        return index;
+    }
+
     fn getNamedNodePtr(self: Graph, name: []const u8) *Node {
         const index = self.name_to_index.get(name) orelse @panic("node not in graph");
         return &self.nodes.items[index];
+    }
+
+    /// Finish building the graph and compute distances between all nodes using Floyd-Warshall
+    fn finalize(self: *Graph, a: Allocator) !void {
+        try self.dist_map.resize(a, self.nodes.items.len, self.nodes.items.len);
+        self.dist_map.fill(std.math.maxInt(u16));
+        for (self.nodes.items) |n| {
+            for (n.edges.slice()) |e| {
+                self.dist_map.atPtr(n.id, e).* = 1;
+            }
+            self.dist_map.atPtr(n.id, n.id).* = 0;
+        }
+        const node_count = self.nodes.items.len;
+        var i: usize = 0;
+        var j: usize = 0;
+        var k: usize = 0;
+        while (k < node_count) : (k += 1) {
+            i = 0;
+            while (i < node_count) : (i += 1) {
+                j = 0;
+                while (j < node_count) : (j += 1) {
+                    var dist_ptr = self.dist_map.atPtr(i, j);
+                    dist_ptr.* = std.math.min(
+                        self.dist_map.at(i, k) +| self.dist_map.at(k, j),
+                        dist_ptr.*,
+                    );
+                }
+            }
+        }
+    }
+
+    fn distance(self: Graph, from: usize, to: usize) u16 {
+        return self.dist_map.at(from, to);
+    }
+
+    fn getNodeById(self: Graph, id: usize) *const Node {
+        return &self.nodes.items[id];
     }
 };
 
 const Node = struct {
     name: []const u8,
     id: usize,
-    rate: u32 = 0,
+    rate: u16 = 0,
     edges: std.BoundedArray(usize, 8),
 };
+
+const ExplorationState = struct {
+    opened: u64,
+    pressure: u16,
+    time: u8,
+    pos: u8,
+
+    fn compare(_: void, a: ExplorationState, b: ExplorationState) std.math.Order {
+        return std.math.order(a.pressure, b.pressure);
+    }
+};
+
+fn findMaxPressure(g: *Graph, a: Allocator) !void {
+    var seen = std.AutoArrayHashMap(ExplorationState, void).init(a);
+    var look = std.PriorityQueue(ExplorationState, void, ExplorationState.compare).init(a, {});
+
+    const start = g.getNamedNode("AA");
+    const initial_state = ExplorationState{
+        .opened = 0,
+        .pressure = 0,
+        .time = 30,
+        .pos = @intCast(u8, start),
+    };
+    try look.add(initial_state);
+
+    var best_pressure: u16 = 0;
+
+    while (look.len > 0) {
+        const next = look.remove();
+        try seen.put(next, {});
+        best_pressure = std.math.max(best_pressure, next.pressure);
+        var neighbor: usize = 0;
+        while (neighbor < g.nodes.items.len) : (neighbor += 1) {
+            if (@intCast(u8, neighbor) == next.pos) {
+                continue;
+            }
+            const neighbor_mask = @as(u64, 1) << @intCast(u6, neighbor);
+            if ((next.opened & neighbor_mask) != 0) {
+                continue;
+            }
+            const dist = g.distance(next.pos, neighbor);
+            if (dist >= next.time) {
+                continue;
+            }
+            const neighbor_state = ExplorationState{
+                .opened = next.opened | neighbor_mask,
+                .pressure = next.pressure + (g.getNodeById(neighbor).rate * (next.time - dist - 1)),
+                .time = next.time - @intCast(u8, dist) - 1,
+                .pos = @intCast(u8, neighbor),
+            };
+            if (neighbor_state.pressure == next.pressure) {
+                continue;
+            }
+            if (neighbor_state.time < 1) {
+                continue;
+            }
+            if (seen.contains(neighbor_state)) {
+                continue;
+            }
+            try look.add(neighbor_state);
+        }
+    }
+    std.debug.print("{d}\n", .{best_pressure});
+}
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
     var g = Graph{};
@@ -68,12 +175,15 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
         const rate_start = std.mem.indexOf(u8, line, "rate=") orelse @panic("no rate specified for node");
         _ = try sr.parse("rate={d}", line[rate_start..], .{&g.getNamedNodePtr(src).rate});
     }
+    try g.finalize(ps.allocator);
     for (g.nodes.items) |n| {
-        std.debug.print("{s} leading to {d} nodes: ", .{ n.name, n.edges.len });
+        std.debug.print("{s}({d}) leading to {d} nodes: ", .{ n.name, n.id, n.edges.len });
         for (n.edges.slice()) |e| {
-            std.debug.print("{s} ", .{g.nodes.items[e].name});
+            std.debug.print("{s}({d},dist={d}) ", .{ g.nodes.items[e].name, g.nodes.items[e].id, g.distance(n.id, e) });
         }
         std.debug.print("\n", .{});
     }
     std.debug.print("{d} total nodes\n", .{g.nodes.items.len});
+
+    try findMaxPressure(&g, ps.allocator);
 }
