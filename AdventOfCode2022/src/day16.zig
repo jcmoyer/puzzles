@@ -96,61 +96,90 @@ const ExplorationState = struct {
     pos: u8,
 
     fn compare(_: void, a: ExplorationState, b: ExplorationState) std.math.Order {
-        return std.math.order(a.pressure, b.pressure);
+        return std.math.order(b.pressure, a.pressure);
     }
 };
 
-fn findMaxPressure(g: *Graph, a: Allocator) !void {
-    var seen = std.AutoArrayHashMap(ExplorationState, void).init(a);
+const SearchOptions = struct {
+    init_opened: u64 = 0,
+    init_pressure: u16 = 0,
+    time_limit: u8 = 30,
+    twice: bool = false,
+};
+
+fn findMaxPressure(g: *Graph, a: Allocator, opts: SearchOptions) !ExplorationState {
     var look = std.PriorityQueue(ExplorationState, void, ExplorationState.compare).init(a, {});
 
     const start = g.getNamedNode("AA");
     const initial_state = ExplorationState{
-        .opened = 0,
-        .pressure = 0,
-        .time = 30,
+        .opened = opts.init_opened,
+        .pressure = opts.init_pressure,
+        .time = opts.time_limit,
         .pos = @intCast(u8, start),
     };
     try look.add(initial_state);
 
-    var best_pressure: u16 = 0;
+    var best_state = initial_state;
 
     while (look.len > 0) {
         const next = look.remove();
-        try seen.put(next, {});
-        best_pressure = std.math.max(best_pressure, next.pressure);
+        if (next.pressure > best_state.pressure) {
+            best_state = next;
+        }
         var neighbor: usize = 0;
         while (neighbor < g.nodes.items.len) : (neighbor += 1) {
             if (@intCast(u8, neighbor) == next.pos) {
                 continue;
             }
+
+            const neighbor_rate = g.getNodeById(neighbor).rate;
+            if (neighbor_rate == 0) {
+                continue;
+            }
+
             const neighbor_mask = @as(u64, 1) << @intCast(u6, neighbor);
             if ((next.opened & neighbor_mask) != 0) {
                 continue;
             }
+
             const dist = g.distance(next.pos, neighbor);
             if (dist >= next.time) {
+                if (opts.twice) {
+                    const state = try findMaxPressure(g, a, .{
+                        .time_limit = opts.time_limit,
+                        .init_opened = next.opened,
+                        .init_pressure = next.pressure,
+                        .twice = false,
+                    });
+                    if (state.pressure > best_state.pressure) {
+                        best_state = state;
+                        std.debug.print("{d}\n", .{state.pressure});
+                    }
+                }
                 continue;
             }
+
             const neighbor_state = ExplorationState{
                 .opened = next.opened | neighbor_mask,
                 .pressure = next.pressure + (g.getNodeById(neighbor).rate * (next.time - dist - 1)),
                 .time = next.time - @intCast(u8, dist) - 1,
                 .pos = @intCast(u8, neighbor),
             };
+
             if (neighbor_state.pressure == next.pressure) {
                 continue;
             }
-            if (neighbor_state.time < 1) {
-                continue;
-            }
-            if (seen.contains(neighbor_state)) {
-                continue;
-            }
+            // if (neighbor_state.time == 0) {
+            //     continue;
+            // }
+            // if (seen.contains(neighbor_state)) {
+            //     continue;
+            // }
             try look.add(neighbor_state);
         }
     }
-    std.debug.print("{d}\n", .{best_pressure});
+
+    return best_state;
 }
 
 pub fn solve(ps: *runner.PuzzleSolverState) !void {
@@ -185,5 +214,9 @@ pub fn solve(ps: *runner.PuzzleSolverState) !void {
     }
     std.debug.print("{d} total nodes\n", .{g.nodes.items.len});
 
-    try findMaxPressure(&g, ps.allocator);
+    const state_part1 = try findMaxPressure(&g, ps.allocator, .{});
+    try ps.solution(state_part1.pressure);
+
+    const state_part2 = try findMaxPressure(&g, ps.allocator, .{ .time_limit = 26, .twice = true });
+    try ps.solution(state_part2.pressure);
 }
