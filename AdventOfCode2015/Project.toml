@@ -1,0 +1,7 @@
+name = "AdventOfCode2015"
+uuid = "8e7f3e5f-9782-4fac-9962-1f48eba3a0e4"
+authors = ["J.C. Moyer"]
+version = "0.1.0"
+
+[deps]
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
