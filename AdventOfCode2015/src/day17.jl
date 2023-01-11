@@ -26,7 +26,7 @@ function countsumto(sumto, containers, used, completesets, runningsum=0)
 end
 
 function countsumto(sumto, containers)
-    completesets=Set()
+    completesets = Set()
     for i in eachindex(containers)
         used = Set(i)
         sumhere = containers[i]
@@ -38,7 +38,7 @@ end
 function solve(text::AbstractString)
     containers = Int[]
     for line in eachline(IOBuffer(text))
-        push!(containers,parse(Int, line))
+        push!(containers, parse(Int, line))
     end
 
     sets = countsumto(150, containers)

@@ -16,7 +16,7 @@ function step(mat, frozen=Set())
                 if x == 0 && y == 0
                     continue
                 end
-                neighboridx = i + CartesianIndex(x,y)
+                neighboridx = i + CartesianIndex(x, y)
                 neighborson += checkbounds(Bool, mat, neighboridx) && mat[neighboridx]
             end
         end
@@ -30,12 +30,12 @@ function step(mat, frozen=Set())
 end
 
 function solve(text::AbstractString)
-    lights = falses((100,100))
+    lights = falses((100, 100))
     r = 1
     for line in eachline(IOBuffer(text))
         for c in eachindex(line)
             if line[c] == '#'
-                lights[r,c] = true
+                lights[r, c] = true
             end
         end
         r += 1
@@ -43,20 +43,20 @@ function solve(text::AbstractString)
 
     p1lights = copy(lights)
     p2lights = copy(lights)
-    p2lights[begin,begin] = true
-    p2lights[begin,end] = true
-    p2lights[end,begin] = true
-    p2lights[end,end] = true
+    p2lights[begin, begin] = true
+    p2lights[begin, end] = true
+    p2lights[end, begin] = true
+    p2lights[end, end] = true
     p2frozen = Set([
-        CartesianIndex(1,1),
-        CartesianIndex(1,size(p2lights, 2)),
-        CartesianIndex(size(p2lights, 1),1),
-        CartesianIndex(size(p2lights, 1),size(p2lights, 2)),
+        CartesianIndex(1, 1),
+        CartesianIndex(1, size(p2lights, 2)),
+        CartesianIndex(size(p2lights, 1), 1),
+        CartesianIndex(size(p2lights, 1), size(p2lights, 2)),
     ])
 
     for _ = 1:100
-        p1lights=step(p1lights)
-        p2lights=step(p2lights, p2frozen)
+        p1lights = step(p1lights)
+        p2lights = step(p2lights, p2frozen)
     end
 
     println(count(p1lights))
