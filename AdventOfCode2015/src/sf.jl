@@ -1,6 +1,6 @@
 module Supafast
 
-export getinput, Direction, dir2vec, char2dir
+export getinput, Direction, dir2vec, char2dir, matchlines, parseint
 
 function getinput(year::Integer, day::Integer)
     localpath = "test/$year-$(lpad(day, 2, '0'))-input.txt"
@@ -38,5 +38,18 @@ function dir2vec(d::Direction)
         return [0,-1]
     end
 end
+
+function matchlines(lines, actions...)
+    for line in eachline(IOBuffer(lines))
+        for (re, f) in actions
+            m = match(re, line)
+            if m !== nothing
+                f(m.captures...)
+            end
+        end
+    end
+end
+
+parseint(str) = parse(Int, str)
 
 end
