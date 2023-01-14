@@ -6,21 +6,31 @@ using .Supafast
 import DataStructures: PriorityQueue, enqueue!, dequeue!
 
 abstract type Spell end
+abstract type Effect <: Spell end
+
+heal(::Spell) = 0
+damage(::Spell) = 0
 
 struct MagicMissile <: Spell end
 manacost(::MagicMissile) = 53
+damage(::MagicMissile) = 4
 
 struct Drain <: Spell end
 manacost(::Drain) = 73
+damage(::Drain) = 2
+heal(::Drain) = 2
 
-struct Shield <: Spell end
+struct Shield <: Effect end
 manacost(::Shield) = 113
+effecttime(::Shield) = 6
 
-struct Poison <: Spell end
+struct Poison <: Effect end
 manacost(::Poison) = 173
+effecttime(::Poison) = 6
 
-struct Recharge <: Spell end
+struct Recharge <: Effect end
 manacost(::Recharge) = 229
+effecttime(::Recharge) = 5
 
 struct Player
     hp::Int
@@ -46,6 +56,10 @@ EffectTimers() = EffectTimers(0, 0, 0)
 active(t::EffectTimers, ::Shield) = t.shield > 0
 active(t::EffectTimers, ::Poison) = t.poison > 0
 active(t::EffectTimers, ::Recharge) = t.recharge > 0
+activate(t::EffectTimers, ::Spell) = t
+activate(t::EffectTimers, e::Shield) = EffectTimers(effecttime(e), t.poison, t.recharge)
+activate(t::EffectTimers, e::Poison) = EffectTimers(t.shield, effecttime(e), t.recharge)
+activate(t::EffectTimers, e::Recharge) = EffectTimers(t.shield, t.poison, effecttime(e))
 tick(t::EffectTimers) = EffectTimers(t.shield - 1, t.poison - 1, t.recharge - 1)
 
 struct State
@@ -62,6 +76,26 @@ end
 State(boss::Boss; hardmode) = State(Player(), boss, EffectTimers(), 0, 0, 0, hardmode)
 
 finished(s::State) = s.player.hp <= 0 || s.boss.hp <= 0
+
+function castspell(s::State, spell)
+    State(
+        Player(s.player.hp + heal(spell), s.player.mp - manacost(spell)),
+        Boss(s.boss.hp - damage(spell), s.boss.damage),
+        activate(s.effects, spell),
+        s.mpspent + manacost(spell),
+        s.playerdef,
+        s.stepid + 1,
+        s.hardmode
+    )
+end
+
+function trycast!(buf, s::State, spell::Spell)
+    canafford(s.player, spell) && push!(buf, castspell(s, spell))
+end
+
+function trycast!(buf, s::State, eff::Effect)
+    !active(s.effects, eff) && canafford(s.player, eff) && push!(buf, castspell(s, eff))
+end
 
 function doeffects(s::State)
     mpregen = active(s.effects, Recharge()) ? 101 : 0
@@ -81,61 +115,11 @@ end
 
 function doplayer(s::State)
     states = State[]
-    if canafford(s.player, MagicMissile())
-        push!(states, State(
-            Player(s.player.hp, s.player.mp - manacost(MagicMissile())),
-            Boss(s.boss.hp - 4, s.boss.damage),
-            s.effects,
-            s.mpspent + manacost(MagicMissile()),
-            s.playerdef,
-            s.stepid + 1,
-            s.hardmode,
-        ))
-    end
-    if canafford(s.player, Drain())
-        push!(states, State(
-            Player(s.player.hp + 2, s.player.mp - manacost(Drain())),
-            Boss(s.boss.hp - 2, s.boss.damage),
-            s.effects,
-            s.mpspent + manacost(Drain()),
-            s.playerdef,
-            s.stepid + 1,
-            s.hardmode,
-        ))
-    end
-    if canafford(s.player, Shield()) && !active(s.effects, Shield())
-        push!(states, State(
-            Player(s.player.hp, s.player.mp - manacost(Shield())),
-            s.boss,
-            EffectTimers(6, s.effects.poison, s.effects.recharge),
-            s.mpspent + manacost(Shield()),
-            s.playerdef,
-            s.stepid + 1,
-            s.hardmode,
-        ))
-    end
-    if canafford(s.player, Poison()) && !active(s.effects, Poison())
-        push!(states, State(
-            Player(s.player.hp, s.player.mp - manacost(Poison())),
-            s.boss,
-            EffectTimers(s.effects.shield, 6, s.effects.recharge),
-            s.mpspent + manacost(Poison()),
-            s.playerdef,
-            s.stepid + 1,
-            s.hardmode,
-        ))
-    end
-    if canafford(s.player, Recharge()) && !active(s.effects, Recharge())
-        push!(states, State(
-            Player(s.player.hp, s.player.mp - manacost(Recharge())),
-            s.boss,
-            EffectTimers(s.effects.shield, s.effects.poison, 5),
-            s.mpspent + manacost(Recharge()),
-            s.playerdef,
-            s.stepid + 1,
-            s.hardmode,
-        ))
-    end
+    trycast!(states, s, MagicMissile())
+    trycast!(states, s, Drain())
+    trycast!(states, s, Shield())
+    trycast!(states, s, Poison())
+    trycast!(states, s, Recharge())
     states
 end
 
