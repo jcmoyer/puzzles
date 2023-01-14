@@ -3,8 +3,6 @@ module Day22
 include("sf.jl")
 using .Supafast
 
-import DataStructures: PriorityQueue, enqueue!, dequeue!
-
 abstract type Spell end
 abstract type Effect <: Spell end
 
