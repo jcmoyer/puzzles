@@ -2,13 +2,18 @@
 
 julia_version = "1.9.0-beta2"
 manifest_format = "2.0"
-project_hash = "151f0f284827695951e3a5de3ce22609fbc480ed"
+project_hash = "35a2fa5a274748b61fad9e0a44a892ed6748916e"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[deps.Combinatorics]]
+git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
+uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+version = "1.0.2"
 
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
