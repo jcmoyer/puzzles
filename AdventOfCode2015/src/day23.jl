@@ -52,28 +52,24 @@ function interpret(cpu::Cpu, prog)
 end
 
 function solve(text::AbstractString)
-    program = Instruction[]
-
-    matchlines(
+     program = maplines(
         text,
-        r"hlf (a|b)" => r -> push!(program, Instruction(hlf, reg2index(r), 0)),
-        r"tpl (a|b)" => r -> push!(program, Instruction(tpl, reg2index(r), 0)),
-        r"inc (a|b)" => r -> push!(program, Instruction(inc, reg2index(r), 0)),
-        r"jmp ([\+\-]\d+)" => offset -> push!(program, Instruction(jmp, parseint(offset), 0)),
-        r"jie (a|b), ([\+\-]\d+)" => (r, offset) -> push!(program, Instruction(jie, reg2index(r), parseint(offset))),
-        r"jio (a|b), ([\+\-]\d+)" => (r, offset) -> push!(program, Instruction(jio, reg2index(r), parseint(offset))),
+        r"hlf (a|b)" => r -> Instruction(hlf, reg2index(r), 0),
+        r"tpl (a|b)" => r -> Instruction(tpl, reg2index(r), 0),
+        r"inc (a|b)" => r -> Instruction(inc, reg2index(r), 0),
+        r"jmp ([\+\-]\d+)" => offset -> Instruction(jmp, parseint(offset), 0),
+        r"jie (a|b), ([\+\-]\d+)" => (r, offset) -> Instruction(jie, reg2index(r), parseint(offset)),
+        r"jio (a|b), ([\+\-]\d+)" => (r, offset) -> Instruction(jio, reg2index(r), parseint(offset)),
     )
-
-    display(program)
 
     cpu = Cpu()
     interpret(cpu, program)
-    display(cpu)
+    println(cpu.reg[reg2index("b")])
 
     cpu = Cpu()
     cpu.reg[reg2index("a")] = 1
     interpret(cpu, program)
-    display(cpu)
+    println(cpu.reg[reg2index("b")])
 end
 
 solve(getinput(2015, 23))
