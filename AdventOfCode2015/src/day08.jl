@@ -1,8 +1,5 @@
 module Day08
 
-include("sf.jl")
-using .Supafast
-
 function solve(text)
     p1 = 0
     p2 = 0
@@ -15,10 +12,7 @@ function solve(text)
         escaped = "\"$(escape_string(line))\""
         p2 += length(escaped) - length(line)
     end
-    println(p1)
-    println(p2)
+    return p1, p2
 end
-
-solve(getinput(2015, 8))
 
 end

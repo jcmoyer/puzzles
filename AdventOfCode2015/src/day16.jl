@@ -1,7 +1,6 @@
 module Day16
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 const FactDict = Dict{AbstractString,Union{Missing,Int}}
 
@@ -67,14 +66,10 @@ function solve(text::AbstractString)
     p1 = findfirst(sues) do s
         issame(known, s)
     end
-    println(p1)
-
     p2 = findfirst(sues) do s
         issame2(known, s)
     end
-    println(p2)
+    return p1, p2
 end
-
-solve(getinput(2015, 16))
 
 end

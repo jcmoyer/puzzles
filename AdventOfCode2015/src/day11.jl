@@ -1,7 +1,6 @@
 module Day11
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 function inc!(str)
     i = length(str)
@@ -49,20 +48,22 @@ function check(str)
 end
 
 function solve(text)
+    p1, p2 = "n/a", "n/a"
     bytes = map(UInt8, collect(text))
-    npw = 0
+    numfound = 0
     while true
         if check(bytes)
-            println(String(copy(bytes)))
-            npw += 1
-            if npw == 2
+            if numfound == 0
+                p1 = String(copy(bytes))
+            elseif numfound == 1
+                p2 = String(copy(bytes))
                 break
             end
+            numfound += 1
         end
         inc!(bytes)
     end
+    return p1, p2
 end
-
-solve(getinput(2015, 11))
 
 end

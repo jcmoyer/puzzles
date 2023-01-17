@@ -1,7 +1,6 @@
 module Day23
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 @enum Opcode hlf tpl inc jmp jie jio
 
@@ -52,7 +51,7 @@ function interpret(cpu::Cpu, prog)
 end
 
 function solve(text::AbstractString)
-     program = maplines(
+    program = maplines(
         text,
         r"hlf (a|b)" => r -> Instruction(hlf, reg2index(r), 0),
         r"tpl (a|b)" => r -> Instruction(tpl, reg2index(r), 0),
@@ -64,14 +63,14 @@ function solve(text::AbstractString)
 
     cpu = Cpu()
     interpret(cpu, program)
-    println(cpu.reg[reg2index("b")])
+    p1 = cpu.reg[reg2index("b")]
 
     cpu = Cpu()
     cpu.reg[reg2index("a")] = 1
     interpret(cpu, program)
-    println(cpu.reg[reg2index("b")])
-end
+    p2 = cpu.reg[reg2index("b")]
 
-solve(getinput(2015, 23))
+    return p1, p2
+end
 
 end

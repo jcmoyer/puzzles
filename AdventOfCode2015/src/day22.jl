@@ -1,7 +1,6 @@
 module Day22
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 abstract type Spell end
 abstract type Effect <: Spell end
@@ -169,10 +168,7 @@ function solve(text::AbstractString)
         r"Hit Points: (\d+)" => x -> boss = Boss(parseint(x), boss.damage),
         r"Damage: (\d+)" => x -> boss = Boss(boss.hp, parseint(x)),
     )
-    State(boss; hardmode=false) |> findminmp |> println
-    State(boss; hardmode=true) |> findminmp |> println
+    return findminmp(State(boss; hardmode=false)), findminmp(State(boss; hardmode=true))
 end
-
-solve(getinput(2015, 22))
 
 end

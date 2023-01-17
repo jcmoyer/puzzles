@@ -1,7 +1,6 @@
 module Day24
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 # Hand solved solution:
 #
@@ -69,10 +68,7 @@ end
 function solve(text::AbstractString)
     weights = maplines(text, r"(\d+)" => parseint)
     sort!(weights)
-    println(qe(weights; groupcount=3))
-    println(qe(weights; groupcount=4))
+    return qe(weights; groupcount=3), qe(weights; groupcount=4)
 end
-
-solve(getinput(2015, 24))
 
 end

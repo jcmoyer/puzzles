@@ -1,7 +1,6 @@
 module Day13
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 # reskinned day 9, only difference is you add the distance to the first node in
 # the path when you reach the end v( '_')v
@@ -43,7 +42,6 @@ function solve(text)
     end
 
     nameid = Dict(zip(names, 1:length(names)))
-    println(nameid)
 
     distmat = zeros(Int, (1 + length(names), 1 + length(names)))
     for a in names
@@ -55,10 +53,7 @@ function solve(text)
         end
     end
 
-    println(visitrec(maximum, 1, distmat[1:end-1, 1:end-1], 1))
-    println(visitrec(maximum, 1, distmat, 1))
+    return visitrec(maximum, 1, distmat[1:end-1, 1:end-1], 1), visitrec(maximum, 1, distmat, 1)
 end
-
-solve(getinput(2015, 13))
 
 end

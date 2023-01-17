@@ -2,15 +2,40 @@ module Supafast
 
 export getinput, Direction, dir2vec, char2dir, matchlines, maplines, parseint
 
+function getprojectroot()
+    here = realpath(".")
+    last = ""
+    while here != last
+        if isfile(joinpath(here, "Project.toml"))
+            return here
+        else
+            last = here
+            here = realpath(joinpath(here, ".."))
+        end
+    end
+    return nothing
+end
+
 function getinput(year::Integer, day::Integer)
-    localpath = "test/$year-$(lpad(day, 2, '0'))-input.txt"
-    if !ispath("../scripts/aoctool.py")
+    inputname = "$year-$(lpad(day, 2, '0'))-input.txt"
+    root = getprojectroot()
+    localpath = joinpath(root, "test", inputname)
+    # avoid running aoctool since it's relatively expensive
+    if ispath(localpath)
+        return readchomp(localpath)
+    end
+    aoctoolpath = joinpath(root, "../scripts/aoctool.py")
+    if !ispath(aoctoolpath)
         error("aoctool not found; cwd is: $(pwd())")
     end
-    if !ispath(localpath)
-        run(`python ../scripts/aoctool.py get-input $year $day $localpath`)
-    end
+    run(`python $aoctoolpath get-input $year $day $localpath`)
     return readchomp(localpath)
+end
+
+function getoutputfilename(year::Integer, day::Integer)
+    outputname = "$year-$(lpad(day, 2, '0'))-output.txt"
+    root = getprojectroot()
+    return joinpath(root, "test", outputname)
 end
 
 @enum Direction right up left down

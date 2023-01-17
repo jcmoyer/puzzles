@@ -1,7 +1,6 @@
 module Day18
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 function step(mat, frozen=Set())
     new = copy(mat)
@@ -59,10 +58,7 @@ function solve(text::AbstractString)
         p2lights = step(p2lights, p2frozen)
     end
 
-    println(count(p1lights))
-    println(count(p2lights))
+    return count(p1lights), count(p2lights)
 end
-
-solve(getinput(2015, 18))
 
 end

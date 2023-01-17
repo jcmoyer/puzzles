@@ -1,7 +1,6 @@
 module Day14
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 struct Deer
     speed::Int
@@ -27,8 +26,6 @@ function solve(text)
         push!(deer, Deer(map(x -> parse(Int, x), m.captures)...))
     end
 
-    println(maximum(d -> disttime(d, 2503), deer))
-
     points = zeros(Int, length(deer))
     for t = 1:2503
         _, awardto = findmax(deer) do d
@@ -36,9 +33,8 @@ function solve(text)
         end
         points[awardto] += 1
     end
-    println(maximum(points))
-end
 
-solve(getinput(2015, 14))
+    return maximum(d -> disttime(d, 2503), deer), maximum(points)
+end
 
 end

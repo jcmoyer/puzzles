@@ -1,7 +1,6 @@
 module Day25
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 function solve(text::AbstractString)
     row, col = map(parseint, match(r"row (\d+), column (\d+)", text))
@@ -20,9 +19,7 @@ function solve(text::AbstractString)
         end
     end
 
-    println(m[row, col])
+    return m[row, col]
 end
-
-solve(getinput(2015, 25))
 
 end

@@ -1,7 +1,6 @@
 module Day17
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 function countsumto(sumto, containers, used, completesets, runningsum=0)
     if runningsum == sumto
@@ -42,12 +41,8 @@ function solve(text::AbstractString)
     end
 
     sets = countsumto(150, containers)
-    println(length(sets))
-
     minlen = minimum(length, sets)
-    println(count(s -> length(s) == minlen, sets))
+    return length(sets), count(s -> length(s) == minlen, sets)
 end
-
-solve(getinput(2015, 17))
 
 end

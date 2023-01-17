@@ -1,8 +1,5 @@
 module Day05
 
-include("sf.jl")
-using .Supafast
-
 function nice(str)
     vowels = 0
     anydoubled = false
@@ -56,10 +53,7 @@ function nice2(str)
 end
 
 function solve(text)
-    println(mapreduce(nice, +, eachline(IOBuffer(text))))
-    println(mapreduce(nice2, +, eachline(IOBuffer(text))))
+    mapreduce(nice, +, eachline(IOBuffer(text))), mapreduce(nice2, +, eachline(IOBuffer(text)))
 end
-
-solve(getinput(2015, 5))
 
 end

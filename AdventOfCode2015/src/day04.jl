@@ -1,8 +1,5 @@
 module Day04
 
-include("sf.jl")
-using .Supafast
-
 # References:
 #
 # https://en.wikipedia.org/wiki/MD5
@@ -94,12 +91,12 @@ function md5(text)::UInt128
 end
 
 function solve(text)
+    p1, p2 = 0, 0
     i = 0
     while true
         h = md5("$text$i")
         if (h & UInt128(0xf0ffff)) == 0
-            println(bytes2hex(reinterpret(UInt8, [h])))
-            println(i)
+            p1 = i
             break
         end
         i += 1
@@ -107,14 +104,12 @@ function solve(text)
     while true
         h = md5("$text$i")
         if (h & UInt128(0xffffff)) == 0
-            println(bytes2hex(reinterpret(UInt8, [h])))
-            println(i)
+            p2 = i
             break
         end
         i += 1
     end
+    return p1, p2
 end
-
-solve(getinput(2015, 4))
 
 end

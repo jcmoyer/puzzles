@@ -1,8 +1,5 @@
 module Day10
 
-include("sf.jl")
-using .Supafast
-
 function looksay(s)
     cur = first(s)
     n = 1
@@ -21,16 +18,16 @@ function looksay(s)
 end
 
 function solve(text)
+    p1, p2 = 0, 0
     for i = 1:40
         text = looksay(text)
     end
-    println(length(text))
+    p1 = length(text)
     for i = 1:10
         text = looksay(text)
     end
-    println(length(text))
+    p2 = length(text)
+    return p1, p2
 end
-
-solve(getinput(2015, 10))
 
 end

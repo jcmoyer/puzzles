@@ -1,7 +1,6 @@
 module Day19
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 import DataStructures: PriorityQueue, enqueue!, dequeue!
 
@@ -77,10 +76,7 @@ function solve(text::AbstractString)
         end
     end
 
-    println(length(replacements(forward, molecule)))
-    println(subcount(backward, molecule, UInt8['e']))
+    return length(replacements(forward, molecule)), subcount(backward, molecule, UInt8['e'])
 end
-
-solve(getinput(2015, 19))
 
 end

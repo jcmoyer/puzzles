@@ -1,7 +1,6 @@
 module Day12
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 import JSON
 
@@ -40,11 +39,8 @@ function sumints(obj::Dict)
 end
 
 function solve(text)
-    println(sumallints(text))
     root = JSON.parse(text)
-    println(sumints(root))
+    return sumallints(text), sumints(root)
 end
-
-solve(getinput(2015, 12))
 
 end

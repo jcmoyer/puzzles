@@ -1,8 +1,5 @@
 module Day07
 
-include("sf.jl")
-using .Supafast
-
 isconst(s) = all(isdigit(c) for c in s)
 isreg(s) = !isconst(s)
 
@@ -122,10 +119,7 @@ function solve(text)
     ops[:b] = OpConst(p1)
     p2 = eval(OpName(:a), ops, env)
 
-    println(p1)
-    println(p2)
+    return p1, p2
 end
-
-solve(getinput(2015, 7))
 
 end

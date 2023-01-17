@@ -1,8 +1,5 @@
 module Day02
 
-include("sf.jl")
-using .Supafast
-
 sa(l, w, h) = 2l * w + 2w * h + 2h * l
 
 function slack(l, w, h)
@@ -24,10 +21,7 @@ function solve(text)
         p1 += sa(length, width, height) + slack(length, width, height)
         p2 += ribbon(length, width, height)
     end
-    println(p1)
-    println(p2)
+    return p1, p2
 end
-
-solve(getinput(2015, 2))
 
 end

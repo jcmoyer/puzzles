@@ -1,7 +1,6 @@
 module Day15
 
-include("sf.jl")
-using .Supafast
+using ..Supafast
 
 import LinearAlgebra: dot
 
@@ -31,14 +30,11 @@ function solve(text::AbstractString)
     p1 = maximum(Iterators.product(1:100, 1:100, 1:100, 1:100)) do t
         sum(t) == 100 ? score(ingredmat, Int[t...]) : 0
     end
-    println(p1)
-
     p2 = maximum(Iterators.product(1:100, 1:100, 1:100, 1:100)) do t
         sum(t) == 100 ? scorecal(ingredmat, Int[t...], 500) : 0
     end
-    println(p2)
-end
 
-solve(getinput(2015, 15))
+    return p1, p2
+end
 
 end

@@ -1,8 +1,5 @@
 module Day09
 
-include("sf.jl")
-using .Supafast
-
 function visitrec(f::Function, start, distmap, seen=Set(), d=0)
     push!(seen, start)
     adjd = Int[]
@@ -39,10 +36,7 @@ function solve(text)
     for ((from, to), dist) in routes
         distmat[indices[from], indices[to]] = dist
     end
-    println(minimum([visitrec(minimum, i, distmat) for i in 1:nloc]))
-    println(maximum([visitrec(maximum, i, distmat) for i in 1:nloc]))
+    return minimum([visitrec(minimum, i, distmat) for i in 1:nloc]), maximum([visitrec(maximum, i, distmat) for i in 1:nloc])
 end
-
-solve(getinput(2015, 9))
 
 end

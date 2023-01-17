@@ -1,8 +1,5 @@
 module Day06
 
-include("sf.jl")
-using .Supafast
-
 function part1(text)
     mat = falses(1000, 1000)
 
@@ -64,11 +61,6 @@ function part2(text)
     return sum(mat)
 end
 
-function solve(text)
-    println(part1(text))
-    println(part2(text))
-end
-
-solve(getinput(2015, 6))
+solve(text) = part1(text), part2(text)
 
 end
