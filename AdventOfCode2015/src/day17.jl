@@ -2,47 +2,19 @@ module Day17
 
 using ..Supafast
 
-function countsumto(sumto, containers, used, completesets, runningsum=0)
-    if runningsum == sumto
-        push!(completesets, used)
-        return
-    elseif runningsum > sumto
-        return
-    end
-    for i in eachindex(containers)
-        if i in used
-            continue
-        else
-            countsumto(
-                sumto,
-                containers,
-                push!(copy(used), i),
-                completesets,
-                runningsum + containers[i]
-            )
-        end
-    end
-end
-
-function countsumto(sumto, containers)
-    completesets = Set()
-    for i in eachindex(containers)
-        used = Set(i)
-        sumhere = containers[i]
-        countsumto(sumto, containers, used, completesets, sumhere)
-    end
-    return completesets
-end
+import Combinatorics: combinations
 
 function solve(text::AbstractString)
-    containers = Int[]
-    for line in eachline(IOBuffer(text))
-        push!(containers, parse(Int, line))
+    containers = maplines(text, r"(\d+)" => parseint)
+    waysbylen = zeros(Int, length(containers))
+    ways = 0
+    for c in combinations(containers)
+        if sum(c) == 150
+            waysbylen[length(c)] += 1
+            ways += 1
+        end
     end
-
-    sets = countsumto(150, containers)
-    minlen = minimum(length, sets)
-    return length(sets), count(s -> length(s) == minlen, sets)
+    return ways, first(waysbylen[waysbylen.>0])
 end
 
 end
