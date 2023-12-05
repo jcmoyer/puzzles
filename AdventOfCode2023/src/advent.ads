@@ -27,8 +27,8 @@ package Advent is
       Keep_Empty : Boolean := True)
       return String_Array;
 
-   function Starts_With (Source, Substr: String) return Boolean;
-   function Ends_With (Source, Substr: String) return Boolean;
+   function Starts_With (Source, Substr : String) return Boolean;
+   function Ends_With (Source, Substr : String) return Boolean;
 
    --  Splits S on any delimiter contained in Delims.
    --  function Split_Any (S : String; Delims : String) return String_Array;
