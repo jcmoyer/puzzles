@@ -8,7 +8,7 @@ from pathlib import Path
 
 def main():
     # TODO: Support release testing at some point.
-    proc = subprocess.run(["gprbuild", "-XBuild=Deug"])
+    proc = subprocess.run(["gprbuild", "-XBuild=Debug"])
     if proc.returncode != 0:
         print("test-all: gprbuild failed; aborting test")
         exit(1)
