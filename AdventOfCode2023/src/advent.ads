@@ -3,6 +3,7 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package Advent is
    procedure Solution (Val : Integer);
+   procedure Solution (Val : Long_Long_Integer);
    procedure Solution (Val : String);
 
    package String_Vectors is new Ada.Containers.Indefinite_Vectors
@@ -25,6 +26,9 @@ package Advent is
       Delims     : String;
       Keep_Empty : Boolean := True)
       return String_Array;
+
+   function Starts_With (Source, Substr: String) return Boolean;
+   function Ends_With (Source, Substr: String) return Boolean;
 
    --  Splits S on any delimiter contained in Delims.
    --  function Split_Any (S : String; Delims : String) return String_Array;

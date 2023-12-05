@@ -8,6 +8,11 @@ package body Advent is
       Put_Line (Trim (Val'Image, Ada.Strings.Left));
    end Solution;
 
+   procedure Solution (Val : Long_Long_Integer) is
+   begin
+      Put_Line (Trim (Val'Image, Ada.Strings.Left));
+   end Solution;
+
    procedure Solution (Val : String) is
    begin
       Put_Line (Val);
@@ -85,6 +90,23 @@ package body Advent is
    begin
       return Split (To_String (S), Delims, Keep_Empty);
    end Split;
+
+   function Starts_With (Source, Substr : String) return Boolean is
+   begin
+      if Source'Length < Substr'Length then
+         return False;
+      end if;
+      return
+        Source (Source'First .. Source'First + Substr'Length - 1) = Substr;
+   end Starts_With;
+
+   function Ends_With (Source, Substr : String) return Boolean is
+   begin
+      if Source'Length < Substr'Length then
+         return False;
+      end if;
+      return Source (Source'Last - Substr'Length + 1 .. Source'Last) = Substr;
+   end Ends_With;
 
    --  function Split_Any (S : String; Delims : String) return String_Array is
    --     Result : String_Array;
