@@ -30,6 +30,9 @@ package Advent is
    function Starts_With (Source, Substr : String) return Boolean;
    function Ends_With (Source, Substr : String) return Boolean;
 
+   function Delete_Whitespace (Source : String) return String with
+     Post => Delete_Whitespace'Result'Length <= Source'Length;
+
    --  Splits S on any delimiter contained in Delims.
    --  function Split_Any (S : String; Delims : String) return String_Array;
 

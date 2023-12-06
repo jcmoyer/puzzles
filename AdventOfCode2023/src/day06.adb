@@ -1,22 +1,27 @@
-with Advent;                use Advent;
-with Advent.Intervals;
-with Ada.Containers;        use Ada.Containers;
-with Ada.Containers.Vectors;
-with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Advent;         use Advent;
+with Advent.Parsers.Integers;
+with Ada.Containers; use Ada.Containers;
 
 procedure Day06 is
    type Time_Type is new Long_Long_Integer;
+
+   package Time_Parsers is new Advent.Parsers.Integers
+     (Element_Type => Time_Type);
+
    type Distance_Type is new Long_Long_Integer;
 
-   type Race_Record is record
-      Time     : Time_Type;
-      Distance : Distance_Type;
+   package Distance_Parsers is new Advent.Parsers.Integers
+     (Element_Type => Distance_Type);
+
+   type Race_Records is record
+      Time     : Time_Parsers.Vector;
+      Distance : Distance_Parsers.Vector;
    end record;
 
    function Calc_Distance
      (Charge_Time, Available_Time : Time_Type) return Distance_Type
    is
-      Remaining_Time : Time_Type := Available_Time - Charge_Time;
+      Remaining_Time : constant Time_Type := Available_Time - Charge_Time;
    begin
       if Remaining_Time <= 0 then
          return 0;
@@ -24,77 +29,61 @@ procedure Day06 is
       return Distance_Type (Remaining_Time * Charge_Time);
    end Calc_Distance;
 
-   function Find_Min_Time (R : Race_Record) return Time_Type is
+   function Find_Min_Time (T : Time_Type; D : Distance_Type) return Time_Type
+   is
    begin
-      for I in 1 .. R.Time loop
-         if Calc_Distance (Charge_Time => I, Available_Time => R.Time) >
-           R.Distance
-         then
+      for I in 1 .. T loop
+         if Calc_Distance (Charge_Time => I, Available_Time => T) > D then
             return I;
          end if;
       end loop;
+      return 0;
    end Find_Min_Time;
 
-   function Find_Max_Time (R : Race_Record) return Time_Type is
+   function Find_Max_Time (T : Time_Type; D : Distance_Type) return Time_Type
+   is
    begin
-      for I in reverse 1 .. R.Time loop
-         if Calc_Distance (Charge_Time => I, Available_Time => R.Time) >
-           R.Distance
-         then
+      for I in reverse 1 .. T loop
+         if Calc_Distance (Charge_Time => I, Available_Time => T) > D then
             return I;
          end if;
       end loop;
+      return 0;
    end Find_Max_Time;
+
+   function Find_Charge_Time
+     (T : Time_Type; D : Distance_Type) return Time_Type is
+     (1 + Find_Max_Time (T, D) - Find_Min_Time (T, D));
+
+   function Way_Product (R : Race_Records) return Long_Long_Integer with
+     Pre => R.Distance.Length = R.Time.Length
+   is
+      Result : Time_Type := 1;
+   begin
+      for I in R.Distance.First_Index .. R.Distance.Last_Index loop
+         Result := Result * Find_Charge_Time (R.Time (I), R.Distance (I));
+      end loop;
+      return Long_Long_Integer (Result);
+   end Way_Product;
 
    Lines : constant String_Array := Read_All_Lines ("test/2023-06-input.txt");
 
-   --  TODO: more than 4 records
-   Record_P1 : array (1 .. 4) of Race_Record;
-   Record_P2 : Race_Record;
+   Record_P1 : Race_Records;
+   Record_P2 : Race_Records;
 
 begin
    for Line of Lines loop
       if Starts_With (Line, "Time:") then
-         declare
-            Time_Strs : constant String_Array :=
-              Split (Line, " ", Keep_Empty => False);
-            First     : Integer               := Time_Strs.First_Index + 1;
-            Long_Time : Unbounded_String;
-         begin
-            for I in First .. Time_Strs.Last_Index loop
-               Record_P1 (Record_P1'First + I - First).Time :=
-                 Time_Type'Value (Time_Strs (I));
-               Append (Long_Time, Time_Strs (I));
-            end loop;
-            Record_P2.Time := Time_Type'Value (To_String (Long_Time));
-         end;
+         Record_P1.Time := Time_Parsers.Extract_Integers (Line);
+         Record_P2.Time :=
+           Time_Parsers.Extract_Integers (Delete_Whitespace (Line));
       elsif Starts_With (Line, "Distance:") then
-         declare
-            Dist_Strs : constant String_Array :=
-              Split (Line, " ", Keep_Empty => False);
-            First     : Integer               := Dist_Strs.First_Index + 1;
-            Long_Dist : Unbounded_String;
-         begin
-            for I in Dist_Strs.First_Index + 1 .. Dist_Strs.Last_Index loop
-               Record_P1 (Record_P1'First + I - First).Distance :=
-                 Distance_Type'Value (Dist_Strs (I));
-               Append (Long_Dist, Dist_Strs (I));
-            end loop;
-            Record_P2.Distance := Distance_Type'Value (To_String (Long_Dist));
-         end;
+         Record_P1.Distance := Distance_Parsers.Extract_Integers (Line);
+         Record_P2.Distance :=
+           Distance_Parsers.Extract_Integers (Delete_Whitespace (Line));
       end if;
    end loop;
 
-   declare
-      Prod : Time_Type := 1;
-   begin
-      for R of Record_P1 loop
-         Prod := Prod * (Find_Max_Time (R) - Find_Min_Time (R) + 1);
-      end loop;
-      Solution (Long_Long_Integer (Prod));
-   end;
-
-   Solution
-     (Long_Long_Integer
-        (Find_Max_Time (Record_P2) - Find_Min_Time (Record_P2) + 1));
+   Solution (Way_Product (Record_P1));
+   Solution (Way_Product (Record_P2));
 end Day06;

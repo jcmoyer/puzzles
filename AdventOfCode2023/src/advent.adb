@@ -1,6 +1,7 @@
-with Ada.Text_IO;       use Ada.Text_IO;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
 with Ada.Strings;
+with Ada.Characters.Handling; use Ada.Characters.Handling;
 
 package body Advent is
    procedure Solution (Val : Integer) is
@@ -107,6 +108,19 @@ package body Advent is
       end if;
       return Source (Source'Last - Substr'Length + 1 .. Source'Last) = Substr;
    end Ends_With;
+
+   function Delete_Whitespace (Source : String) return String is
+      Result : String (1 .. Source'Length);
+      Length : Integer := 0;
+   begin
+      for I in Source'Range loop
+         if not Is_Space (Source (I)) then
+            Result (Result'First + Length) := Source (I);
+            Length                         := Length + 1;
+         end if;
+      end loop;
+      return Result (1 .. Length);
+   end Delete_Whitespace;
 
    --  function Split_Any (S : String; Delims : String) return String_Array is
    --     Result : String_Array;
