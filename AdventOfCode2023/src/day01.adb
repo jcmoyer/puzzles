@@ -55,8 +55,6 @@ procedure Day01 is
    end Is_Digit_Word;
 
    function Calibration_With_Words (S : String) return Calibration_Result is
-      I : Integer := S'First;
-
       --  Zero is not a valid result, so we can use it as a "none" value.
       First_Value : Integer := 0;
       Last_Value  : Integer := 0;
@@ -73,15 +71,13 @@ procedure Day01 is
       end Handle_Value;
 
    begin
-      while I <= S'Last loop
+      for I in S'Range loop
          if Is_Digit (S (I)) then
             This_Value := Integer'Value (S (I .. I));
             Handle_Value;
          elsif Is_Digit_Word (S, I, This_Value) then
             Handle_Value;
          end if;
-
-         I := I + 1;
       end loop;
 
       return First_Value * 10 + Last_Value;
