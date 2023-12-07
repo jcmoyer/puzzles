@@ -7,7 +7,7 @@ project AdventOfCode2023 is
     for Object_Dir use "obj";
     for Exec_Dir use "bin/" & Build;
     for Main use ("day01.adb", "day02.adb", "day03.adb", "day04.adb",
-       "day05.adb", "day06.adb");
+       "day05.adb", "day06.adb", "day07.adb");
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa");
 
@@ -22,9 +22,14 @@ project AdventOfCode2023 is
         end case;
     end Compiler;
 
+    package Binder is
+       for Default_Switches ("Ada") use ("-Es");
+    end Binder;
+
     package Pretty_Printer is
-        for Default_Switches ("ada") use (
-            "--no-compact"
+        for Default_Switches ("Ada") use (
+            "--no-compact",
+            "--max-line-length=99"
         );
     end Pretty_Printer;
 end AdventOfCode2023;
