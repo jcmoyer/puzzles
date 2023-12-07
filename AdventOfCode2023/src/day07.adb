@@ -1,7 +1,7 @@
 with Advent;         use Advent;
-with Advent.Parsers.Integers;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Vectors;
+with Ada.Command_Line;
 
 procedure Day07 is
    --  A hand consists of five cards labeled one of A, K, Q, J, T, 9, 8, 7, 6,
@@ -18,7 +18,53 @@ procedure Day07 is
       end if;
    end Joker_Rule_Pos;
 
-   type Hand is array (1 .. 5) of Card;
+   --  Zero-based indexing significantly reduces overall parse/classify time by
+   --  ~25%.
+   type Hand is array (0 .. 4) of Card;
+
+   type Card_Count is range 0 .. 5;
+
+   type Card_Counts is record
+      Ones   : Card_Count := 0;
+      Twos   : Card_Count := 0;
+      Threes : Card_Count := 0;
+      Fours  : Card_Count := 0;
+      Fives  : Card_Count := 0;
+      Mostly : Card       := 'J';
+   end record;
+
+   function Count (H : Hand) return Card_Counts is
+      Counts    : array (Card) of Integer := (others => 0);
+      Result    : Card_Counts;
+      Most_Type : Integer                 := 0;
+   begin
+      for C of H loop
+         Counts (C) := Counts (C) + 1;
+         if C /= 'J' and then Counts (C) > Most_Type then
+            Most_Type     := Counts (C);
+            Result.Mostly := C;
+         end if;
+      end loop;
+
+      for I in Counts'Range loop
+         case Counts (I) is
+            when 1 =>
+               Result.Ones := Result.Ones + 1;
+            when 2 =>
+               Result.Twos := Result.Twos + 1;
+            when 3 =>
+               Result.Threes := Result.Threes + 1;
+            when 4 =>
+               Result.Fours := Result.Fours + 1;
+            when 5 =>
+               Result.Fives := Result.Fives + 1;
+            when others =>
+               null;
+         end case;
+      end loop;
+
+      return Result;
+   end Count;
 
    --  Comparison function for part 2 hands
    function Less_Than_Joker (Left, Right : Hand) return Boolean is
@@ -35,9 +81,9 @@ procedure Day07 is
    end Less_Than_Joker;
 
    --  Returns the first index of a card in hand if it exists or 0 otherwise.
-   function Index (H : Hand; Elem : Card) return Natural is
+   function Index (H : Hand; Elem : Card; Start : Natural := Hand'First) return Natural is
    begin
-      for I in H'Range loop
+      for I in Start .. H'Last loop
          if H (I) = Elem then
             return I;
          end if;
@@ -46,92 +92,39 @@ procedure Day07 is
    end Index;
 
    function Image (H : Hand) return String is
-     (H (1)'Image & H (2)'Image & H (3)'Image & H (4)'Image & H (5)'Image);
+     (H (0)'Image & H (1)'Image & H (2)'Image & H (3)'Image & H (4)'Image);
 
    type Hand_Type is (High_Card, One_Pair, Two_Pair, Three_Kind, Full_House, Four_Kind, Five_Kind);
 
-   function Classify (H : Hand) return Hand_Type is
-      Counts : array (Card) of Integer := (others => 0);
-
-      --  Returns the number of distinct cards in the hand that have N copies.
-      function Copy_Count (N : Integer) return Integer is
-         Result : Integer := 0;
-      begin
-         for I in Counts'Range loop
-            if Counts (I) = N then
-               Result := Result + 1;
-            end if;
-         end loop;
-         return Result;
-      end Copy_Count;
+   function Classify (H : Hand; Counts : Card_Counts) return Hand_Type is
    begin
-      for C of H loop
-         Counts (C) := Counts (C) + 1;
-      end loop;
-
-      if Copy_Count (5) = 1 then
+      if Counts.Fives = 1 then
          return Five_Kind;
-      elsif Copy_Count (4) = 1 then
+      elsif Counts.Fours = 1 then
          return Four_Kind;
-      elsif Copy_Count (3) = 1 and then Copy_Count (2) = 1 then
+      elsif Counts.Threes = 1 and then Counts.Twos = 1 then
          return Full_House;
-      elsif Copy_Count (3) = 1 and then Copy_Count (1) = 2 then
+      elsif Counts.Threes = 1 and then Counts.Ones = 2 then
          return Three_Kind;
-      elsif Copy_Count (2) = 2 then
+      elsif Counts.Twos = 2 then
          return Two_Pair;
-      elsif Copy_Count (2) = 1 and then Copy_Count (1) = 3 then
+      elsif Counts.Twos = 1 and then Counts.Ones = 3 then
          return One_Pair;
-      elsif Copy_Count (1) = 5 then
+      elsif Counts.Ones = 5 then
          return High_Card;
       end if;
+      return One_Pair;
    end Classify;
 
-   function Classify_Joker (H : Hand) return Hand_Type is
-      package Hand_Vectors is new Ada.Containers.Vectors
-        (Index_Type => Positive, Element_Type => Hand);
-
-      Search_States : Hand_Vectors.Vector;
-      Best          : Hand_Type := Classify (H);
+   function Classify_Joker (H : Hand; Counts : Card_Counts) return Hand_Type is
+      Substituted : Hand := H;
    begin
-      Search_States.Append (H);
-
-      --  Adjacent states are obtained by removing one 'J' and appending one
-      --  substituted hand for each other card type.
-      --
-      --  However we don't need to actually insert one of each other card,
-      --  because the best solution will always be to insert cards that already
-      --  exist in the hand as this will push e.g. three-of-a-kinds to
-      --  four-of-a-kinds. (TODO: this optimization is not yet implemented)
-      --
-      --  Unlike a normal BFS/DFS we do not need to maintain a list of seen
-      --  nodes since it's impossible to revisit a state. Substituting a 'J'
-      --  for another card always advances the state towards a leaf node,
-      --  because 'J' can never be re-inserted.
-
-      while Search_States.Length > 0 loop
-         declare
-            Next        : constant Hand := Search_States.Last_Element;
-            Adj         : Hand          := Next;
-            Joker_Index : Natural       := Index (Next, 'J');
-         begin
-            Search_States.Delete_Last;
-
-            if Joker_Index /= 0 then
-               -- convert one joker to other cards
-               for I in Card'Range loop
-                  if I /= 'J' then
-                     Adj (Joker_Index) := I;
-                     Search_States.Append (Adj);
-                  end if;
-               end loop;
-            else
-               -- no jokers means this is a leaf state
-               Best := Hand_Type'Max (Best, Classify (Next));
-            end if;
-         end;
+      for I in Substituted'Range loop
+         if Substituted (I) = 'J' then
+            Substituted (I) := Counts.Mostly;
+         end if;
       end loop;
-
-      return Best;
+      return Classify (Substituted, Count (Substituted));
    end Classify_Joker;
 
    type Hand_Bid is record
@@ -168,15 +161,39 @@ procedure Day07 is
    package Hand_Bid_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Hand_Bid);
 
+   --  This may look silly but it reduces the parse time by 70ms (originally
+   --  out of 600ms total program runtime) on a 2.5M input compared to using
+   --  Card'Value.
+   function Parse_Card (C : Character) return Card is
+   begin
+      case C is
+         --!pp off
+         when '2' => return '2';
+         when '3' => return '3';
+         when '4' => return '4';
+         when '5' => return '5';
+         when '6' => return '6';
+         when '7' => return '7';
+         when '8' => return '8';
+         when '9' => return '9';
+         when 'T' => return 'T';
+         when 'J' => return 'J';
+         when 'Q' => return 'Q';
+         when 'K' => return 'K';
+         when 'A' => return 'A';
+         when others =>
+            raise Program_Error;
+         --!pp on
+      end case;
+   end Parse_Card;
+
    function Parse_Hand (S : String) return Hand with
      Pre => S'Length = 5
    is
       Result : Hand;
    begin
       for I in S'Range loop
-         --  TODO: having to manually surround the character with apostrophes is
-         --  kind of gross, does ada have a better way to parse character enumerations?
-         Result (Result'First + I - S'First) := Card'Value (''' & S (I .. I) & ''');
+         Result (Result'First + I - S'First) := Parse_Card (S (I));
       end loop;
       return Result;
    end Parse_Hand;
@@ -186,9 +203,10 @@ procedure Day07 is
    --  Joker rules change the tiebreak mechanism
    package Hand_Bid_Joker_Sorting is new Hand_Bid_Vectors.Generic_Sorting ("<" => Less_Than_Joker);
 
-   function Winnings (Hands : in out Hand_Bid_Vectors.Vector; Joker_Rules : Boolean) return Integer
+   function Winnings
+     (Hands : in out Hand_Bid_Vectors.Vector; Joker_Rules : Boolean) return Long_Long_Integer
    is
-      Result : Integer := 0;
+      Result : Long_Long_Integer := 0;
    begin
       if Joker_Rules then
          Hand_Bid_Joker_Sorting.Sort (Hands);
@@ -197,26 +215,27 @@ procedure Day07 is
       end if;
 
       for Rank in Hands.First_Index .. Hands.Last_Index loop
-         Result := Result + Hands (Rank).Bid * Rank;
+         Result := Result + Long_Long_Integer (Hands (Rank).Bid) * Long_Long_Integer (Rank);
       end loop;
 
       return Result;
    end Winnings;
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-07-input.txt");
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
    Hands : Hand_Bid_Vectors.Vector;
 
 begin
    for Line of Lines loop
       declare
-         H   : constant Hand    := Parse_Hand (Line (1 .. 5));
-         Bid : constant Integer := Integer'Value (Line (7 .. Line'Last));
+         H      : constant Hand        := Parse_Hand (Line (1 .. 5));
+         Bid    : constant Integer     := Integer'Value (Line (7 .. Line'Last));
+         Counts : constant Card_Counts := Count (H);
       begin
          Hands.Append
            ((Cards                => H,
              Bid                  => Bid,
-             Classification       => Classify (H),
-             Classification_Joker => Classify_Joker (H)));
+             Classification       => Classify (H, Counts),
+             Classification_Joker => Classify_Joker (H, Counts)));
       end;
    end loop;
 
