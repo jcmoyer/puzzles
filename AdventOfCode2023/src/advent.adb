@@ -1,22 +1,29 @@
-with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Text_IO;
 with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
 with Ada.Strings;
 with Ada.Characters.Handling; use Ada.Characters.Handling;
+with Ada.Streams;             use Ada.Streams;
+with Ada.Streams.Stream_IO;
+with Ada.Characters.Latin_1;
 
 package body Advent is
+   package TIO renames Ada.Text_IO;
+   package SIO renames Ada.Streams.Stream_IO;
+   package Latin_1 renames Ada.Characters.Latin_1;
+
    procedure Solution (Val : Integer) is
    begin
-      Put_Line (Trim (Val'Image, Ada.Strings.Left));
+      TIO.Put_Line (Trim (Val'Image, Ada.Strings.Left));
    end Solution;
 
    procedure Solution (Val : Long_Long_Integer) is
    begin
-      Put_Line (Trim (Val'Image, Ada.Strings.Left));
+      TIO.Put_Line (Trim (Val'Image, Ada.Strings.Left));
    end Solution;
 
    procedure Solution (Val : String) is
    begin
-      Put_Line (Val);
+      TIO.Put_Line (Val);
    end Solution;
 
    function Is_Any_Of (C : Character; Vals : String) return Boolean is
@@ -39,11 +46,7 @@ package body Advent is
       end if;
    end Slice_Empty;
 
-   function Split
-     (S          : String;
-      Delims     : String;
-      Keep_Empty : Boolean := True)
-      return String_Array
+   function Split (S : String; Delims : String; Keep_Empty : Boolean := True) return String_Array
    is
       Result : String_Array;
 
@@ -83,10 +86,7 @@ package body Advent is
    end Split;
 
    function Split
-     (S          : Unbounded_String;
-      Delims     : String;
-      Keep_Empty : Boolean := True)
-      return String_Array
+     (S : Unbounded_String; Delims : String; Keep_Empty : Boolean := True) return String_Array
    is
    begin
       return Split (To_String (S), Delims, Keep_Empty);
@@ -97,8 +97,7 @@ package body Advent is
       if Source'Length < Substr'Length then
          return False;
       end if;
-      return
-        Source (Source'First .. Source'First + Substr'Length - 1) = Substr;
+      return Source (Source'First .. Source'First + Substr'Length - 1) = Substr;
    end Starts_With;
 
    function Ends_With (Source, Substr : String) return Boolean is
@@ -144,19 +143,60 @@ package body Advent is
    --     return Result;
    --  end Split_Any;
 
+   type Stream_Element_Array_Ptr is access all Ada.Streams.Stream_Element_Array;
+
    function Read_All_Lines (Filename : String) return String_Array is
-      Input_File : File_Type;
+      Input_File : SIO.File_Type;
       Result     : String_Array;
+
+      Buffer : Stream_Element_Array_Ptr;
+
+      Line_Start : Stream_Element_Offset := 0;
+      Line_End   : Stream_Element_Offset := 0;
+      I          : Stream_Element_Offset := 0;
+      Last       : Stream_Element_Offset;
+
+      use type SIO.Count;
+
    begin
-      Open (Input_File, In_File, Filename);
-      while not End_Of_File (Input_File) loop
+      SIO.Open (Input_File, SIO.In_File, Filename);
+
+      Buffer := new Stream_Element_Array (0 .. Stream_Element_Offset (SIO.Size (Input_File) - 1));
+
+      SIO.Read (Input_File, Buffer.all, Last);
+
+      I := Buffer.all'First;
+
+      while I <= Buffer.all'Last loop
+         --  scan for newline
+         Line_Start := I;
+         while I <= Buffer.all'Last
+           and then Buffer.all (I) /= Stream_Element (Character'Pos (Latin_1.LF))
+         loop
+            I := I + 1;
+         end loop;
+         Line_End := I - 1;
+
+         --  handle \r\n
+         if Buffer.all (Line_End) = Stream_Element (Character'Pos (Latin_1.CR)) then
+            Line_End := Line_End - 1;
+         end if;
+
+         --  skip newline
+         I := I + 1;
+
+         --  copy processed line
          declare
-            Line : constant String := Get_Line (Input_File);
+            Line : String (1 .. Integer (Line_End - Line_Start + 1));
          begin
+            for J in Line_Start .. Line_End loop
+               Line (Line'First + Integer (J - Line_Start)) := Character'Val (Buffer.all (J));
+            end loop;
             Result.Append (Line);
          end;
       end loop;
-      Close (Input_File);
+
+      SIO.Close (Input_File);
       return Result;
    end Read_All_Lines;
 
@@ -187,9 +227,7 @@ package body Advent is
 
    function Contains (R : Rectangle; P : Point) return Boolean is
    begin
-      return
-        P.X >= R.Left and then P.X <= R.Right and then P.Y >= R.Bottom
-        and then P.Y <= R.Top;
+      return P.X >= R.Left and then P.X <= R.Right and then P.Y >= R.Bottom and then P.Y <= R.Top;
    end Contains;
 
    procedure Inflate (R : in out Rectangle; Delta_X, Delta_Y : Integer) is
