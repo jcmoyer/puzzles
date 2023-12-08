@@ -92,6 +92,43 @@ package body Advent is
       return Split (To_String (S), Delims, Keep_Empty);
    end Split;
 
+   function Split_Any
+     (S : String; Delims : String; Keep_Empty : Boolean := True) return String_Array
+   is
+      Result : String_Array;
+
+      --  Left and right indices of the current substring
+      L : Integer := S'First;
+      R : Integer := L;
+   begin
+      if S'Length = 0 then
+         return Result;
+      end if;
+
+      while R in S'Range loop
+         if Is_Any_Of (S (R), Delims) then
+            declare
+               New_Str : constant String := Slice_Empty (S, L, R - 1);
+            begin
+               if Keep_Empty or else New_Str'Length > 0 then
+                  Result.Append (New_Str);
+               end if;
+            end;
+            L := R + 1;
+         end if;
+         R := R + 1;
+      end loop;
+
+      declare
+         New_Str : constant String := Slice_Empty (S, L, S'Last);
+      begin
+         if Keep_Empty or else New_Str'Length > 0 then
+            Result.Append (New_Str);
+         end if;
+      end;
+      return Result;
+   end Split_Any;
+
    function Starts_With (Source, Substr : String) return Boolean is
    begin
       if Source'Length < Substr'Length then
@@ -120,28 +157,6 @@ package body Advent is
       end loop;
       return Result (1 .. Length);
    end Delete_Whitespace;
-
-   --  function Split_Any (S : String; Delims : String) return String_Array is
-   --     Result : String_Array;
-
-   --     --  Left and right indices of the current substring
-   --     L : Integer := S'First;
-   --     R : Integer := L;
-   --  begin
-   --     if S'Length = 0 then
-   --        return Result;
-   --     end if;
-
-   --     while R in S'Range loop
-   --        if Is_Any_Of (S (R), Delims) then
-   --           Result.Append (Slice_Empty (S, L, R - 1));
-   --           L := R + 1;
-   --        end if;
-   --        R := R + 1;
-   --     end loop;
-   --     Result.Append (Slice_Empty (S, L, R - 1));
-   --     return Result;
-   --  end Split_Any;
 
    type Stream_Element_Array_Ptr is access all Ada.Streams.Stream_Element_Array;
 
