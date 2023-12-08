@@ -1,9 +1,11 @@
 with Advent;            use Advent;
+with Advent.Integers;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers;    use Ada.Containers;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Strings.Hash;
 
 procedure Day08 is
    type Direction is ('L', 'R');
@@ -11,8 +13,7 @@ procedure Day08 is
    package Direction_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Direction);
 
-   package Integer_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Long_Long_Integer);
+   package Integers is new Advent.Integers (Element_Type => Long_Long_Integer);
 
    function Parse_Direction (C : Character) return Direction is
    begin
@@ -27,7 +28,7 @@ procedure Day08 is
 
    Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
-   type Node_Name is new String (1 .. 3);
+   subtype Node_Name is String (1 .. 3);
 
    package Name_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Node_Name);
@@ -41,14 +42,11 @@ procedure Day08 is
 
    Directions : Direction_Vectors.Vector;
 
-   function Hash (N : Node_Name) return Hash_Type is
-   begin
-      --  idk lol maybe I'll find a real hash function somewhere
-      return Character'Pos (N (1)) * 37 + Character'Pos (N (2)) * 17 + Character'Pos (N (3)) * 31;
-   end Hash;
-
    package Node_Maps is new Ada.Containers.Hashed_Maps
-     (Key_Type => Node_Name, Element_Type => Graph_Node, Hash => Hash, Equivalent_Keys => "=");
+     (Key_Type        => Node_Name,
+      Element_Type    => Graph_Node,
+      Hash            => Ada.Strings.Hash,
+      Equivalent_Keys => "=");
 
    type Graph is record
       Nodes : Node_Maps.Map;
@@ -87,48 +85,11 @@ procedure Day08 is
       return Steps;
    end Count_Distance;
 
-   function Gcd (A, B : Long_Long_Integer) return Long_Long_Integer is
-      M : Long_Long_Integer := A;
-      N : Long_Long_Integer := B;
-      T : Long_Long_Integer;
-   begin
-      while N /= 0 loop
-         T := M;
-         M := N;
-         N := T rem N;
-      end loop;
-      return M;
-   end Gcd;
-
-   function Lcm (A, B : Long_Long_Integer) return Long_Long_Integer is
-   begin
-      if A = 0 or else B = 0 then
-         return 0;
-      end if;
-      return abs (A) * (abs (B) / Gcd (A, B));
-   end Lcm;
-
-   function Lcm (Xs : Integer_Vectors.Vector) return Long_Long_Integer with
-     Pre => Xs.Length > 0
-   is
-      R : Long_Long_Integer := Xs (1);
-   begin
-      if Xs.Length = 1 then
-         return R;
-      end if;
-
-      for I in Xs.First_Index + 1 .. Xs.Last_Index loop
-         R := Lcm (R, Xs (I));
-      end loop;
-
-      return R;
-   end Lcm;
-
    G : Graph;
 
    Starts    : Name_Vectors.Vector;
    Ends      : Name_Vectors.Vector;
-   Distances : Integer_Vectors.Vector;
+   Distances : Integers.Vector;
 
 begin
    for Line of Lines loop
@@ -172,5 +133,5 @@ begin
       end loop;
    end loop;
 
-   Solution (Lcm (Distances));
+   Solution (Integers.Lcm (Distances));
 end Day08;
