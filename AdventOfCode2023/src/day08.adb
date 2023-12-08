@@ -87,15 +87,15 @@ begin
    for Line of Lines loop
       if Index (Line, "=") /= 0 then
          declare
-            Parent_Children : constant String_Array := Split (Line, " = ");
-            Parent_Name     : constant Node_Name    := Node_Name (Parent_Children.Element (0));
-            Children        : constant String_Array :=
-              Split_Any (Parent_Children (1), "(), ", Keep_Empty => False);
-            Child_L         : constant Node_Name    := Node_Name (Children.Element (0));
-            Child_R         : constant Node_Name    := Node_Name (Children.Element (1));
+            Parent_Children : constant String_Array :=
+              Split_Any (Line, "(),= ", Keep_Empty => False);
+
+            Parent_Name : constant Node_Name := Parent_Children.Element (0);
+            Child_L     : constant Node_Name := Parent_Children.Element (1);
+            Child_R     : constant Node_Name := Parent_Children.Element (2);
          begin
             Insert (G, Parent_Name, Child_L, Child_R);
-            if Ends_With (String (Parent_Name), "A") then
+            if Ends_With (Parent_Name, "A") then
                Starts.Append (Parent_Name);
             end if;
          end;
