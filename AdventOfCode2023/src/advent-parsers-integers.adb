@@ -16,6 +16,18 @@ package body Advent.Parsers.Integers is
                end loop;
                Result.Append (Element_Type'Value (S (Int_Start .. I - 1)));
             end;
+         elsif S (I) = '-' and then I + 1 in S'Range and then Is_Digit (S (I + 1)) then
+            --  handle negative numbers
+            declare
+               Int_Start : constant Positive := I;
+            begin
+               --  move cursor past sign to first digit
+               I := I + 1;
+               while I <= S'Last and then Is_Digit (S (I)) loop
+                  I := I + 1;
+               end loop;
+               Result.Append (Element_Type'Value (S (Int_Start .. I - 1)));
+            end;
          else
             I := I + 1;
          end if;
