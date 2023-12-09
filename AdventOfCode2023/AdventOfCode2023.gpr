@@ -18,7 +18,7 @@ project AdventOfCode2023 is
        "day09.adb"
     );
 
-    Common_Switches := ("-gnaty", "-g", "-gnatwa");
+    Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99", "-gnaty-s");
 
     package Compiler is
         case Build is
