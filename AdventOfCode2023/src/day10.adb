@@ -1,61 +1,19 @@
-with Advent;         use Advent;
+with Advent;            use Advent;
+with Advent.Directions; use Advent.Directions;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers.Bounded_Vectors;
-with Ada.Containers; use Ada.Containers;
+with Ada.Containers;    use Ada.Containers;
 with Ada.Text_IO;
 
 procedure Day10 is
    --
-   --  Vector math [TODO: extract to utils]
+   --  Containers for 4-tile adjacent (math) vectors
    --
-   type Vec2i is array (0 .. 1) of Integer;
-   function Image (V : Vec2i) return String is ("<" & V (0)'Image & "," & V (1)'Image & ">");
-
-   function "+" (A, B : Vec2i) return Vec2i is ((A (0) + B (0), A (1) + B (1)));
-   function "-" (A, B : Vec2i) return Vec2i is ((A (0) - B (0), A (1) - B (1)));
-
    package Vec2i_Bounded_Vectors is new Ada.Containers.Bounded_Vectors
      (Index_Type => Positive, Element_Type => Vec2i);
 
    subtype Adjacent_Vectors is Vec2i_Bounded_Vectors.Vector (4);
-
-   --
-   --  Directions [TODO: extract to utils]
-   --
-   type Direction is (North, South, West, East);
-
-   --  Returns a vector using conventional <row, col> matrix coordinates.
-   function To_Vector (Dir : Direction) return Vec2i is
-   begin
-      case Dir is
-         when North =>
-            return (-1, 0);
-         when South =>
-            return (1, 0);
-         when West =>
-            return (0, -1);
-         when East =>
-            return (0, 1);
-      end case;
-   end To_Vector;
-
-   function Opposite (Dir : Direction) return Direction is
-   begin
-      case Dir is
-         when North =>
-            return South;
-         when South =>
-            return North;
-         when West =>
-            return East;
-         when East =>
-            return West;
-      end case;
-   end Opposite;
-
-   type Direction_Flags is array (Direction) of Boolean;
-   pragma Pack (Direction_Flags);
 
    --
    --  Tiles
