@@ -317,9 +317,7 @@ procedure Day10 is
                         Move_To_Matching_Corner;
                         Right_Corner := Element (M, (Row, Col));
 
-                        if Connects_Same_Vertical (Left_Corner, Right_Corner) then
-                           N_Crossings := N_Crossings + 2;
-                        else
+                        if not Connects_Same_Vertical (Left_Corner, Right_Corner) then
                            N_Crossings := N_Crossings + 1;
                         end if;
                      end;
