@@ -96,7 +96,7 @@ procedure Day07 is
 
    type Hand_Type is (High_Card, One_Pair, Two_Pair, Three_Kind, Full_House, Four_Kind, Five_Kind);
 
-   function Classify (H : Hand; Counts : Card_Counts) return Hand_Type is
+   function Classify (Counts : Card_Counts) return Hand_Type is
    begin
       if Counts.Fives = 1 then
          return Five_Kind;
@@ -124,7 +124,7 @@ procedure Day07 is
             Substituted (I) := Counts.Mostly;
          end if;
       end loop;
-      return Classify (Substituted, Count (Substituted));
+      return Classify (Count (Substituted));
    end Classify_Joker;
 
    type Hand_Bid is record
@@ -234,7 +234,7 @@ begin
          Hands.Append
            ((Cards                => H,
              Bid                  => Bid,
-             Classification       => Classify (H, Counts),
+             Classification       => Classify (Counts),
              Classification_Joker => Classify_Joker (H, Counts)));
       end;
    end loop;
