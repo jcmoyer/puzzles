@@ -73,4 +73,7 @@ package Advent is
      ((Ada.Containers.Hash_Type (A (0)) * 73_856_093) xor
       (Ada.Containers.Hash_Type (A (1)) * 19_349_663));
 
+   --  TODO: Generic vector package.
+   type Vec2l is array (0 .. 1) of Long_Long_Integer;
+   function Manhattan (A, B : Vec2l) return Long_Long_Integer is (abs (A (0) - B (0)) + abs (A (1) - B (1)));
 end Advent;
