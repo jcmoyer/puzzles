@@ -1,6 +1,6 @@
 package body Advent.Directions is
 
-   function To_Vector (Dir : Direction) return Vec2i is
+   function To_Vector (Dir : Direction) return Advent.Integer_Vector_Math.Vec2 is
    begin
       case Dir is
          when North =>

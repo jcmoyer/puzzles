@@ -51,29 +51,4 @@ package Advent is
 
    function Contains (R : Rectangle; P : Point) return Boolean;
    procedure Inflate (R : in out Rectangle; Delta_X, Delta_Y : Integer);
-
-   --
-   --  2D Vector math
-   --
-   type Vec2i is array (0 .. 1) of Integer;
-   function Image (V : Vec2i) return String is ("<" & V (0)'Image & "," & V (1)'Image & ">");
-
-   function "+" (A, B : Vec2i) return Vec2i is ((A (0) + B (0), A (1) + B (1)));
-   function "-" (A, B : Vec2i) return Vec2i is ((A (0) - B (0), A (1) - B (1)));
-   function "*" (A : Vec2i; B : Integer) return Vec2i is ((A (0) * B, A (1) * B));
-   function "/" (A : Vec2i; B : Integer) return Vec2i is ((A (0) / B, A (1) / B));
-   function Manhattan (A, B : Vec2i) return Integer is (abs (A (0) - B (0)) + abs (A (1) - B (1)));
-
-   --  Teschner, Matthias & Heidelberger, Bruno & Müller, Matthias &
-   --  Pomeranets, Danat & Gross, Markus. (2003). Optimized Spatial Hashing for
-   --  Collision Detection of Deformable Objects. VMV’03: Proceedings of the
-   --  Vision, Modeling, Visualization. 3.
-   use type Ada.Containers.Hash_Type;
-   function Hash (A : Vec2i) return Ada.Containers.Hash_Type is
-     ((Ada.Containers.Hash_Type (A (0)) * 73_856_093) xor
-      (Ada.Containers.Hash_Type (A (1)) * 19_349_663));
-
-   --  TODO: Generic vector package.
-   type Vec2l is array (0 .. 1) of Long_Long_Integer;
-   function Manhattan (A, B : Vec2l) return Long_Long_Integer is (abs (A (0) - B (0)) + abs (A (1) - B (1)));
 end Advent;

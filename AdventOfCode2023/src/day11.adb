@@ -1,14 +1,19 @@
 with Advent;         use Advent;
+with Advent.Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers; use Ada.Containers;
 
 procedure Day11 is
+   package Long_Vector_Math is new Advent.Vector_Math (Element_Type => Long_Long_Integer);
+
+   use Long_Vector_Math;
+
    package Integer_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Integer);
 
    type Galaxy is record
-      Position : Vec2l;
+      Position : Vec2;
    end record;
 
    package Galaxy_Vectors is new Ada.Containers.Vectors

@@ -1,19 +1,20 @@
-with Advent;            use Advent;
-with Advent.Directions; use Advent.Directions;
+with Advent;                     use Advent;
+with Advent.Directions;          use Advent.Directions;
+with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers.Bounded_Vectors;
-with Ada.Containers;    use Ada.Containers;
+with Ada.Containers;             use Ada.Containers;
 with Ada.Text_IO;
 
 procedure Day10 is
    --
    --  Containers for 4-tile adjacent (math) vectors
    --
-   package Vec2i_Bounded_Vectors is new Ada.Containers.Bounded_Vectors
-     (Index_Type => Positive, Element_Type => Vec2i);
+   package Vec2_Bounded_Vectors is new Ada.Containers.Bounded_Vectors
+     (Index_Type => Positive, Element_Type => Vec2);
 
-   subtype Adjacent_Vectors is Vec2i_Bounded_Vectors.Vector (4);
+   subtype Adjacent_Vectors is Vec2_Bounded_Vectors.Vector (4);
 
    --
    --  Tiles
@@ -78,36 +79,36 @@ procedure Day10 is
    --  Tilemap
    --
    type Map is record
-      Start      : Vec2i;
+      Start      : Vec2;
       Tiles      : Tile_Matrix_Ptr;
       Rows, Cols : Integer;
    end record;
 
-   function Element (M : Map; Index : Vec2i) return Tile is
+   function Element (M : Map; Index : Vec2) return Tile is
    begin
       return M.Tiles (Index (0), Index (1));
    end Element;
 
-   function Reference (M : Map; Index : Vec2i) return Tile_Ptr is
+   function Reference (M : Map; Index : Vec2) return Tile_Ptr is
    begin
       return M.Tiles (Index (0), Index (1))'Access;
    end Reference;
 
-   function In_Bounds (M : Map; Index : Vec2i) return Boolean is
+   function In_Bounds (M : Map; Index : Vec2) return Boolean is
    begin
       return Index (0) in 1 .. M.Rows and then Index (1) in 1 .. M.Cols;
    end In_Bounds;
 
    --  Clears the contents of Buffer and replaces them with the relative
    --  offsets from the tile at Index.
-   procedure Get_Adjacent_Indices (M : Map; Index : Vec2i; Buffer : in out Adjacent_Vectors) is
+   procedure Get_Adjacent_Indices (M : Map; Index : Vec2; Buffer : in out Adjacent_Vectors) is
       T : constant Tile := Element (M, Index);
    begin
       Buffer.Clear;
       for Dir in Direction loop
          if T.Connects (Dir) then
             declare
-               Adjacent_Index : constant Vec2i := Index + To_Vector (Dir);
+               Adjacent_Index : constant Vec2 := Index + To_Vector (Dir);
             begin
                if In_Bounds (M, Adjacent_Index) then
                   Buffer.Append (Index + To_Vector (Dir));
@@ -139,7 +140,7 @@ procedure Day10 is
       --  and seeing if any adjacent tiles are connected towards the start.
       for Dir in Direction loop
          declare
-            Index : constant Vec2i := Result.Start + To_Vector (Dir);
+            Index : constant Vec2 := Result.Start + To_Vector (Dir);
          begin
             if In_Bounds (Result, Index) then
                declare
@@ -157,7 +158,7 @@ procedure Day10 is
    end Load_Map;
 
    type Path_State is record
-      Index : Vec2i;
+      Index : Vec2;
       Steps : Integer := 0;
    end record;
 
@@ -171,7 +172,7 @@ procedure Day10 is
       Explore         : Path_Vectors.Vector;
       Adjacent_Buffer : Adjacent_Vectors;
 
-      Start_Index : constant Vec2i    := M.Start;
+      Start_Index : constant Vec2     := M.Start;
       Start_Tile  : constant Tile_Ptr := Reference (M, Start_Index);
 
       Result : Integer := 0;
