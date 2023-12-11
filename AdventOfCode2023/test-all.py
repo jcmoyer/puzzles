@@ -19,7 +19,7 @@ def main():
     args = parser.parse_args()
 
     mode = args.mode
-    proc = subprocess.run(["gprbuild", f"-XBuild={mode}"])
+    proc = subprocess.run(["gprbuild", "-j0", f"-XBuild={mode}"])
     if proc.returncode != 0:
         print("test-all: gprbuild failed; aborting test")
         exit(1)
