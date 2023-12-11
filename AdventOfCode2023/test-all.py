@@ -29,8 +29,7 @@ def format_ns(t):
     if t < 1000:
         return f"{t}ms"
     t //= 1000
-    if t < 1000:
-        return f"{t}s"
+    return f"{t}s"
 
 
 def async_run_test(test_name, cmd):
