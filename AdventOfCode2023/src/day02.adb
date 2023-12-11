@@ -35,16 +35,12 @@ begin
                for P of Pairs loop
                   declare
                      Number_Color : constant String_Array := Split (P, " ");
-                     Number       : constant Integer      :=
-                       Integer'Value (Trim (Number_Color (0), Both));
-                     Color_Str    : constant String       :=
-                       Trim (Number_Color (1), Both);
-                     Color        : constant Color_Name   :=
-                       Color_Name'Value (Color_Str);
+                     Number : constant Integer := Integer'Value (Trim (Number_Color (0), Both));
+                     Color_Str    : constant String       := Trim (Number_Color (1), Both);
+                     Color        : constant Color_Name   := Color_Name'Value (Color_Str);
                   begin
                      Sum (Color)        := Sum (Color) + Number;
-                     Max_Colors (Color) :=
-                       Integer'Max (Max_Colors (Color), Number);
+                     Max_Colors (Color) := Integer'Max (Max_Colors (Color), Number);
                   end;
                end loop;
                if Sum (Red) > 12 or Sum (Green) > 13 or Sum (Blue) > 14 then

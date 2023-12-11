@@ -84,24 +84,15 @@ procedure Day05 is
          Destination => (Dest_Start, Source_Start + Length - 1));
    end Parse_Source_Dest_Range;
 
-   package I64_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => I64);
+   package I64_Vectors is new Ada.Containers.Vectors (Index_Type => Positive, Element_Type => I64);
    subtype I64_Vector is I64_Vectors.Vector;
 
    type Map_Kind is
-     (Seed_Soil,
-      Soil_Fert,
-      Fert_Water,
-      Water_Light,
-      Light_Temp,
-      Temp_Humid,
-      Humid_Loc);
+     (Seed_Soil, Soil_Fert, Fert_Water, Water_Light, Light_Temp, Temp_Humid, Humid_Loc);
 
    type Map_Chain is array (Map_Kind) of SDR_Vector;
 
-   function Map_Range
-     (M : Multi_Interval; Map : SDR_Vector) return Multi_Interval
-   is
+   function Map_Range (M : Multi_Interval; Map : SDR_Vector) return Multi_Interval is
       Input   : Multi_Interval := Copy (M);
       Result  : Multi_Interval;
       Deleted : Multi_Interval;
@@ -116,9 +107,7 @@ procedure Day05 is
       return Result;
    end Map_Range;
 
-   function Map_Range
-     (M : Multi_Interval; Maps : Map_Chain) return Multi_Interval
-   is
+   function Map_Range (M : Multi_Interval; Maps : Map_Chain) return Multi_Interval is
       Input : Multi_Interval := Copy (M);
    begin
       for K in Map_Kind'Range loop
@@ -127,7 +116,7 @@ procedure Day05 is
       return Input;
    end Map_Range;
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-05-input.txt");
+   Lines       : constant String_Array := Read_All_Lines ("test/2023-05-input.txt");
    Seeds       : I64_Vector;
    Current_Map : Map_Kind              := Seed_Soil;
    Maps        : Map_Chain;
@@ -139,8 +128,7 @@ begin
    for Line of Lines loop
       if Starts_With (Line, "seeds: ") then
          declare
-            Seeds_Strs : constant String_Array :=
-              Split (Line (8 .. Line'Last), " ");
+            Seeds_Strs : constant String_Array := Split (Line (8 .. Line'Last), " ");
          begin
             for Str of Seeds_Strs loop
                Seeds.Append (I64'Value (Str));
@@ -172,9 +160,7 @@ begin
       while I <= Seeds.Last_Index loop
          Insert (Seeds_P1, Singleton (Seeds (I)));
          Insert (Seeds_P1, Singleton (Seeds (I + 1)));
-         Insert
-           (Seeds_P2,
-            Interval'(Min => Seeds (I), Max => Seeds (I) + Seeds (I + 1) - 1));
+         Insert (Seeds_P2, Interval'(Min => Seeds (I), Max => Seeds (I) + Seeds (I + 1) - 1));
          I := I + 2;
       end loop;
    end;

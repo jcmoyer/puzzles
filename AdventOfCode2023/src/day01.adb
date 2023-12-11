@@ -24,17 +24,13 @@ procedure Day01 is
    subtype Calibration_Result is Integer range 11 .. 99;
 
    function Calibration (S : String) return Calibration_Result is
-      I : constant Integer :=
-        Index (S, Decimal_Digit_Set, S'First, Going => Forward);
-      J : constant Integer :=
-        Index (S, Decimal_Digit_Set, S'Last, Going => Backward);
+      I : constant Integer := Index (S, Decimal_Digit_Set, S'First, Going => Forward);
+      J : constant Integer := Index (S, Decimal_Digit_Set, S'Last, Going => Backward);
    begin
       return Calibration_Result'Value (S (I) & S (J));
    end Calibration;
 
-   function Is_Digit_Word
-     (S : String; Position : Positive; Value : out Integer) return Boolean
-   is
+   function Is_Digit_Word (S : String; Position : Positive; Value : out Integer) return Boolean is
       --  Number of characters left in S if we were to start searching from Position
       S_Left : constant Integer := S'Last - Position + 1;
    begin
@@ -43,8 +39,7 @@ procedure Day01 is
             Word_Length : constant Integer := Length (Digit_Words (R));
          begin
             if Word_Length <= S_Left
-              and then Digit_Words (R) =
-                S (Position .. Position + Word_Length - 1)
+              and then Digit_Words (R) = S (Position .. Position + Word_Length - 1)
             then
                Value := R;
                return True;

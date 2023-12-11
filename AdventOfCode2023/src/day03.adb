@@ -46,16 +46,14 @@ begin
             end loop;
 
             declare
-               Rect : Rectangle :=
-                 (Left => N_Start, Right => J - 1, Top => I, Bottom => I);
+               Rect : Rectangle := (Left => N_Start, Right => J - 1, Top => I, Bottom => I);
             begin
                Inflate (Rect, 1, 1);
                Grid_Numbers.Append ((Value => Value, Rect => Rect));
             end;
          else
             if Map (I, J) /= '.' then
-               Grid_Symbols.Append
-                 ((Value => Map (I, J), Location => (Y => I, X => J)));
+               Grid_Symbols.Append ((Value => Map (I, J), Location => (Y => I, X => J)));
             end if;
             J := J + 1;
          end if;

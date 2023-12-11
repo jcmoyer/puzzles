@@ -5,14 +5,11 @@ package body Advent.Intervals is
    --  Interval
    ----------------------------------------------------------------------------
 
-   function "=" (A, B : Interval) return Boolean is
-     (A.Min = B.Min and then A.Max = B.Max);
+   function "=" (A, B : Interval) return Boolean is (A.Min = B.Min and then A.Max = B.Max);
 
-   function Image (R : Interval) return String is
-     (R.Min'Image & ".." & R.Max'Image);
+   function Image (R : Interval) return String is (R.Min'Image & ".." & R.Max'Image);
 
-   function Singleton (Value : Element_Type) return Interval is
-     (Min => Value, Max => Value);
+   function Singleton (Value : Element_Type) return Interval is (Min => Value, Max => Value);
 
    function First (R : Interval) return Element_Type is (R.Min);
    function Last (R : Interval) return Element_Type is (R.Max);
@@ -25,19 +22,16 @@ package body Advent.Intervals is
      (Contains (R, Enclosed.Min) and then Contains (R, Enclosed.Max));
 
    function Overlaps (A, B : Interval) return Boolean is
-     (Contains (A, First (B)) or else Contains (A, Last (B))
-      or else Contains (B, First (A)) or else Contains (B, Last (A)));
+     (Contains (A, First (B)) or else Contains (A, Last (B)) or else Contains (B, First (A))
+      or else Contains (B, Last (A)));
 
    function Merge (A, B : Interval) return Interval is
-     (Min => Element_Type'Min (A.Min, B.Min),
-      Max => Element_Type'Max (A.Max, B.Max));
+     (Min => Element_Type'Min (A.Min, B.Min), Max => Element_Type'Max (A.Max, B.Max));
 
    function Intersect (A, B : Interval) return Interval is
    begin
       if Overlaps (A, B) then
-         return
-           (Min => Element_Type'Max (A.Min, B.Min),
-            Max => Element_Type'Min (A.Max, B.Max));
+         return (Min => Element_Type'Max (A.Min, B.Min), Max => Element_Type'Min (A.Max, B.Max));
       else
          return Empty_Interval;
       end if;
@@ -74,8 +68,7 @@ package body Advent.Intervals is
             J := I + 1;
             while J <= M.Children.Last_Index loop
                if Overlaps (M.Children (I), M.Children (J)) then
-                  M.Children.Replace_Element
-                    (I, Merge (M.Children (I), M.Children (J)));
+                  M.Children.Replace_Element (I, Merge (M.Children (I), M.Children (J)));
                   M.Children.Swap (J, M.Children.Last_Index);
                   M.Children.Delete_Last;
                else
@@ -101,9 +94,7 @@ package body Advent.Intervals is
       Reduce (M);
    end Insert;
 
-   procedure Delete
-     (M : in out Multi_Interval; R : Interval; Deleted : out Multi_Interval)
-   is
+   procedure Delete (M : in out Multi_Interval; R : Interval; Deleted : out Multi_Interval) is
       I : Integer := M.Children.First_Index;
    begin
       while I <= M.Children.Last_Index loop
@@ -120,10 +111,8 @@ package body Advent.Intervals is
             --  other interval could be affected, so we can safely return after
             --  performing the split.
             declare
-               Left  : constant Interval :=
-                 (Min => M.Children (I).Min, Max => First (R) - 1);
-               Right : constant Interval :=
-                 (Min => Last (R) + 1, Max => M.Children (I).Max);
+               Left  : constant Interval := (Min => M.Children (I).Min, Max => First (R) - 1);
+               Right : constant Interval := (Min => Last (R) + 1, Max => M.Children (I).Max);
             begin
                Insert (Deleted, R);
                M.Children.Swap (I, M.Children.Last_Index);
@@ -141,12 +130,10 @@ package body Advent.Intervals is
             Insert (Deleted, Intersect (R, M.Children (I)));
             if Contains (R, M.Children (I).Min) then
                --  Left side
-               M.Children.Replace_Element
-                 (I, (Min => R.Max + 1, Max => M.Children (I).Max));
+               M.Children.Replace_Element (I, (Min => R.Max + 1, Max => M.Children (I).Max));
             else
                --  Right side
-               M.Children.Replace_Element
-                 (I, (Min => M.Children (I).Min, Max => R.Min - 1));
+               M.Children.Replace_Element (I, (Min => M.Children (I).Min, Max => R.Min - 1));
             end if;
             I := I + 1;
          else
@@ -164,9 +151,7 @@ package body Advent.Intervals is
       end loop;
    end Translate;
 
-   procedure Translate
-     (M : in out Multi_Interval; Span : Interval; Amount : Element_Type)
-   is
+   procedure Translate (M : in out Multi_Interval; Span : Interval; Amount : Element_Type) is
       I : Integer := M.Children.First_Index;
 
       --  Deleting from M while mutating it is pretty complicated, so we'll

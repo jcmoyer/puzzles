@@ -5,22 +5,18 @@ with Ada.Containers; use Ada.Containers;
 procedure Day06 is
    type Time_Type is new Long_Long_Integer;
 
-   package Time_Parsers is new Advent.Parsers.Integers
-     (Element_Type => Time_Type);
+   package Time_Parsers is new Advent.Parsers.Integers (Element_Type => Time_Type);
 
    type Distance_Type is new Long_Long_Integer;
 
-   package Distance_Parsers is new Advent.Parsers.Integers
-     (Element_Type => Distance_Type);
+   package Distance_Parsers is new Advent.Parsers.Integers (Element_Type => Distance_Type);
 
    type Race_Records is record
       Time     : Time_Parsers.Vector;
       Distance : Distance_Parsers.Vector;
    end record;
 
-   function Calc_Distance
-     (Charge_Time, Available_Time : Time_Type) return Distance_Type
-   is
+   function Calc_Distance (Charge_Time, Available_Time : Time_Type) return Distance_Type is
       Remaining_Time : constant Time_Type := Available_Time - Charge_Time;
    begin
       if Remaining_Time <= 0 then
@@ -29,8 +25,7 @@ procedure Day06 is
       return Distance_Type (Remaining_Time * Charge_Time);
    end Calc_Distance;
 
-   function Find_Min_Time (T : Time_Type; D : Distance_Type) return Time_Type
-   is
+   function Find_Min_Time (T : Time_Type; D : Distance_Type) return Time_Type is
    begin
       for I in 1 .. T loop
          if Calc_Distance (Charge_Time => I, Available_Time => T) > D then
@@ -40,8 +35,7 @@ procedure Day06 is
       return 0;
    end Find_Min_Time;
 
-   function Find_Max_Time (T : Time_Type; D : Distance_Type) return Time_Type
-   is
+   function Find_Max_Time (T : Time_Type; D : Distance_Type) return Time_Type is
    begin
       for I in reverse 1 .. T loop
          if Calc_Distance (Charge_Time => I, Available_Time => T) > D then
@@ -51,8 +45,7 @@ procedure Day06 is
       return 0;
    end Find_Max_Time;
 
-   function Find_Charge_Time
-     (T : Time_Type; D : Distance_Type) return Time_Type is
+   function Find_Charge_Time (T : Time_Type; D : Distance_Type) return Time_Type is
      (1 + Find_Max_Time (T, D) - Find_Min_Time (T, D));
 
    function Way_Product (R : Race_Records) return Long_Long_Integer with
@@ -75,12 +68,10 @@ begin
    for Line of Lines loop
       if Starts_With (Line, "Time:") then
          Record_P1.Time := Time_Parsers.Extract_Integers (Line);
-         Record_P2.Time :=
-           Time_Parsers.Extract_Integers (Delete_Whitespace (Line));
+         Record_P2.Time := Time_Parsers.Extract_Integers (Delete_Whitespace (Line));
       elsif Starts_With (Line, "Distance:") then
          Record_P1.Distance := Distance_Parsers.Extract_Integers (Line);
-         Record_P2.Distance :=
-           Distance_Parsers.Extract_Integers (Delete_Whitespace (Line));
+         Record_P2.Distance := Distance_Parsers.Extract_Integers (Delete_Whitespace (Line));
       end if;
    end loop;
 

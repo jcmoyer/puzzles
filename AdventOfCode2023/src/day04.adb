@@ -8,9 +8,7 @@ procedure Day04 is
    function Equivalent_Elements (X, Y : Integer) return Boolean is (X = Y);
 
    package Integer_Sets is new Ada.Containers.Hashed_Sets
-     (Element_Type        => Integer,
-      Hash                => Hash,
-      Equivalent_Elements => Equivalent_Elements);
+     (Element_Type => Integer, Hash => Hash, Equivalent_Elements => Equivalent_Elements);
    subtype Integer_Set is Integer_Sets.Set;
 
    package Integer_Maps is new Ada.Containers.Hashed_Maps
@@ -40,29 +38,22 @@ begin
    for Line of Lines loop
       declare
          Card_Values : constant String_Array := Split (Line, ": ");
-         Card_Info   : constant String_Array :=
-           Split (Card_Values (0), " ", Keep_Empty => False);
+         Card_Info   : constant String_Array := Split (Card_Values (0), " ", Keep_Empty => False);
          Card_Number : constant Integer      := Integer'Value (Card_Info (1));
          Values      : constant String_Array := Split (Card_Values (1), " | ");
 
-         Winning_Strs : constant String_Array :=
-           Split (Values (0), " ", Keep_Empty => False);
-         Actual_Strs  : constant String_Array :=
-           Split (Values (1), " ", Keep_Empty => False);
+         Winning_Strs : constant String_Array := Split (Values (0), " ", Keep_Empty => False);
+         Actual_Strs  : constant String_Array := Split (Values (1), " ", Keep_Empty => False);
 
          Winning_Set : Integer_Set;
          Actual_Set  : Integer_Set;
 
-         This_Quantity : Integer_Maps.Cursor :=
-           Card_Quantities.Find (Card_Number);
+         This_Quantity : Integer_Maps.Cursor := Card_Quantities.Find (Card_Number);
          Did_Insert    : Boolean             := False;
       begin
          if This_Quantity = Integer_Maps.No_Element then
             Card_Quantities.Insert
-              (Card_Number,
-               1,
-               Position => This_Quantity,
-               Inserted => Did_Insert);
+              (Card_Number, 1, Position => This_Quantity, Inserted => Did_Insert);
          else
             Card_Quantities.Replace_Element
               (This_Quantity, Integer_Maps.Element (This_Quantity) + 1);
@@ -81,13 +72,11 @@ begin
 
             for I in 1 .. Winning_Set.Length loop
                declare
-                  Ref_Number   : constant Integer := Card_Number + Integer (I);
-                  Ref_Quantity : constant Integer_Maps.Cursor :=
-                    Card_Quantities.Find (Ref_Number);
+                  Ref_Number   : constant Integer             := Card_Number + Integer (I);
+                  Ref_Quantity : constant Integer_Maps.Cursor := Card_Quantities.Find (Ref_Number);
                begin
                   if Ref_Quantity = Integer_Maps.No_Element then
-                     Card_Quantities.Insert
-                       (Ref_Number, Integer_Maps.Element (This_Quantity));
+                     Card_Quantities.Insert (Ref_Number, Integer_Maps.Element (This_Quantity));
                   else
                      Card_Quantities.Replace_Element
                        (Ref_Quantity,

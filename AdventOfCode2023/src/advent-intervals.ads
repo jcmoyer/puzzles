@@ -46,11 +46,9 @@ package Advent.Intervals is
    procedure Reduce (M : in out Multi_Interval);
    procedure Insert (M : in out Multi_Interval; R : Interval);
    procedure Insert (M : in out Multi_Interval; R : Multi_Interval);
-   procedure Delete
-     (M : in out Multi_Interval; R : Interval; Deleted : out Multi_Interval);
+   procedure Delete (M : in out Multi_Interval; R : Interval; Deleted : out Multi_Interval);
    procedure Translate (M : in out Multi_Interval; Amount : Element_Type);
-   procedure Translate
-     (M : in out Multi_Interval; Span : Interval; Amount : Element_Type);
+   procedure Translate (M : in out Multi_Interval; Span : Interval; Amount : Element_Type);
    function First (M : Multi_Interval) return Element_Type;
 
 private
