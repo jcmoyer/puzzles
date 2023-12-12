@@ -46,6 +46,15 @@ package body Advent is
       end if;
    end Slice_Empty;
 
+   function Unbounded_Slice_Empty (S : Unbounded_String; Low, High : Integer) return Unbounded_String is
+   begin
+      if High < Low then
+         return Ada.Strings.Unbounded.Null_Unbounded_String;
+      else
+         return Unbounded_Slice(S, Low, High);
+      end if;
+   end Unbounded_Slice_Empty;
+
    function Split (S : String; Delims : String; Keep_Empty : Boolean := True) return String_Array
    is
       Result : String_Array;

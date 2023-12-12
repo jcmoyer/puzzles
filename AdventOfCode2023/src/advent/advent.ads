@@ -16,6 +16,8 @@ package Advent is
    --  When I <= J, returns S(I..J); otherwise returns an empty string.
    function Slice_Empty (S : String; I, J : Integer) return String;
 
+   function Unbounded_Slice_Empty (S : Unbounded_String; Low, High : Integer) return Unbounded_String;
+
    function Split (S : String; Delims : String; Keep_Empty : Boolean := True) return String_Array;
 
    function Split
