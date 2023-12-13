@@ -249,6 +249,32 @@ package body Advent is
       return M'Length (2);
    end Cols;
 
+   function Image (M : Char_Matrix) return String is
+      --  Add an additional column for each row to store a newline
+      Result_Length : constant Integer            := Rows (M) * Cols (M) + Rows (M);
+      Result        : String (1 .. Result_Length) := (others => Ada.Characters.Latin_1.LF);
+
+      Line_Length : constant Integer := Cols (M) + 1;
+   begin
+      for I in M'First (1) .. M'Last (1) loop
+         for J in M'First (2) .. M'Last (2) loop
+            Result (1 + (I - M'First (1)) * Line_Length + (J - M'First (2))) := M (I, J);
+         end loop;
+      end loop;
+      return Result;
+   end Image;
+
+   function Transpose (M : Char_Matrix) return Char_Matrix is
+      Result : Char_Matrix (M'First (2) .. M'Last (2), M'First (1) .. M'Last (1));
+   begin
+      for I in M'First (1) .. M'Last (1) loop
+         for J in M'First (2) .. M'Last (2) loop
+            Result (J, I) := M (I, J);
+         end loop;
+      end loop;
+      return Result;
+   end Transpose;
+
    function Contains (R : Rectangle; P : Point) return Boolean is
    begin
       return P.X >= R.Left and then P.X <= R.Right and then P.Y >= R.Bottom and then P.Y <= R.Top;

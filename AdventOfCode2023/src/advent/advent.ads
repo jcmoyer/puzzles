@@ -42,6 +42,8 @@ package Advent is
    function Read_Tilemap (Filename : String) return Char_Matrix;
    function Rows (M : Char_Matrix) return Integer;
    function Cols (M : Char_Matrix) return Integer;
+   function Image (M : Char_Matrix) return String;
+   function Transpose (M : Char_Matrix) return Char_Matrix;
 
    type Rectangle is record
       Left, Right, Top, Bottom : Integer;
