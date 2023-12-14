@@ -24,22 +24,19 @@ procedure Day14 is
       and then P (0) <= R.Bottom);
 
    procedure Settle (M : in out Sparse_Map; Rock : Vec2; Dir : Direction; Region : Rectangle) is
-      Current : Vec2 := Rock + To_Vector (Dir);
+      Dir_Vec : constant Vec2 := To_Vector (Dir);
+      Current : Vec2          := Rock + Dir_Vec;
       Cursor  : Sparse_Maps.Cursor;
    begin
       while Contains (Region, Current) loop
          Cursor := M.Find (Current);
-
-         if Cursor /= Sparse_Maps.No_Element
-           and then (Sparse_Maps.Element (Cursor) = '#' or else Sparse_Maps.Element (Cursor) = 'O')
-         then
-            exit;
-         end if;
-         Current := Current + To_Vector (Dir);
+         exit when Cursor /= Sparse_Maps.No_Element
+           and then (M (Cursor) = '#' or else M (Cursor) = 'O');
+         Current := Current + Dir_Vec;
       end loop;
       --  either hit edge or another object
       M.Delete (Rock);
-      M.Insert (Current - To_Vector (Dir), 'O');
+      M.Insert (Current - Dir_Vec, 'O');
    end Settle;
 
    procedure Tilt (M : in out Sparse_Map; Dir : Direction; Region : Rectangle) is
@@ -206,8 +203,8 @@ begin
    Solution (Total_Load (Map, Region));
 
    loop
-      for J in Order'Range loop
-         Tilt (Map, Order (J), Region);
+      for Dir of Order loop
+         Tilt (Map, Dir, Region);
       end loop;
       History.Append (Total_Load (Map, Region));
       Cycles := Find_Cycle (History);
