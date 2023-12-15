@@ -1,6 +1,7 @@
 with Ada.Containers;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Streams;
 
 package Advent is
    procedure Solution (Val : Integer);
@@ -32,6 +33,16 @@ package Advent is
 
    function Delete_Whitespace (Source : String) return String with
      Post => Delete_Whitespace'Result'Length <= Source'Length;
+
+   --
+   --  I/O  [TODO: to be extracted into another module]
+   --
+
+   type Stream_Element_Array_Ptr is access all Ada.Streams.Stream_Element_Array;
+
+   function Read_All_Bytes (Filename : String) return Stream_Element_Array_Ptr;
+
+   function Read_All_Text (Filename : String) return String;
 
    --  Returns an array of strings where each element corresponds to a single
    --  line in the input file.

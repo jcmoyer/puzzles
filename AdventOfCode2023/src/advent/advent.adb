@@ -46,12 +46,14 @@ package body Advent is
       end if;
    end Slice_Empty;
 
-   function Unbounded_Slice_Empty (S : Unbounded_String; Low, High : Integer) return Unbounded_String is
+   function Unbounded_Slice_Empty
+     (S : Unbounded_String; Low, High : Integer) return Unbounded_String
+   is
    begin
       if High < Low then
          return Ada.Strings.Unbounded.Null_Unbounded_String;
       else
-         return Unbounded_Slice(S, Low, High);
+         return Unbounded_Slice (S, Low, High);
       end if;
    end Unbounded_Slice_Empty;
 
@@ -167,13 +169,35 @@ package body Advent is
       return Result (1 .. Length);
    end Delete_Whitespace;
 
-   type Stream_Element_Array_Ptr is access all Ada.Streams.Stream_Element_Array;
+   function Read_All_Bytes (Filename : String) return Stream_Element_Array_Ptr is
+      Input_File : SIO.File_Type;
+      Buffer     : Stream_Element_Array_Ptr;
+      Last       : Stream_Element_Offset;
+
+      use type SIO.Count;
+
+   begin
+      SIO.Open (Input_File, SIO.In_File, Filename);
+      Buffer := new Stream_Element_Array (0 .. Stream_Element_Offset (SIO.Size (Input_File) - 1));
+      SIO.Read (Input_File, Buffer.all, Last);
+      SIO.Close (Input_File);
+      return Buffer;
+   end Read_All_Bytes;
+
+   function Read_All_Text (Filename : String) return String is
+      Buffer : constant Stream_Element_Array_Ptr := Read_All_Bytes (Filename);
+      Result : String (1 .. Buffer'Length);
+   begin
+      for I in Buffer'Range loop
+         Result (Result'First + Integer (I - Buffer'First)) := Character'Val (Buffer (I));
+      end loop;
+      return Result;
+   end Read_All_Text;
 
    function Read_All_Lines (Filename : String) return String_Array is
-      Input_File : SIO.File_Type;
-      Result     : String_Array;
+      Result : String_Array;
 
-      Buffer : Stream_Element_Array_Ptr;
+      Buffer : constant Stream_Element_Array_Ptr := Read_All_Bytes (Filename);
 
       Line_Start : Stream_Element_Offset := 0;
       Line_End   : Stream_Element_Offset := 0;
@@ -183,12 +207,6 @@ package body Advent is
       use type SIO.Count;
 
    begin
-      SIO.Open (Input_File, SIO.In_File, Filename);
-
-      Buffer := new Stream_Element_Array (0 .. Stream_Element_Offset (SIO.Size (Input_File) - 1));
-
-      SIO.Read (Input_File, Buffer.all, Last);
-
       I := Buffer.all'First;
 
       while I <= Buffer.all'Last loop
@@ -220,7 +238,6 @@ package body Advent is
          end;
       end loop;
 
-      SIO.Close (Input_File);
       return Result;
    end Read_All_Lines;
 
