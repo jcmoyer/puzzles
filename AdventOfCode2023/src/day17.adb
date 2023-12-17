@@ -31,17 +31,13 @@ procedure Day17 is
    type Forward_Step_Count is range 0 .. 10;
 
    type Path_State is record
-      Forward_Steps : Forward_Step_Count := 0;
-      Heat_Loss     : Integer            := 0;
+      Forward_Steps : Forward_Step_Count;
+      Heat_Loss     : Integer;
       Forward       : Direction;
       Position      : Vec2;
    end record;
 
-   package Path_State_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Path_State);
-
-   subtype Path_State_Vector is Path_State_Vectors.Vector;
-
+   --  Should be roughly ~3.34mb for official inputs.
    type Path_Score_Map is
      array
        (Integer range <>,
@@ -59,16 +55,26 @@ procedure Day17 is
    function Element (Map : Digit_Matrix; Indices : Vec2) return Digit is
      (Map (Indices (0), Indices (1)));
 
+   --  Part 1 rules
    function Can_Forward_Normal (S : Path_State) return Boolean is (S.Forward_Steps < 3);
    function Can_Turn_Normal (S : Path_State) return Boolean is (True);
    function Can_Goal_Normal (S : Path_State) return Boolean is (True);
 
+   --  Part 2 rules
    function Can_Forward_Ultra (S : Path_State) return Boolean is (S.Forward_Steps < 10);
    function Can_Turn_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
    function Can_Goal_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
 
    package Path_Queue_Interfaces is new Ada.Containers.Synchronized_Queue_Interfaces
      (Element_Type => Path_State);
+
+   function Get_Priority (P : Path_State) return Integer is (P.Heat_Loss);
+
+   package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
+     (Queue_Interfaces => Path_Queue_Interfaces,
+      Queue_Priority   => Integer,
+      Before           => "<",
+      Get_Priority     => Get_Priority);
 
    generic
       with function Can_Forward (S : Path_State) return Boolean;
@@ -77,22 +83,91 @@ procedure Day17 is
    function Find_Path (Map : Digit_Matrix) return Integer;
 
    function Find_Path (Map : Digit_Matrix) return Integer is
-
-      Current         : Path_State;
-      Score           : Path_Score_Map_Ptr :=
+      Explore         : Path_Queues.Queue;
+      Score           : constant Path_Score_Map_Ptr :=
         new Path_Score_Map (Map'Range (1), Map'Range (2), Forward_Step_Count, Direction);
-      Goal            : constant Vec2      := (Map'Length (1), Map'Length (2));
-      Best_Goal_Score : Integer            := Integer'Last;
+      Goal            : constant Vec2               := (Map'Length (1), Map'Length (2));
+      Best_Goal_Score : Integer                     := Integer'Last;
 
-      function Get_Priority (P : Path_State) return Integer is (P.Heat_Loss);
+      procedure Process_One is
+         Current : Path_State;
+      begin
+         Explore.Dequeue (Current);
 
-      package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
-        (Queue_Interfaces => Path_Queue_Interfaces,
-         Queue_Priority   => Integer,
-         Before           => "<",
-         Get_Priority     => Get_Priority);
+         --  have we seen this state before at a lower score? if so, there's no
+         --  point revisiting it
+         if Current.Heat_Loss >=
+           Score
+             (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward)
+         then
+            return;
+         end if;
 
-      Explore : Path_Queues.Queue;
+         --  if we've already found a solution and it's better than the current
+         --  score, there's no point continuing
+         if Current.Heat_Loss > Best_Goal_Score then
+            return;
+         end if;
+
+         --  otherwise, mark the new best score for this cell
+         Score
+           (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward) :=
+           Current.Heat_Loss;
+
+         --  if we're at the goal, record the final score and return since
+         --  there's nothing else to do
+         if Current.Position = Goal and then Can_Goal (Current) then
+            Best_Goal_Score := Integer'Min (Best_Goal_Score, Current.Heat_Loss);
+            return;
+         end if;
+
+         --  enqueue adjacent states
+         if Can_Forward (Current) then
+            declare
+               Forward_Position : constant Vec2 := Current.Position + To_Vector (Current.Forward);
+            begin
+               if In_Bounds (Map, Forward_Position) then
+                  Explore.Enqueue
+                    (Path_State'
+                       (Forward_Steps => Current.Forward_Steps + 1,
+                        Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Forward_Position)),
+                        Forward       => Current.Forward,
+                        Position      => Forward_Position));
+               end if;
+            end;
+         end if;
+
+         if Can_Turn (Current) then
+            declare
+               Left_Position : constant Vec2 :=
+                 Current.Position + To_Vector (Rotate_Left (Current.Forward));
+            begin
+               if In_Bounds (Map, Left_Position) then
+                  Explore.Enqueue
+                    (Path_State'
+                       (Forward_Steps => 1,
+                        Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Left_Position)),
+                        Forward       => Rotate_Left (Current.Forward),
+                        Position      => Left_Position));
+               end if;
+            end;
+
+            declare
+               Right_Position : constant Vec2 :=
+                 Current.Position + To_Vector (Rotate_Right (Current.Forward));
+            begin
+               if In_Bounds (Map, Right_Position) then
+                  Explore.Enqueue
+                    (Path_State'
+                       (Forward_Steps => 1,
+                        Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Right_Position)),
+                        Forward       => Rotate_Right (Current.Forward),
+                        Position      => Right_Position));
+               end if;
+            end;
+         end if;
+      end Process_One;
+
    begin
       Score.all := (others => (others => (others => (others => Integer'Last))));
 
@@ -103,71 +178,7 @@ procedure Day17 is
         (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1)));
 
       while Explore.Current_Use > 0 loop
-         Explore.Dequeue (Current);
-
-         --  have we seen this state before at a lower score? if so, there's no
-         --  point revisiting it
-         if Current.Heat_Loss <
-           Score
-             (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward)
-           and then Current.Heat_Loss < Best_Goal_Score
-         then
-            --  otherwise, mark the new best score for this cell
-            Score
-              (Current.Position (0),
-               Current.Position (1),
-               Current.Forward_Steps,
-               Current.Forward) :=
-              Current.Heat_Loss;
-
-            if Current.Position = Goal and then Can_Goal (Current) then
-               Best_Goal_Score := Integer'Min (Best_Goal_Score, Current.Heat_Loss);
-            else
-               if Can_Forward (Current) then
-                  declare
-                     Forward_Position : Vec2 := Current.Position + To_Vector (Current.Forward);
-                  begin
-                     if In_Bounds (Map, Forward_Position) then
-                        Explore.Enqueue
-                          (Path_State'
-                             (Forward_Steps => Current.Forward_Steps + 1,
-                              Heat_Loss     =>
-                                Current.Heat_Loss + Integer (Element (Map, Forward_Position)),
-                              Forward       => Current.Forward,
-                              Position      => Forward_Position));
-                     end if;
-                  end;
-               end if;
-
-               if Can_Turn (Current) then
-                  declare
-                     Left_Position  : constant Vec2 :=
-                       Current.Position + To_Vector (Rotate_Left (Current.Forward));
-                     Right_Position : constant Vec2 :=
-                       Current.Position + To_Vector (Rotate_Right (Current.Forward));
-                  begin
-                     if In_Bounds (Map, Left_Position) then
-                        Explore.Enqueue
-                          (Path_State'
-                             (Forward_Steps => 1,
-                              Heat_Loss     =>
-                                Current.Heat_Loss + Integer (Element (Map, Left_Position)),
-                              Forward       => Rotate_Left (Current.Forward),
-                              Position      => Left_Position));
-                     end if;
-                     if In_Bounds (Map, Right_Position) then
-                        Explore.Enqueue
-                          (Path_State'
-                             (Forward_Steps => 1,
-                              Heat_Loss     =>
-                                Current.Heat_Loss + Integer (Element (Map, Right_Position)),
-                              Forward       => Rotate_Right (Current.Forward),
-                              Position      => Right_Position));
-                     end if;
-                  end;
-               end if;
-            end if;
-         end if;
+         Process_One;
       end loop;
 
       return Best_Goal_Score;
@@ -179,6 +190,7 @@ procedure Day17 is
    function Find_Path_Ultra is new Find_Path
      (Can_Forward => Can_Forward_Ultra, Can_Turn => Can_Turn_Ultra, Can_Goal => Can_Goal_Ultra);
 
+   --  locals
    Char_Map  : constant Char_Matrix  := Read_Tilemap (Ada.Command_Line.Argument (1));
    Digit_Map : constant Digit_Matrix := Chars_To_Digits (Char_Map);
 
