@@ -10,7 +10,7 @@ with Ada.Containers.Synchronized_Queue_Interfaces;
 procedure Day17 is
    --  Digit matrix stores pre-converted characters so we don't have to keep
    --  converting characters to integers in the pathfinding loop.
-   subtype Digit is Integer range 0 .. 9;
+   type Digit is range 0 .. 9;
 
    type Digit_Matrix is array (Integer range <>, Integer range <>) of Digit;
 
@@ -84,7 +84,7 @@ procedure Day17 is
       Goal            : constant Vec2      := (Map'Length (1), Map'Length (2));
       Best_Goal_Score : Integer            := Integer'Last;
 
-      function Get_Priority (P : Path_State) return Integer is (Manhattan (P.Position, Goal));
+      function Get_Priority (P : Path_State) return Integer is (P.Heat_Loss);
 
       package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
         (Queue_Interfaces => Path_Queue_Interfaces,
@@ -103,13 +103,13 @@ procedure Day17 is
         (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1)));
 
       while Explore.Current_Use > 0 loop
-         Explore.Dequeue(Current);
+         Explore.Dequeue (Current);
 
          --  have we seen this state before at a lower score? if so, there's no
          --  point revisiting it
-         if Score
-             (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward) >
-           Current.Heat_Loss
+         if Current.Heat_Loss <
+           Score
+             (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward)
            and then Current.Heat_Loss < Best_Goal_Score
          then
             --  otherwise, mark the new best score for this cell
@@ -131,7 +131,8 @@ procedure Day17 is
                         Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => Current.Forward_Steps + 1,
-                              Heat_Loss     => Current.Heat_Loss + Element (Map, Forward_Position),
+                              Heat_Loss     =>
+                                Current.Heat_Loss + Integer (Element (Map, Forward_Position)),
                               Forward       => Current.Forward,
                               Position      => Forward_Position));
                      end if;
@@ -149,7 +150,8 @@ procedure Day17 is
                         Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => 1,
-                              Heat_Loss     => Current.Heat_Loss + Element (Map, Left_Position),
+                              Heat_Loss     =>
+                                Current.Heat_Loss + Integer (Element (Map, Left_Position)),
                               Forward       => Rotate_Left (Current.Forward),
                               Position      => Left_Position));
                      end if;
@@ -157,7 +159,8 @@ procedure Day17 is
                         Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => 1,
-                              Heat_Loss     => Current.Heat_Loss + Element (Map, Right_Position),
+                              Heat_Loss     =>
+                                Current.Heat_Loss + Integer (Element (Map, Right_Position)),
                               Forward       => Rotate_Right (Current.Forward),
                               Position      => Right_Position));
                      end if;
