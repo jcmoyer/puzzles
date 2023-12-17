@@ -4,6 +4,8 @@ with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers;             use Ada.Containers;
 with Ada.Containers.Vectors;
+with Ada.Containers.Unbounded_Priority_Queues;
+with Ada.Containers.Synchronized_Queue_Interfaces;
 
 procedure Day17 is
    --  Digit matrix stores pre-converted characters so we don't have to keep
@@ -47,6 +49,10 @@ procedure Day17 is
         Forward_Step_Count range <>,
         Direction range <>) of Integer;
 
+   --  Since the score map will be pretty large, best not to allocate it on the
+   --  stack.
+   type Path_Score_Map_Ptr is access all Path_Score_Map;
+
    function In_Bounds (Map : Digit_Matrix; Indices : Vec2) return Boolean is
      (Indices (0) in Map'Range (1) and then Indices (1) in Map'Range (2));
 
@@ -61,6 +67,9 @@ procedure Day17 is
    function Can_Turn_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
    function Can_Goal_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
 
+   package Path_Queue_Interfaces is new Ada.Containers.Synchronized_Queue_Interfaces
+     (Element_Type => Path_State);
+
    generic
       with function Can_Forward (S : Path_State) return Boolean;
       with function Can_Turn (S : Path_State) return Boolean;
@@ -68,22 +77,33 @@ procedure Day17 is
    function Find_Path (Map : Digit_Matrix) return Integer;
 
    function Find_Path (Map : Digit_Matrix) return Integer is
-      Explore         : Path_State_Vector;
+
       Current         : Path_State;
-      Score : Path_Score_Map (Map'Range (1), Map'Range (2), Forward_Step_Count, Direction) :=
-        (others => (others => (others => (others => Integer'Last))));
-      Goal            : constant Vec2 := (Map'Length (1), Map'Length (2));
-      Best_Goal_Score : Integer := Integer'Last;
+      Score           : Path_Score_Map_Ptr :=
+        new Path_Score_Map (Map'Range (1), Map'Range (2), Forward_Step_Count, Direction);
+      Goal            : constant Vec2      := (Map'Length (1), Map'Length (2));
+      Best_Goal_Score : Integer            := Integer'Last;
+
+      function Get_Priority (P : Path_State) return Integer is (Manhattan (P.Position, Goal));
+
+      package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
+        (Queue_Interfaces => Path_Queue_Interfaces,
+         Queue_Priority   => Integer,
+         Before           => "<",
+         Get_Priority     => Get_Priority);
+
+      Explore : Path_Queues.Queue;
    begin
-      Explore.Append
+      Score.all := (others => (others => (others => (others => Integer'Last))));
+
+      Explore.Enqueue
         (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => East, Position => (1, 1)));
 
-      Explore.Append
+      Explore.Enqueue
         (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1)));
 
-      while Explore.Length > 0 loop
-         Current := Explore.Last_Element;
-         Explore.Delete_Last;
+      while Explore.Current_Use > 0 loop
+         Explore.Dequeue(Current);
 
          --  have we seen this state before at a lower score? if so, there's no
          --  point revisiting it
@@ -108,7 +128,7 @@ procedure Day17 is
                      Forward_Position : Vec2 := Current.Position + To_Vector (Current.Forward);
                   begin
                      if In_Bounds (Map, Forward_Position) then
-                        Explore.Append
+                        Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => Current.Forward_Steps + 1,
                               Heat_Loss     => Current.Heat_Loss + Element (Map, Forward_Position),
@@ -126,7 +146,7 @@ procedure Day17 is
                        Current.Position + To_Vector (Rotate_Right (Current.Forward));
                   begin
                      if In_Bounds (Map, Left_Position) then
-                        Explore.Append
+                        Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => 1,
                               Heat_Loss     => Current.Heat_Loss + Element (Map, Left_Position),
@@ -134,7 +154,7 @@ procedure Day17 is
                               Position      => Left_Position));
                      end if;
                      if In_Bounds (Map, Right_Position) then
-                        Explore.Append
+                        Explore.Enqueue
                           (Path_State'
                              (Forward_Steps => 1,
                               Heat_Loss     => Current.Heat_Loss + Element (Map, Right_Position),
