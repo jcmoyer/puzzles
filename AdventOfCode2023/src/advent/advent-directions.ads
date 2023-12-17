@@ -18,4 +18,8 @@ package Advent.Directions is
    type Direction_Flags is array (Direction) of Boolean;
    pragma Pack (Direction_Flags);
 
+   function Rotate_Left (Dir : Direction) return Direction;
+
+   function Rotate_Right (Dir : Direction) return Direction;
+
 end Advent.Directions;
