@@ -1,11 +1,6 @@
-with Advent.Integer_Vector_Math;
-
 package Advent.Directions is
 
    type Direction is (North, South, West, East);
-
-   --  Returns a vector using conventional <row, col> matrix coordinates.
-   function To_Vector (Dir : Direction) return Advent.Integer_Vector_Math.Vec2;
 
    --  Returns the opposite Direction from Dir. The conversions are:
    --

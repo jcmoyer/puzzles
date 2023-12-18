@@ -2,6 +2,8 @@
 --  rarely if ever deal with real numbers. The only counter-example I can think
 --  of is 2019 day 10 which *could* be solved with real number trigonometry.
 
+with Advent.Directions; use Advent.Directions;
+
 generic
    type Element_Type is range <>;
 package Advent.Vector_Math is
@@ -32,7 +34,10 @@ package Advent.Vector_Math is
    --  Vision, Modeling, Visualization. 3.
    use type Ada.Containers.Hash_Type;
    function Hash (A : Vec2) return Ada.Containers.Hash_Type is
-     ((Ada.Containers.Hash_Type (A (0)) * 73_856_093) xor
-      (Ada.Containers.Hash_Type (A (1)) * 19_349_663));
+     ((Ada.Containers.Hash_Type'Mod (A (0)) * 73_856_093) xor
+      (Ada.Containers.Hash_Type'Mod (A (1)) * 19_349_663));
+
+   --  Returns a vector using conventional <row, col> matrix coordinates.
+   function To_Vector (Dir : Direction) return Vec2;
 
 end Advent.Vector_Math;
