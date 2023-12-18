@@ -4,8 +4,6 @@ with Advent.Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers;    use Ada.Containers;
 with Ada.Containers.Vectors;
-with Ada.Text_IO;       use Ada.Text_IO;
-with Ada.Containers.Hashed_Maps;
 
 procedure Day18 is
    package Long_Vectors is new Advent.Vector_Math (Element_Type => Long_Long_Integer);
@@ -68,9 +66,9 @@ procedure Day18 is
      (Parse_Hex_Direction (S (S'Last)));
 
    function Parse_Dig_Order (S : String) return Dig_Order is
-      Parts  : constant String_Array := Split_Any (S, " #()", Keep_Empty => False);
+      Parts  : constant String_Array    := Split_Any (S, " #()", Keep_Empty => False);
+      Color  : constant String (1 .. 6) := Parts.Element (2);
       Result : Dig_Order;
-      Color  : String (1 .. 6)       := Parts.Element (2);
    begin
       Result.Dir_1    := Parse_LRUD (Parts.Element (0));
       Result.Amount_1 := Long_Long_Integer'Value (Parts.Element (1));
@@ -96,7 +94,7 @@ procedure Day18 is
    begin
       for I in 1 .. Integer (Vertices.Length) loop
          --  I love arbitrary indexing
-         J         :=  Vertices.First_Index + ((I + 1 - Vertices.First_Index) rem Vertices.Last_Index);
+         J := Vertices.First_Index + ((I + 1 - Vertices.First_Index) rem Vertices.Last_Index);
          Area      := Area + Long_Long_Integer (Vertices (I) (0) * Vertices (J) (1));
          Area      := Area - Long_Long_Integer (Vertices (I) (1) * Vertices (J) (0));
          Perimeter := Perimeter + Manhattan (Vertices (I), Vertices (J));
