@@ -37,7 +37,7 @@ project AdventOfCode2023 is
                     Common_Switches & ("-Og", "-gnata", "-gnatVa");
             when "Release" =>
                 for Default_Switches ("Ada") use
-                    Common_Switches & ("-O3", "-flto");
+                    Common_Switches & ("-O3", "-gnatn", "-gnatp");
         end case;
     end Compiler;
 
