@@ -51,12 +51,11 @@ procedure Day19 is
       end case;
    end record;
 
-   --  Conditions, e.g. "x>2662:A"
-   type Condition (Kind : Workflow_Output_Kind := Out_Workflow) is record
+   --  Conditions, e.g. "x>2662"
+   type Condition is record
       Left    : Part_Field;
       Right   : Integer;
       Compare : Comparison;
-      Output  : Workflow_Output (Kind);
    end record;
 
    function Compare (Cond : Condition; P : Part) return Boolean is
@@ -130,31 +129,18 @@ procedure Day19 is
    is
    record
       Ranges : Valid_Ranges;
+      Output : Workflow_Output (Output_Kind);
       case Step_Kind is
          when Wf_None =>
             null;
          when Wf_Condition =>
-            Cond : Condition (Output_Kind);
+            Cond : Condition;
          when Wf_Output =>
-            Output : Workflow_Output (Output_Kind);
+            null;
       end case;
    end record;
 
    type Workflow_Step_Ptr is access all Workflow_Step;
-
-   --  TODO: probably should move Workflow_Output out of Condition
-   function Get_Output_Name (S : Workflow_Step) return Workflow_Name is
-   begin
-      case S.Step_Kind is
-         when Wf_Condition =>
-            return S.Cond.Output.Out_Name;
-         when Wf_Output =>
-            return S.Output.Out_Name;
-         when others =>
-            raise Program_Error
-              with "attempted to get output name for uninitialized workflow step";
-      end case;
-   end Get_Output_Name;
 
    package Workflow_Step_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Workflow_Step);
@@ -208,7 +194,7 @@ procedure Day19 is
                  Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
             begin
                if Step.Output_Kind = Out_Workflow then
-                  U.Flows.Reference (Get_Output_Name (Step)).Parent :=
+                  U.Flows.Reference (Step.Output.Out_Name).Parent :=
                     (Workflow_Maps.Key (Wf_Cursor), Step_Id);
                end if;
             end;
@@ -281,13 +267,10 @@ procedure Day19 is
                     (Step_Kind   => Wf_Condition,
                      Output_Kind => Output.Kind,
                      Ranges      => <>,
+                     Output      => Output,
                      Cond        =>
                        Condition'
-                         (Kind    => Output.Kind,
-                          Left    => Part_Kind,
-                          Right   => Compare_To,
-                          Compare => Operator_Kind,
-                          Output  => Output)));
+                         (Left => Part_Kind, Right => Compare_To, Compare => Operator_Kind)));
             end;
          else
             declare
@@ -351,50 +334,42 @@ procedure Day19 is
 
    end Load_Input;
 
+   --  Returns true if Step will accept P. Outputs always return True, and
+   --  conditions return True when their expression returns True.
+   function Accepts (Step : Workflow_Step; P : Part) return Boolean is
+   begin
+      if Step.Step_Kind = Wf_Output then
+         return True;
+      end if;
+
+      if Step.Step_Kind = Wf_Condition and then Compare (Step.Cond, P) then
+         return True;
+      end if;
+
+      return False;
+   end Accepts;
+
    function Rate_Part (U : Universe; P : Part) return Integer is
       Current : Workflow_Maps.Cursor := U.Flows.Find (Workflow_Names.To_Bounded_String ("in"));
    begin
       loop
          for Step of Workflow_Maps.Element (Current).Steps loop
-            case Step.Step_Kind is
-               when Wf_Condition =>
-                  if Compare (Step.Cond, P) then
-                     --  send to this flow
-                     case Step.Cond.Output.Kind is
-                        when Out_Accept =>
-                           return Rating (P);
+            if Accepts (Step, P) then
+               case Step.Output.Kind is
+                  when Out_Accept =>
+                     return Rating (P);
 
-                        when Out_Reject =>
-                           return 0;
+                  when Out_Reject =>
+                     return 0;
 
-                        when Out_Workflow =>
-                           Current := U.Flows.Find (Step.Cond.Output.Out_Name);
-                           exit;
+                  when Out_Workflow =>
+                     Current := U.Flows.Find (Step.Output.Out_Name);
+                     exit;
 
-                        when Out_None =>
-                           raise Program_Error with "output kind is invalid";
-                     end case;
-                  end if;
-
-               when Wf_Output =>
-                  case Step.Output.Kind is
-                     when Out_Accept =>
-                        return Rating (P);
-
-                     when Out_Reject =>
-                        return 0;
-
-                     when Out_Workflow =>
-                        Current := U.Flows.Find (Step.Output.Out_Name);
-                        exit;
-
-                     when Out_None =>
-                        raise Program_Error with "output kind is invalid";
-                  end case;
-
-               when Wf_None =>
-                  raise Program_Error with "workflow has invalid step";
-            end case;
+                  when Out_None =>
+                     raise Program_Error with "output kind is invalid";
+               end case;
+            end if;
          end loop;
       end loop;
    end Rate_Part;
