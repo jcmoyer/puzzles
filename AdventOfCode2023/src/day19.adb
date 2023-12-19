@@ -68,6 +68,51 @@ procedure Day19 is
       end if;
    end Compare;
 
+   --  P2
+   type Valid_Ranges is record
+      Min : Part := (others => 1);
+      Max : Part := (others => 4_000);
+   end record;
+
+   function Count_Accepted (R : Valid_Ranges) return Long_Long_Integer is
+      Accepted : Long_Long_Integer := 1;
+   begin
+      for F in Part_Field loop
+         if R.Max (F) < R.Min (F) then
+            return 0;
+         else
+            Accepted := Accepted * Long_Long_Integer (1 + R.Max (F) - R.Min (F));
+         end if;
+      end loop;
+      return Accepted;
+   end Count_Accepted;
+
+   function Image (R : Valid_Ranges) return String is
+   begin
+      return
+        ("x " & R.Min (Field_X)'Image & ".." & R.Max (Field_X)'Image & " m " &
+         R.Min (Field_M)'Image & ".." & R.Max (Field_M)'Image & " a " & R.Min (Field_A)'Image &
+         ".." & R.Max (Field_A)'Image & " s " & R.Min (Field_S)'Image & ".." &
+         R.Max (Field_S)'Image);
+   end Image;
+
+   procedure Adjust_Range (R : in out Valid_Ranges; C : Condition; Invert : Boolean) is
+   begin
+      if not Invert then
+         if C.Compare = Less_Than then
+            R.Max (C.Left) := Integer'Min (R.Max (C.Left), C.Right - 1);
+         elsif C.Compare = Greater_Than then
+            R.Min (C.Left) := Integer'Max (R.Min (C.Left), C.Right + 1);
+         end if;
+      else
+         if C.Compare = Less_Than then
+            R.Min (C.Left) := Integer'Max (R.Min (C.Left), C.Right);
+         elsif C.Compare = Greater_Than then
+            R.Max (C.Left) := Integer'Min (R.Max (C.Left), C.Right);
+         end if;
+      end if;
+   end Adjust_Range;
+
    --  Workflow steps, either an output or a condition.
    type Workflow_Step_Kind is (Wf_None, Wf_Condition, Wf_Output);
 
@@ -75,6 +120,7 @@ procedure Day19 is
      (Step_Kind : Workflow_Step_Kind := Wf_None; Output_Kind : Workflow_Output_Kind := Out_None)
    is
    record
+      Ranges : Valid_Ranges;
       case Step_Kind is
          when Wf_None =>
             null;
@@ -85,13 +131,39 @@ procedure Day19 is
       end case;
    end record;
 
+   type Workflow_Step_Ptr is access all Workflow_Step;
+
+   --  TODO: probably should move Workflow_Output out of Condition
+   function Get_Output_Name (S : Workflow_Step) return Workflow_Name is
+   begin
+      case S.Step_Kind is
+         when Wf_Condition =>
+            return S.Cond.Output.Out_Name;
+         when Wf_Output =>
+            return S.Output.Out_Name;
+         when others =>
+            raise Program_Error
+              with "attempted to get output name for uninitialized workflow step";
+      end case;
+   end Get_Output_Name;
+
    package Workflow_Step_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Workflow_Step);
 
    --  A named sequence of steps.
+   type Workflow;
+   type Workflow_Ptr is access all Workflow;
+
+   --  Workflow name + step index
+   type Step_Ref is record
+      Workflow_Id : Workflow_Name;
+      Step_Id     : Positive;
+   end record;
+
    type Workflow is record
-      Name  : Workflow_Name;
-      Steps : Workflow_Step_Vectors.Vector;
+      Name   : Workflow_Name;
+      Steps  : Workflow_Step_Vectors.Vector;
+      Parent : Step_Ref;
    end record;
 
    package Workflow_Maps is new Ada.Containers.Hashed_Maps
@@ -101,6 +173,7 @@ procedure Day19 is
       Equivalent_Keys => Workflow_Names."=",
       "="             => "=");
 
+   --  Everything from an input
    type Universe is record
       Flows : Workflow_Maps.Map;
       Parts : Part_Vector;
@@ -159,6 +232,7 @@ procedure Day19 is
                  (Workflow_Step'
                     (Step_Kind   => Wf_Condition,
                      Output_Kind => Output.Kind,
+                     Ranges      => <>,
                      Cond        =>
                        Condition'
                          (Kind    => Output.Kind,
@@ -173,7 +247,10 @@ procedure Day19 is
             begin
                return
                  (Workflow_Step'
-                    (Step_Kind => Wf_Output, Output_Kind => Output.Kind, Output => Output));
+                    (Step_Kind   => Wf_Output,
+                     Output_Kind => Output.Kind,
+                     Ranges      => <>,
+                     Output      => Output));
             end;
          end if;
       end Parse_Workflow_Step;
@@ -222,110 +299,201 @@ procedure Day19 is
 
    end Load_Input;
 
-   Total_Rating   : Integer := 0;
-   Total_Rejected : Integer := 0;
-
-   procedure Send_Part (U : Universe; P : Part) is
+   function Rate_Part (U : Universe; P : Part) return Integer is
+      Result  : Integer              := 0;
       Current : Workflow_Maps.Cursor := U.Flows.Find (Workflow_Names.To_Bounded_String ("in"));
    begin
       loop
          for Step of Workflow_Maps.Element (Current).Steps loop
-
             case Step.Step_Kind is
                when Wf_Condition =>
-
                   if Compare (Step.Cond, P) then
                      --  send to this flow
-
                      case Step.Cond.Output.Kind is
-
                         when Out_Accept =>
-
-                           --  Solution ("Accepted");
-                           Total_Rating := Total_Rating + Rating (P);
-                           return;
+                           return Rating (P);
 
                         when Out_Reject =>
-
-                           --  Solution ("Rejected");
-                           Total_Rejected := Total_Rejected + 1;
-                           return;
+                           return 0;
 
                         when Out_Workflow =>
-
-                           --  Solution
-                           --    ("Move to wf " &
-                           --     Workflow_Names.To_String (Step.Cond.Output.Out_Name));
-
                            Current := U.Flows.Find (Step.Cond.Output.Out_Name);
-
                            exit;
 
                         when Out_None =>
-
                            raise Program_Error with "output kind is invalid";
-
                      end case;
-
                   end if;
 
                when Wf_Output =>
-
                   case Step.Output.Kind is
-
                      when Out_Accept =>
-
-                        --  Solution ("Accepted");
-                        Total_Rating := Total_Rating + Rating (P);
-                        return;
+                        return Rating (P);
 
                      when Out_Reject =>
-
-                        --  Solution ("Rejected");
-                        Total_Rejected := Total_Rejected + 1;
-                        return;
+                        return 0;
 
                      when Out_Workflow =>
-
-                        --  Solution ("Move to wf " & Workflow_Names.To_String (Step.Output.Out_Name));
-
                         Current := U.Flows.Find (Step.Output.Out_Name);
-
                         exit;
 
                      when Out_None =>
-
                         raise Program_Error with "output kind is invalid";
-
                   end case;
 
                when Wf_None =>
-
                   raise Program_Error with "workflow has invalid step";
-
             end case;
-
          end loop;
-
       end loop;
-   end Send_Part;
+   end Rate_Part;
 
-   U : constant Universe := Load_Input (Ada.Command_Line.Argument (1));
+   --  Various accessors through Step_Ref
+   function Get_Flow (U : Universe; Ref : Step_Ref) return Workflow is
+      Wf : Workflow := U.Flows.Element (Ref.Workflow_Id);
+   begin
+      return Wf;
+   end Get_Flow;
 
-   Flow_In : Workflow_Maps.Cursor;
+   function Get_Flow_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Ptr is
+      Wf : Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
+   begin
+      return Wf;
+   end Get_Flow_Ptr;
+
+   function Get_Step (U : Universe; Ref : Step_Ref) return Workflow_Step is
+      Wf : Workflow := U.Flows.Element (Ref.Workflow_Id);
+   begin
+      return Wf.Steps.Element (Ref.Step_Id);
+   end Get_Step;
+
+   function Get_Step_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Step_Ptr is
+      Wf : Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
+   begin
+      return Wf.Steps.Reference (Ref.Step_Id).Element;
+   end Get_Step_Ptr;
+
+   package Step_Ref_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Step_Ref);
+
+   subtype Step_Ref_Vector is Step_Ref_Vectors.Vector;
+
+   function Find_All_Accept_Steps (U : Universe) return Step_Ref_Vector is
+      use type Workflow_Maps.Cursor;
+
+      Wf_Cursor : Workflow_Maps.Cursor := U.Flows.First;
+      Result    : Step_Ref_Vector;
+   begin
+      while Wf_Cursor /= Workflow_Maps.No_Element loop
+         for Step_Id in
+           Workflow_Maps.Element (Wf_Cursor).Steps.First_Index ..
+             Workflow_Maps.Element (Wf_Cursor).Steps.Last_Index
+         loop
+            declare
+               Step : Workflow_Step := Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
+            begin
+               if Step.Output_Kind = Out_Accept then
+                  Result.Append
+                    ((Workflow_Id => Workflow_Maps.Key (Wf_Cursor), Step_Id => Step_Id));
+               end if;
+            end;
+         end loop;
+         Workflow_Maps.Next (Wf_Cursor);
+      end loop;
+
+      return Result;
+   end Find_All_Accept_Steps;
+
+   procedure Link_Parents (U : in out Universe) is
+      use type Workflow_Maps.Cursor;
+
+      Wf_Cursor : Workflow_Maps.Cursor := U.Flows.First;
+   begin
+      while Wf_Cursor /= Workflow_Maps.No_Element loop
+         for Step_Id in
+           Workflow_Maps.Element (Wf_Cursor).Steps.First_Index ..
+             Workflow_Maps.Element (Wf_Cursor).Steps.Last_Index
+         loop
+            declare
+               Step : Workflow_Step := Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
+            begin
+               if Step.Output_Kind = Out_Workflow then
+
+                  U.Flows.Reference (Get_Output_Name (Step)).Parent :=
+                    (Workflow_Maps.Key (Wf_Cursor), Step_Id);
+               end if;
+            end;
+         end loop;
+         Workflow_Maps.Next (Wf_Cursor);
+      end loop;
+   end Link_Parents;
+
+   procedure Compute_Bounds (U : in out Universe; S : Step_Ref) is
+      Bounds            : Valid_Ranges;
+      Current           : Step_Ref := S;
+      --  may be temporarily invalid
+      Unsafe_Next_Index : Integer  := 0;
+      Went_Up           : Boolean  := False;
+   begin
+      loop
+         declare
+            Step_Ptr    : Workflow_Step_Ptr := Get_Step_Ptr (U, S);
+            Current_Ptr : Workflow_Step_Ptr := Get_Step_Ptr (U, Current);
+
+         begin
+            if Current_Ptr.Step_Kind = Wf_Condition then
+               if Current = S then
+                  Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => False);
+               else
+                  Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => not Went_Up);
+               end if;
+            end if;
+         end;
+
+         Went_Up := False;
+
+         --  now walk backwards and up
+         Unsafe_Next_Index := Current.Step_Id - 1;
+         if Unsafe_Next_Index = 0 then
+            --  walked beyond first; go up
+            if Get_Flow (U, Current).Parent.Workflow_Id = "" then
+               exit;
+            else
+               Went_Up := True;
+               Current := Get_Flow (U, Current).Parent;
+            end if;
+         else
+            Current.Step_Id := Unsafe_Next_Index;
+         end if;
+      end loop;
+
+   end Compute_Bounds;
+
+   U       : Universe        := Load_Input (Ada.Command_Line.Argument (1));
+   Accepts : Step_Ref_Vector := Find_All_Accept_Steps (U);
 begin
 
-   Flow_In := U.Flows.Find (Workflow_Names.To_Bounded_String ("in"));
-   Solution (Workflow_Names.To_String (Workflow_Maps.Element (Flow_In).Name));
-   for Step of Workflow_Maps.Element (Flow_In).Steps loop
-      Solution (Step.Step_Kind'Image & " " & Step.Output_Kind'Image);
+   --  Part 1
+   declare
+      Total_Rating : Integer := 0;
+   begin
+      for P of U.Parts loop
+         Total_Rating := Total_Rating + Rate_Part (U, P);
+      end loop;
+      Solution (Total_Rating);
+   end;
 
-   end loop;
+   --  Part 2
+   Link_Parents (U);
 
-   for P of U.Parts loop
-      Send_Part (U, P);
-   end loop;
-
-   Solution (Total_Rating);
+   declare
+      Total_Accepted : Long_Long_Integer := 0;
+   begin
+      for A of Accepts loop
+         Compute_Bounds (U, A);
+         Total_Accepted := Total_Accepted + Count_Accepted (Get_Step (U, A).Ranges);
+      end loop;
+      Solution (Total_Accepted);
+   end;
 
 end Day19;
