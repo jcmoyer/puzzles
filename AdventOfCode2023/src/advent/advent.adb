@@ -202,9 +202,6 @@ package body Advent is
       Line_Start : Stream_Element_Offset := 0;
       Line_End   : Stream_Element_Offset := 0;
       I          : Stream_Element_Offset := 0;
-      Last       : Stream_Element_Offset;
-
-      use type SIO.Count;
 
    begin
       I := Buffer.all'First;

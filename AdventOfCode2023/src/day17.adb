@@ -3,7 +3,6 @@ with Advent.Directions;          use Advent.Directions;
 with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers;             use Ada.Containers;
-with Ada.Containers.Vectors;
 with Ada.Containers.Unbounded_Priority_Queues;
 with Ada.Containers.Synchronized_Queue_Interfaces;
 
