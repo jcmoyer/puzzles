@@ -1,9 +1,10 @@
 with Advent;                  use Advent;
 with Ada.Containers.Vectors;
 with Ada.Characters.Handling; use Ada.Characters.Handling;
+with Ada.Command_Line;
 
 procedure Day03 is
-   Map : constant Char_Matrix := Read_Tilemap ("test/2023-03-input.txt");
+   Map : constant Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
    J   : Integer;
 
    N_Start : Integer;

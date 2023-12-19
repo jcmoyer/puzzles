@@ -1,6 +1,7 @@
 with Advent;         use Advent;
 with Advent.Parsers.Integers;
 with Ada.Containers; use Ada.Containers;
+with Ada.Command_Line;
 
 procedure Day06 is
    type Time_Type is new Long_Long_Integer;
@@ -59,7 +60,7 @@ procedure Day06 is
       return Long_Long_Integer (Result);
    end Way_Product;
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-06-input.txt");
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
    Record_P1 : Race_Records;
    Record_P2 : Race_Records;

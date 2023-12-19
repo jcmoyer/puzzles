@@ -2,6 +2,7 @@ with Advent;         use Advent;
 with Advent.Intervals;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Vectors;
+with Ada.Command_Line;
 
 procedure Day05 is
    ----------------------------------------------------------------------------
@@ -116,7 +117,7 @@ procedure Day05 is
       return Input;
    end Map_Range;
 
-   Lines       : constant String_Array := Read_All_Lines ("test/2023-05-input.txt");
+   Lines       : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
    Seeds       : I64_Vector;
    Current_Map : Map_Kind              := Seed_Soil;
    Maps        : Map_Chain;

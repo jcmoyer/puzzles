@@ -2,6 +2,7 @@ with Advent;         use Advent;
 with Ada.Containers.Hashed_Sets;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers; use Ada.Containers;
+with Ada.Command_Line;
 
 procedure Day04 is
    function Hash (Val : Integer) return Hash_Type is (Hash_Type (Val));
@@ -30,7 +31,7 @@ procedure Day04 is
       return Sum;
    end Count_Quantities;
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-04-input.txt");
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
    Score           : Integer := 0;
    Card_Quantities : Integer_Map;

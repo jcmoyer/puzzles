@@ -1,11 +1,12 @@
 with Advent;            use Advent;
 with Ada.Strings;       use Ada.Strings;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Command_Line;
 
 procedure Day02 is
    type Color_Name is (Red, Green, Blue);
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-02-input.txt");
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
    TotalP1 : Integer := 0;
    TotalP2 : Integer := 0;

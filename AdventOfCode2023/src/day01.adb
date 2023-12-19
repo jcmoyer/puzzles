@@ -4,6 +4,7 @@ with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Bounded;        use Ada.Strings.Bounded;
 with Advent;                     use Advent;
+with Ada.Command_Line;
 
 procedure Day01 is
    package Digit_Strings is new Generic_Bounded_Length (Max => 5);
@@ -78,7 +79,7 @@ procedure Day01 is
       return First_Value * 10 + Last_Value;
    end Calibration_With_Words;
 
-   Lines : constant String_Array := Read_All_Lines ("test/2023-01-input.txt");
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
    Sum1 : Integer := 0;
    Sum2 : Integer := 0;
