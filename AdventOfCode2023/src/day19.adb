@@ -68,12 +68,14 @@ procedure Day19 is
       end if;
    end Compare;
 
-   --  P2
+   --  Inclusive ranges for each variable 'x', 'm', 'a', 's'
    type Valid_Ranges is record
       Min : Part := (others => 1);
       Max : Part := (others => 4_000);
    end record;
 
+   --  Counts and returns the total accepted combinations for a range. If any
+   --  variable has an impossible range, returns 0.
    function Count_Accepted (R : Valid_Ranges) return Long_Long_Integer is
       Accepted : Long_Long_Integer := 1;
    begin
@@ -87,15 +89,22 @@ procedure Day19 is
       return Accepted;
    end Count_Accepted;
 
+   --  For debugging purposes.
    function Image (R : Valid_Ranges) return String is
    begin
+      --!pp off
       return
-        ("x " & R.Min (Field_X)'Image & ".." & R.Max (Field_X)'Image & " m " &
-         R.Min (Field_M)'Image & ".." & R.Max (Field_M)'Image & " a " & R.Min (Field_A)'Image &
-         ".." & R.Max (Field_A)'Image & " s " & R.Min (Field_S)'Image & ".." &
-         R.Max (Field_S)'Image);
+        ("x "  & R.Min (Field_X)'Image & ".." & R.Max (Field_X)'Image &
+         " m " & R.Min (Field_M)'Image & ".." & R.Max (Field_M)'Image &
+         " a " & R.Min (Field_A)'Image & ".." & R.Max (Field_A)'Image &
+         " s " & R.Min (Field_S)'Image & ".." & R.Max (Field_S)'Image);
+      --!pp on
    end Image;
 
+   --  Adjusts a range variable based on a condition. If Invert is True, the
+   --  comparison operator will behave as if it accepts values for which it
+   --  isn't normally true. In particular, this means that < will behave like
+   --  >= and > will behave like <=.
    procedure Adjust_Range (R : in out Valid_Ranges; C : Condition; Invert : Boolean) is
    begin
       if not Invert then
@@ -113,7 +122,7 @@ procedure Day19 is
       end if;
    end Adjust_Range;
 
-   --  Workflow steps, either an output or a condition.
+   --  Workflow steps, either an output like 'A' or "lzz" or a condition.
    type Workflow_Step_Kind is (Wf_None, Wf_Condition, Wf_Output);
 
    type Workflow_Step
@@ -150,21 +159,22 @@ procedure Day19 is
    package Workflow_Step_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Workflow_Step);
 
-   --  A named sequence of steps.
-   type Workflow;
-   type Workflow_Ptr is access all Workflow;
-
-   --  Workflow name + step index
+   --  Workflow name + step index, which can be used to look up either a
+   --  specific workflow or a step within a workflow.
    type Step_Ref is record
       Workflow_Id : Workflow_Name;
       Step_Id     : Positive;
    end record;
 
+   --  A named sequence of steps.
    type Workflow is record
       Name   : Workflow_Name;
       Steps  : Workflow_Step_Vectors.Vector;
+      --  When set, this field points to the workflow that flows to this one.
       Parent : Step_Ref;
    end record;
+
+   type Workflow_Ptr is access all Workflow;
 
    package Workflow_Maps is new Ada.Containers.Hashed_Maps
      (Key_Type        => Workflow_Name,
@@ -179,6 +189,34 @@ procedure Day19 is
       Parts : Part_Vector;
    end record;
 
+   --  Associates each flow with its parent flow and step index within its
+   --  parent flow. After this subprogram is called, Flow Parent fields can be
+   --  used to traverse the tree upwards from any flow. This must be done after
+   --  loading the entire input since it may be unordered.
+   procedure Link_Parents (U : in out Universe) is
+      use type Workflow_Maps.Cursor;
+
+      Wf_Cursor : Workflow_Maps.Cursor := U.Flows.First;
+   begin
+      while Wf_Cursor /= Workflow_Maps.No_Element loop
+         for Step_Id in
+           Workflow_Maps.Element (Wf_Cursor).Steps.First_Index ..
+             Workflow_Maps.Element (Wf_Cursor).Steps.Last_Index
+         loop
+            declare
+               Step : constant Workflow_Step :=
+                 Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
+            begin
+               if Step.Output_Kind = Out_Workflow then
+                  U.Flows.Reference (Get_Output_Name (Step)).Parent :=
+                    (Workflow_Maps.Key (Wf_Cursor), Step_Id);
+               end if;
+            end;
+         end loop;
+         Workflow_Maps.Next (Wf_Cursor);
+      end loop;
+   end Link_Parents;
+
    type Parse_State is (Parse_Workflows, Parse_Parts);
 
    --  Parse errors
@@ -189,6 +227,25 @@ procedure Day19 is
       Result : Universe;
 
       State : Parse_State := Parse_Workflows;
+
+      --  e.g. 'x', 'm', 'a', 's'
+      function Parse_Field (C : Character) return Part_Field is
+      begin
+         case C is
+            when 'x' =>
+               return Field_X;
+            when 'm' =>
+               return Field_M;
+            when 'a' =>
+               return Field_A;
+            when 's' =>
+               return Field_S;
+            when others =>
+               raise Invalid_Field;
+         end case;
+      end Parse_Field;
+
+      function Parse_Field (S : String) return Part_Field is (Parse_Field (S (S'First)));
 
       --  e.g. "A", "R", "qqz"
       function Parse_Output (S : String) return Workflow_Output is
@@ -204,30 +261,21 @@ procedure Day19 is
          end if;
       end Parse_Output;
 
+      --  One step within braces. e.g. "x<2198:cr", "bn", "A", "R"
       function Parse_Workflow_Step (S : String) return Workflow_Step is
          Operator : constant Natural := Index (S, To_Set ("<>"));
       begin
          if Operator /= 0 then
             declare
-               Operator_Kind : Comparison            :=
+               Operator_Kind : constant Comparison :=
                  (if S (Operator) = '<' then Less_Than else Greater_Than);
-               Parts         : constant String_Array := Split_Any (S, ":<>");
-               Part_Kind     : Part_Field;
-               Compare_To    : Integer               := Integer'Value (Parts (1));
-               Output        : Workflow_Output       := Parse_Output (Parts (2));
-            begin
-               if Parts (0) = "x" then
-                  Part_Kind := Field_X;
-               elsif Parts (0) = "m" then
-                  Part_Kind := Field_M;
-               elsif Parts (0) = "a" then
-                  Part_Kind := Field_A;
-               elsif Parts (0) = "s" then
-                  Part_Kind := Field_S;
-               else
-                  raise Invalid_Field;
-               end if;
 
+               Parts : constant String_Array := Split_Any (S, ":<>");
+
+               Part_Kind  : constant Part_Field      := Parse_Field (Parts (0));
+               Compare_To : constant Integer         := Integer'Value (Parts (1));
+               Output     : constant Workflow_Output := Parse_Output (Parts (2));
+            begin
                return
                  (Workflow_Step'
                     (Step_Kind   => Wf_Condition,
@@ -243,7 +291,7 @@ procedure Day19 is
             end;
          else
             declare
-               Output : Workflow_Output := Parse_Output (S);
+               Output : constant Workflow_Output := Parse_Output (S);
             begin
                return
                  (Workflow_Step'
@@ -255,6 +303,7 @@ procedure Day19 is
          end if;
       end Parse_Workflow_Step;
 
+      --  e.g. "shv{x>3654:sbb,R}"
       function Parse_Workflow (Line : String) return Workflow is
          W     : Workflow;
          Parts : constant String_Array := Split_Any (Line, "{},", Keep_Empty => False);
@@ -268,6 +317,7 @@ procedure Day19 is
          return W;
       end Parse_Workflow;
 
+      --  e.g. "{x=388,m=292,a=82,s=3715}"
       function Parse_Part (Line : String) return Part is
          P    : Part;
          Ints : constant Integer_Parsers.Vector := Integer_Parsers.Extract_Integers (Line);
@@ -286,7 +336,7 @@ procedure Day19 is
             State := Parse_Parts;
          elsif State = Parse_Workflows then
             declare
-               W : Workflow := Parse_Workflow (Line);
+               W : constant Workflow := Parse_Workflow (Line);
             begin
                Result.Flows.Insert (W.Name, W);
             end;
@@ -295,12 +345,13 @@ procedure Day19 is
          end if;
       end loop;
 
+      Link_Parents (Result);
+
       return Result;
 
    end Load_Input;
 
    function Rate_Part (U : Universe; P : Part) return Integer is
-      Result  : Integer              := 0;
       Current : Workflow_Maps.Cursor := U.Flows.Find (Workflow_Names.To_Bounded_String ("in"));
    begin
       loop
@@ -350,25 +401,23 @@ procedure Day19 is
 
    --  Various accessors through Step_Ref
    function Get_Flow (U : Universe; Ref : Step_Ref) return Workflow is
-      Wf : Workflow := U.Flows.Element (Ref.Workflow_Id);
    begin
-      return Wf;
+      return U.Flows.Element (Ref.Workflow_Id);
    end Get_Flow;
 
    function Get_Flow_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Ptr is
-      Wf : Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
    begin
-      return Wf;
+      return U.Flows.Reference (Ref.Workflow_Id).Element;
    end Get_Flow_Ptr;
 
    function Get_Step (U : Universe; Ref : Step_Ref) return Workflow_Step is
-      Wf : Workflow := U.Flows.Element (Ref.Workflow_Id);
+      Wf : constant Workflow := U.Flows.Element (Ref.Workflow_Id);
    begin
       return Wf.Steps.Element (Ref.Step_Id);
    end Get_Step;
 
    function Get_Step_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Step_Ptr is
-      Wf : Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
+      Wf : constant Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
    begin
       return Wf.Steps.Reference (Ref.Step_Id).Element;
    end Get_Step_Ptr;
@@ -378,6 +427,7 @@ procedure Day19 is
 
    subtype Step_Ref_Vector is Step_Ref_Vectors.Vector;
 
+   --  Returns a list of all steps that output directly to 'A'
    function Find_All_Accept_Steps (U : Universe) return Step_Ref_Vector is
       use type Workflow_Maps.Cursor;
 
@@ -390,7 +440,8 @@ procedure Day19 is
              Workflow_Maps.Element (Wf_Cursor).Steps.Last_Index
          loop
             declare
-               Step : Workflow_Step := Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
+               Step : constant Workflow_Step :=
+                 Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
             begin
                if Step.Output_Kind = Out_Accept then
                   Result.Append
@@ -404,73 +455,60 @@ procedure Day19 is
       return Result;
    end Find_All_Accept_Steps;
 
-   procedure Link_Parents (U : in out Universe) is
-      use type Workflow_Maps.Cursor;
-
-      Wf_Cursor : Workflow_Maps.Cursor := U.Flows.First;
-   begin
-      while Wf_Cursor /= Workflow_Maps.No_Element loop
-         for Step_Id in
-           Workflow_Maps.Element (Wf_Cursor).Steps.First_Index ..
-             Workflow_Maps.Element (Wf_Cursor).Steps.Last_Index
-         loop
-            declare
-               Step : Workflow_Step := Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
-            begin
-               if Step.Output_Kind = Out_Workflow then
-
-                  U.Flows.Reference (Get_Output_Name (Step)).Parent :=
-                    (Workflow_Maps.Key (Wf_Cursor), Step_Id);
-               end if;
-            end;
-         end loop;
-         Workflow_Maps.Next (Wf_Cursor);
-      end loop;
-   end Link_Parents;
-
+   --  Starts at S, then walks right-to-left until exhausting the steps left of
+   --  S, then go up a level and repeat until we reach past the "in" flow.
+   --
+   --  At each conditional step, the valid XMAS values for S will be refined:
+   --
+   --    1. If we have just started or have just gone up a level, the condition
+   --       must be true to reach S.
+   --    2. If we're at a condition left of S or left of a node we just went up
+   --       to, the condition must be false to reach S.
    procedure Compute_Bounds (U : in out Universe; S : Step_Ref) is
-      Bounds            : Valid_Ranges;
-      Current           : Step_Ref := S;
-      --  may be temporarily invalid
-      Unsafe_Next_Index : Integer  := 0;
-      Went_Up           : Boolean  := False;
+      --  Location we're currently examining.
+      Current : Step_Ref := S;
+
+      --  We will only adjust the ranges for S, so keep a pointer to it.
+      Step_Ptr : constant Workflow_Step_Ptr := Get_Step_Ptr (U, S);
+
+      --  Treat the very first iteration as having gone up a level so it uses
+      --  the condition without inverting it.
+      Went_Up : Boolean := True;
    begin
       loop
          declare
-            Step_Ptr    : Workflow_Step_Ptr := Get_Step_Ptr (U, S);
-            Current_Ptr : Workflow_Step_Ptr := Get_Step_Ptr (U, Current);
-
+            Current_Ptr : constant Workflow_Step_Ptr := Get_Step_Ptr (U, Current);
          begin
+            --  We only care about conditions.
             if Current_Ptr.Step_Kind = Wf_Condition then
-               if Current = S then
-                  Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => False);
-               else
-                  Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => not Went_Up);
-               end if;
+               Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => not Went_Up);
             end if;
          end;
 
          Went_Up := False;
 
-         --  now walk backwards and up
-         Unsafe_Next_Index := Current.Step_Id - 1;
-         if Unsafe_Next_Index = 0 then
-            --  walked beyond first; go up
-            if Get_Flow (U, Current).Parent.Workflow_Id = "" then
+         --  Now walk right-to-left. We use 1-based indices so 0 means we're
+         --  before the start of this flow.
+         if Integer (Current.Step_Id) - 1 = 0 then
+            if Get_Flow_Ptr (U, Current).Parent.Workflow_Id = "" then
+               --  No parent to climb to; we've reached the end.
                exit;
             else
+               --  We go up to the parent flow at the step pointing to this
+               --  flow.
+               Current := Get_Flow_Ptr (U, Current).Parent;
                Went_Up := True;
-               Current := Get_Flow (U, Current).Parent;
             end if;
          else
-            Current.Step_Id := Unsafe_Next_Index;
+            --  There are still steps in this flow; keep walking left.
+            Current.Step_Id := Current.Step_Id - 1;
          end if;
       end loop;
-
    end Compute_Bounds;
 
-   U       : Universe        := Load_Input (Ada.Command_Line.Argument (1));
-   Accepts : Step_Ref_Vector := Find_All_Accept_Steps (U);
+   --  locals
+   U : Universe := Load_Input (Ada.Command_Line.Argument (1));
+
 begin
 
    --  Part 1
@@ -484,10 +522,9 @@ begin
    end;
 
    --  Part 2
-   Link_Parents (U);
-
    declare
-      Total_Accepted : Long_Long_Integer := 0;
+      Accepts        : constant Step_Ref_Vector := Find_All_Accept_Steps (U);
+      Total_Accepted : Long_Long_Integer        := 0;
    begin
       for A of Accepts loop
          Compute_Bounds (U, A);
