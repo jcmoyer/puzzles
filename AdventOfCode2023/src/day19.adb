@@ -137,7 +137,7 @@ procedure Day19 is
       end case;
    end record;
 
-   type Workflow_Step_Ptr is access all Workflow_Step;
+   type Workflow_Step_Const_Ptr is not null access constant Workflow_Step;
 
    package Workflow_Step_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Workflow_Step);
@@ -158,6 +158,7 @@ procedure Day19 is
    end record;
 
    type Workflow_Ptr is access all Workflow;
+   type Workflow_Const_Ptr is not null access constant Workflow;
 
    package Workflow_Maps is new Ada.Containers.Hashed_Maps
      (Key_Type        => Workflow_Name,
@@ -371,10 +372,10 @@ procedure Day19 is
       return U.Flows.Element (Ref.Workflow_Id);
    end Get_Flow;
 
-   function Get_Flow_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Ptr is
+   function Get_Flow_Const_Ptr (U : Universe; Ref : Step_Ref) return Workflow_Const_Ptr is
    begin
-      return U.Flows.Reference (Ref.Workflow_Id).Element;
-   end Get_Flow_Ptr;
+      return U.Flows.Constant_Reference (Ref.Workflow_Id).Element;
+   end Get_Flow_Const_Ptr;
 
    function Get_Step (U : Universe; Ref : Step_Ref) return Workflow_Step is
       Wf : constant Workflow := U.Flows.Element (Ref.Workflow_Id);
@@ -382,11 +383,11 @@ procedure Day19 is
       return Wf.Steps.Element (Ref.Step_Id);
    end Get_Step;
 
-   function Get_Step_Ptr (U : in out Universe; Ref : Step_Ref) return Workflow_Step_Ptr is
-      Wf : constant Workflow_Ptr := U.Flows.Reference (Ref.Workflow_Id).Element;
+   function Get_Step_Const_Ptr (U : Universe; Ref : Step_Ref) return Workflow_Step_Const_Ptr is
+      Wf : constant Workflow_Ptr := U.Flows.Constant_Reference (Ref.Workflow_Id).Element;
    begin
-      return Wf.Steps.Reference (Ref.Step_Id).Element;
-   end Get_Step_Ptr;
+      return Wf.Steps.Constant_Reference (Ref.Step_Id).Element;
+   end Get_Step_Const_Ptr;
 
    package Step_Ref_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Step_Ref);
@@ -430,24 +431,23 @@ procedure Day19 is
    --       must be true to reach S.
    --    2. If we're at a condition left of S or left of a node we just went up
    --       to, the condition must be false to reach S.
-   procedure Compute_Bounds (U : in out Universe; S : Step_Ref) is
+   function Compute_Bounds (U : Universe; S : Step_Ref) return Valid_Ranges is
       --  Location we're currently examining.
       Current : Step_Ref := S;
-
-      --  We will only adjust the ranges for S, so keep a pointer to it.
-      Step_Ptr : constant Workflow_Step_Ptr := Get_Step_Ptr (U, S);
 
       --  Treat the very first iteration as having gone up a level so it uses
       --  the condition without inverting it.
       Went_Up : Boolean := True;
+
+      Result : Valid_Ranges;
    begin
       loop
          declare
-            Current_Ptr : constant Workflow_Step_Ptr := Get_Step_Ptr (U, Current);
+            Current_Ptr : constant Workflow_Step_Const_Ptr := Get_Step_Const_Ptr (U, Current);
          begin
             --  We only care about conditions.
             if Current_Ptr.Kind = Wf_Condition then
-               Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => not Went_Up);
+               Adjust_Range (Result, Current_Ptr.Cond, Invert => not Went_Up);
             end if;
          end;
 
@@ -456,13 +456,13 @@ procedure Day19 is
          --  Now walk right-to-left. We use 1-based indices so 0 means we're
          --  before the start of this flow.
          if Integer (Current.Step_Id) - 1 = 0 then
-            if Get_Flow_Ptr (U, Current).Parent.Workflow_Id = "" then
+            if Get_Flow_Const_Ptr (U, Current).Parent.Workflow_Id = "" then
                --  No parent to climb to; we've reached the end.
                exit;
             else
                --  We go up to the parent flow at the step pointing to this
                --  flow.
-               Current := Get_Flow_Ptr (U, Current).Parent;
+               Current := Get_Flow_Const_Ptr (U, Current).Parent;
                Went_Up := True;
             end if;
          else
@@ -470,10 +470,12 @@ procedure Day19 is
             Current.Step_Id := Current.Step_Id - 1;
          end if;
       end loop;
+
+      return Result;
    end Compute_Bounds;
 
    --  locals
-   U : Universe := Load_Input (Ada.Command_Line.Argument (1));
+   U : constant Universe := Load_Input (Ada.Command_Line.Argument (1));
 
 begin
 
@@ -493,8 +495,7 @@ begin
       Total_Accepted : Long_Long_Integer        := 0;
    begin
       for A of Accepts loop
-         Compute_Bounds (U, A);
-         Total_Accepted := Total_Accepted + Count_Accepted (Get_Step (U, A).Ranges);
+         Total_Accepted := Total_Accepted + Count_Accepted (Compute_Bounds (U, A));
       end loop;
       Solution (Total_Accepted);
    end;
