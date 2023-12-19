@@ -42,7 +42,7 @@ procedure Day19 is
    --  Workflow outputs, e.g. "A", "R", "qqz"
    type Workflow_Output_Kind is (Out_None, Out_Workflow, Out_Accept, Out_Reject);
 
-   type Workflow_Output (Kind : Workflow_Output_Kind) is record
+   type Workflow_Output (Kind : Workflow_Output_Kind := Out_None) is record
       case Kind is
          when Out_Workflow =>
             Out_Name : Workflow_Name;
@@ -124,13 +124,10 @@ procedure Day19 is
    --  Workflow steps, either an output like 'A' or "lzz" or a condition.
    type Workflow_Step_Kind is (Wf_None, Wf_Condition, Wf_Output);
 
-   type Workflow_Step
-     (Step_Kind : Workflow_Step_Kind := Wf_None; Output_Kind : Workflow_Output_Kind := Out_None)
-   is
-   record
+   type Workflow_Step (Kind : Workflow_Step_Kind := Wf_None) is record
       Ranges : Valid_Ranges;
-      Output : Workflow_Output (Output_Kind);
-      case Step_Kind is
+      Output : Workflow_Output;
+      case Kind is
          when Wf_None =>
             null;
          when Wf_Condition =>
@@ -193,7 +190,7 @@ procedure Day19 is
                Step : constant Workflow_Step :=
                  Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
             begin
-               if Step.Output_Kind = Out_Workflow then
+               if Step.Output.Kind = Out_Workflow then
                   U.Flows.Reference (Step.Output.Out_Name).Parent :=
                     (Workflow_Maps.Key (Wf_Cursor), Step_Id);
                end if;
@@ -264,11 +261,10 @@ procedure Day19 is
             begin
                return
                  (Workflow_Step'
-                    (Step_Kind   => Wf_Condition,
-                     Output_Kind => Output.Kind,
-                     Ranges      => <>,
-                     Output      => Output,
-                     Cond        =>
+                    (Kind   => Wf_Condition,
+                     Ranges => <>,
+                     Output => Output,
+                     Cond   =>
                        Condition'
                          (Left => Part_Kind, Right => Compare_To, Compare => Operator_Kind)));
             end;
@@ -276,12 +272,7 @@ procedure Day19 is
             declare
                Output : constant Workflow_Output := Parse_Output (S);
             begin
-               return
-                 (Workflow_Step'
-                    (Step_Kind   => Wf_Output,
-                     Output_Kind => Output.Kind,
-                     Ranges      => <>,
-                     Output      => Output));
+               return (Workflow_Step'(Kind => Wf_Output, Ranges => <>, Output => Output));
             end;
          end if;
       end Parse_Workflow_Step;
@@ -338,11 +329,11 @@ procedure Day19 is
    --  conditions return True when their expression returns True.
    function Accepts (Step : Workflow_Step; P : Part) return Boolean is
    begin
-      if Step.Step_Kind = Wf_Output then
+      if Step.Kind = Wf_Output then
          return True;
       end if;
 
-      if Step.Step_Kind = Wf_Condition and then Compare (Step.Cond, P) then
+      if Step.Kind = Wf_Condition and then Compare (Step.Cond, P) then
          return True;
       end if;
 
@@ -418,7 +409,7 @@ procedure Day19 is
                Step : constant Workflow_Step :=
                  Workflow_Maps.Element (Wf_Cursor).Steps.Element (Step_Id);
             begin
-               if Step.Output_Kind = Out_Accept then
+               if Step.Output.Kind = Out_Accept then
                   Result.Append
                     ((Workflow_Id => Workflow_Maps.Key (Wf_Cursor), Step_Id => Step_Id));
                end if;
@@ -455,7 +446,7 @@ procedure Day19 is
             Current_Ptr : constant Workflow_Step_Ptr := Get_Step_Ptr (U, Current);
          begin
             --  We only care about conditions.
-            if Current_Ptr.Step_Kind = Wf_Condition then
+            if Current_Ptr.Kind = Wf_Condition then
                Adjust_Range (Step_Ptr.Ranges, Current_Ptr.Cond, Invert => not Went_Up);
             end if;
          end;
