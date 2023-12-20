@@ -121,7 +121,7 @@ procedure Day20 is
    type Pulse_Counts_Array is array (Pulse) of Long_Long_Integer;
 
    --  Callback type for hooking module output.
-   type Output_Hook is not null access procedure (Message : Pulse_Message);
+   type Output_Hook is access procedure (Message : Pulse_Message);
 
    package Hook_Maps is new Ada.Containers.Hashed_Maps
      (Key_Type => Module_Id, Element_Type => Output_Hook, Hash => Hash, Equivalent_Keys => "=");
@@ -308,7 +308,7 @@ procedure Day20 is
 
    --  Delivers one message to the module To and processes it.
    procedure Deliver (G : in out Module_Graph; To : Module_Id; Message : Pulse_Message) is
-      Processor : Module_Ptr := G.Modules.Reference (To).Element;
+      Processor : constant Module_Ptr := G.Modules.Reference (To).Element;
    begin
       case Processor.Kind is
          when Broadcaster =>
