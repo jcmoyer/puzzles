@@ -7,8 +7,7 @@ with Ada.Containers.Vectors;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Hashed_Sets;
 with Ada.Text_IO;                use Ada.Text_IO;
-with Ada.Containers.Synchronized_Queue_Interfaces;
-with Ada.Containers.Unbounded_Priority_Queues;
+with Interfaces;                 use Interfaces;
 
 procedure Day23 is
 
@@ -89,15 +88,6 @@ procedure Day23 is
       Steps    : Step_Count;
       From, To : Node_Index;
    end record;
-
-   function Other_Node (E : Edge; From : Node_Index) return Node_Index is
-   begin
-      if From = E.From then
-         return E.To;
-      else
-         return E.From;
-      end if;
-   end Other_Node;
 
    type Node is record
       Position : Vec2;
@@ -241,60 +231,47 @@ procedure Day23 is
 
    function Hash (I : Node_Index) return Hash_Type is (Hash_Type (I));
 
-   package Node_Sets is new Ada.Containers.Hashed_Sets
-     (Element_Type => Node_Index, Hash => Hash, Equivalent_Elements => "=");
-
    type Path_State is record
       --  Node position
       Position : Node_Index;
 
-      --  Edges we've taken
-      Seen : Node_Sets.Set;
+      --  Nodes we've already visited. Each node N occupies 1 bit at 1 << N.
+      Seen : Interfaces.Unsigned_64;
 
-      --  Could get this from seen I guess
+      --  Total steps taken.
       Steps : Step_Count;
    end record;
 
-   package Path_Queue_Interfaces is new Ada.Containers.Synchronized_Queue_Interfaces
-     (Element_Type => Path_State);
-
-   function Get_Priority (P : Path_State) return Integer is (Integer (P.Steps));
-
-   package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
-     (Queue_Interfaces => Path_Queue_Interfaces,
-      Queue_Priority   => Integer,
-      Before           => ">",
-      Get_Priority     => Get_Priority);
+   package Path_State_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Path_State);
 
    function Find_Longest_Path (G : Graph; Start, Goal : Vec2) return Step_Count is
-      Explore : Path_Queues.Queue;
+      Explore : Path_State_Vectors.Vector;
       Current : Path_State;
 
       Best_Steps : Step_Count := 0;
 
    begin
-      Explore.Enqueue
-        (Path_State'
-           (Position => Get_Node_Index (G, Start), Steps => 0, Seen => Node_Sets.Empty_Set));
+      Explore.Append (Path_State'(Position => Get_Node_Index (G, Start), Steps => 0, Seen => 0));
 
-      while Explore.Current_Use > 0 loop
-         Explore.Dequeue (Current);
+      while Explore.Length > 0 loop
+         Current := Explore.Last_Element;
+         Explore.Delete_Last;
 
-         Current.Seen.Insert (Current.Position);
+         Current.Seen := Current.Seen or Interfaces.Shift_Left (1, Natural (Current.Position));
 
          if G.Nodes (Current.Position).Position = Goal then
             Best_Steps := Step_Count'Max (Best_Steps, Current.Steps);
-            Put_Line ("Goal in " & Current.Steps'Image & " (best " & Best_Steps'Image & ")");
          else
             for E of G.Nodes (Current.Position).Edge_Ids loop
                declare
-                  Other : constant Node_Index := G.Edges (E).To;
+                  Neighbor : constant Node_Index := G.Edges (E).To;
                begin
-                  if not Current.Seen.Contains (Other) then
-                     Explore.Enqueue
-                       ((Position => Other,
-                         Seen     => Current.Seen.Copy,
-                         Steps    => Current.Steps + G.Edges (E).Steps));
+                  if (Current.Seen and Interfaces.Shift_Left (1, Natural (Neighbor))) = 0 then
+                     Explore.Append
+                       ((Position => Neighbor,
+                         Seen     => Current.Seen,
+                        Steps     => Current.Steps + G.Edges (E).Steps));
                   end if;
                end;
             end loop;
