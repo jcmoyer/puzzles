@@ -16,7 +16,7 @@ procedure Day23 is
    --
    --  paths are all one tile wide, so it should be fast to explore each branch
    --  grid is 141x141 tiles = 19881 cells; 9292 are '.' 10471 are '#'
-
+   --
    --  There are no '^' characters in the input
    --
    --  A dot adjacent to an arrow is always surrounded by multiple (3+?) arrows
@@ -25,6 +25,8 @@ procedure Day23 is
    --
    --  Passing through a junction is the only way to get to a different
    --  junction, there are no gaps in the walls
+   --
+   --  An arrow is always approached from the opposite direction it points
 
    type Step_Count is new Natural;
 
@@ -84,16 +86,16 @@ procedure Day23 is
      (Index_Type => Edge_Index, Element_Type => Integer);
 
    type Edge is record
-      Steps          : Integer;
-      Node_A, Node_B : Node_Index;
+      Steps    : Step_Count;
+      From, To : Node_Index;
    end record;
 
    function Other_Node (E : Edge; From : Node_Index) return Node_Index is
    begin
-      if From = E.Node_A then
-         return E.Node_B;
+      if From = E.From then
+         return E.To;
       else
-         return E.Node_A;
+         return E.From;
       end if;
    end Other_Node;
 
@@ -128,38 +130,36 @@ procedure Day23 is
       return G.Nodes_By_Position.Element (Key);
    end Get_Node_Index;
 
-   function Contains_Edge (G : Graph; First, Second : Vec2) return Boolean is
+   function Contains_Edge (G : Graph; From, To : Vec2) return Boolean is
    begin
       for E of G.Edges loop
-         if G.Nodes (E.Node_A).Position = First and then G.Nodes (E.Node_B).Position = Second then
-            return True;
-         end if;
-         --  The order may be swapped
-         if G.Nodes (E.Node_A).Position = Second and then G.Nodes (E.Node_B).Position = First then
+         if G.Nodes (E.From).Position = From and then G.Nodes (E.To).Position = To then
             return True;
          end if;
       end loop;
       return False;
    end Contains_Edge;
 
-   --  Adds an edge to the graph between two nodes. If an edge already exists
-   --  between the nodes, this procedure does nothing.
-   procedure Add_Edge (G : in out Graph; First, Second : Vec2; Steps : Integer) with
-     Pre => G.Nodes_By_Position.Contains (First) and then G.Nodes_By_Position.Contains (Second)
+   procedure Add_Edge
+     (G : in out Graph; From, To : Vec2; Steps : Step_Count; Bidirectional : Boolean) with
+     Pre => G.Nodes_By_Position.Contains (From) and then G.Nodes_By_Position.Contains (To)
    is
-      First_Index  : constant Node_Index := G.Nodes_By_Position.Element (First);
-      Second_Index : constant Node_Index := G.Nodes_By_Position.Element (Second);
+      From_Index : constant Node_Index := G.Nodes_By_Position.Element (From);
+      To_Index   : constant Node_Index := G.Nodes_By_Position.Element (To);
    begin
-      if not Contains_Edge (G, First, Second) then
-         G.Edges.Append ((Steps => Steps, Node_A => First_Index, Node_B => Second_Index));
-         G.Nodes (First_Index).Edge_Ids.Append (G.Edges.Last_Index);
-         G.Nodes (Second_Index).Edge_Ids.Append (G.Edges.Last_Index);
+      if not Contains_Edge (G, From, To) then
+         G.Edges.Append ((Steps => Steps, From => From_Index, To => To_Index));
+         G.Nodes (From_Index).Edge_Ids.Append (G.Edges.Last_Index);
+      end if;
+      if Bidirectional and then not Contains_Edge (G, To, From) then
+         G.Edges.Append ((Steps => Steps, From => To_Index, To => From_Index));
+         G.Nodes (To_Index).Edge_Ids.Append (G.Edges.Last_Index);
       end if;
    end Add_Edge;
 
    type Tilemap_Path_State is record
       Position : Vec2;
-      Steps    : Integer;
+      Steps    : Step_Count;
    end record;
 
    package Tilemap_Path_State_Vectors is new Ada.Containers.Vectors
@@ -167,7 +167,7 @@ procedure Day23 is
 
    type Adjacent_Junction is record
       Position : Vec2;
-      Steps    : Integer;
+      Steps    : Step_Count;
    end record;
 
    package Adjacent_Junction_Vectors is new Ada.Containers.Vectors
@@ -200,10 +200,34 @@ procedure Day23 is
                   Index : constant Vec2 := Current.Position + To_Vector (D);
                   Value : Character;
                begin
-                  if Try_Element (M, Index, Value) then
-                     if Value /= '#' and then not Seen.Contains (Index) then
-                        Explore.Append ((Position => Index, Steps => Current.Steps + 1));
-                     end if;
+                  if Try_Element (M, Index, Value) and then not Seen.Contains (Index) then
+                     case Value is
+                        when '.' =>
+                           Explore.Append ((Position => Index, Steps => Current.Steps + 1));
+
+                        when '^' =>
+                           if D = North then
+                              Explore.Append ((Position => Index, Steps => Current.Steps + 1));
+                           end if;
+
+                        when 'v' =>
+                           if D = South then
+                              Explore.Append ((Position => Index, Steps => Current.Steps + 1));
+                           end if;
+
+                        when '<' =>
+                           if D = West then
+                              Explore.Append ((Position => Index, Steps => Current.Steps + 1));
+                           end if;
+
+                        when '>' =>
+                           if D = East then
+                              Explore.Append ((Position => Index, Steps => Current.Steps + 1));
+                           end if;
+
+                        when others =>
+                           null;
+                     end case;
                   end if;
                end;
             end loop;
@@ -242,7 +266,7 @@ procedure Day23 is
       Before           => ">",
       Get_Priority     => Get_Priority);
 
-   function Find_Longest_Path (G : Graph; First, Last : Vec2) return Step_Count is
+   function Find_Longest_Path (G : Graph; Start, Goal : Vec2) return Step_Count is
       Explore : Path_Queues.Queue;
       Current : Path_State;
 
@@ -251,68 +275,73 @@ procedure Day23 is
    begin
       Explore.Enqueue
         (Path_State'
-           (Position => Get_Node_Index (G, First), Steps => 0, Seen => Node_Sets.Empty_Set));
+           (Position => Get_Node_Index (G, Start), Steps => 0, Seen => Node_Sets.Empty_Set));
 
       while Explore.Current_Use > 0 loop
          Explore.Dequeue (Current);
 
          Current.Seen.Insert (Current.Position);
 
-         if G.Nodes (Current.Position).Position = Last then
+         if G.Nodes (Current.Position).Position = Goal then
             Best_Steps := Step_Count'Max (Best_Steps, Current.Steps);
             Put_Line ("Goal in " & Current.Steps'Image & " (best " & Best_Steps'Image & ")");
          else
             for E of G.Nodes (Current.Position).Edge_Ids loop
                declare
-                  Other : constant Node_Index := Other_Node (G.Edges (E), Current.Position);
+                  Other : constant Node_Index := G.Edges (E).To;
                begin
                   if not Current.Seen.Contains (Other) then
                      Explore.Enqueue
                        ((Position => Other,
                          Seen     => Current.Seen.Copy,
-                         Steps    => Current.Steps + Step_Count (G.Edges (E).Steps)));
+                         Steps    => Current.Steps + G.Edges (E).Steps));
                   end if;
                end;
             end loop;
          end if;
-
       end loop;
 
       return Best_Steps;
    end Find_Longest_Path;
 
+   function Construct_Graph (M : Char_Matrix; Start, Goal : Vec2; Slopes : Boolean) return Graph is
+      Js : Vec2_Sets.Set := Find_All_Junctions (M);
+      G  : Graph;
+   begin
+
+      --  We can treat the start and end as junctions for simplicity
+      Js.Insert (Start);
+      Js.Insert (Goal);
+
+      for J of Js loop
+         Add_Node (G, J);
+      end loop;
+
+      for J of Js loop
+         for K of Find_Adjacent_Junctions (M, J, Js) loop
+            Add_Edge (G, J, K.Position, K.Steps, Bidirectional => not Slopes);
+         end loop;
+      end loop;
+
+      return G;
+
+   end Construct_Graph;
+
    --  locals
-   Map : constant Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
-
-   Js : constant Vec2_Sets.Set := Find_All_Junctions (Map);
-
-   P_Start : constant Vec2 := (1, 2);
-   P_End   : constant Vec2 := (Rows (Map), Cols (Map) - 1);
-
-   G : Graph;
+   Map     : constant Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
+   P_Start : constant Vec2        := (1, 2);
+   P_Goal  : constant Vec2        := (Rows (Map), Cols (Map) - 1);
 
 begin
 
-   for J of Js loop
-      Add_Node (G, J);
-   end loop;
+   Solution
+     (Integer
+        (Find_Longest_Path
+           (Construct_Graph (Map, P_Start, P_Goal, Slopes => True), P_Start, P_Goal)));
 
-   Add_Node (G, P_Start);
-   for K of Find_Adjacent_Junctions (Map, P_Start, Js) loop
-      Add_Edge (G, P_Start, K.Position, K.Steps);
-   end loop;
-
-   Add_Node (G, P_End);
-   for K of Find_Adjacent_Junctions (Map, P_End, Js) loop
-      Add_Edge (G, P_End, K.Position, K.Steps);
-   end loop;
-
-   for J of Js loop
-      for K of Find_Adjacent_Junctions (Map, J, Js) loop
-         Add_Edge (G, J, K.Position, K.Steps);
-      end loop;
-   end loop;
-
-   Solution (Integer (Find_Longest_Path (G, P_Start, P_End)));
+   Solution
+     (Integer
+        (Find_Longest_Path
+           (Construct_Graph (Map, P_Start, P_Goal, Slopes => False), P_Start, P_Goal)));
 
 end Day23;
