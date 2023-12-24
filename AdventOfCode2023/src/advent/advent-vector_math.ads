@@ -40,4 +40,9 @@ package Advent.Vector_Math is
    --  Returns a vector using conventional <row, col> matrix coordinates.
    function To_Vector (Dir : Direction) return Vec2;
 
+   --
+   --  3D Vector math
+   --
+   type Vec3 is array (0 .. 2) of Element_Type;
+
 end Advent.Vector_Math;
