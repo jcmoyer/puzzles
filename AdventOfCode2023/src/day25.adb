@@ -1,44 +1,17 @@
 with Advent;         use Advent;
-with Advent.Parsers.Integers;
-with Advent.Vector_Math;
 with Ada.Command_Line;
 with Ada.Containers; use Ada.Containers;
-with Ada.Containers.Vectors;
 with Ada.Containers.Hashed_Maps;
-with Ada.Containers.Ordered_Sets;
-with Ada.Numerics.Long_Long_Real_Arrays;
-with Ada.Text_IO;    use Ada.Text_IO;
 with Ada.Strings.Hash;
+with Ada.Finalization;
+with Ada.Unchecked_Deallocation;
 
 procedure Day25 is
 
    subtype Node_Name is String (1 .. 3);
 
-   type Node_Index is new Positive;
-
-   package Node_Index_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Node_Index);
-
-   package Node_Index_Sets is new Ada.Containers.Ordered_Sets (Element_Type => Node_Index);
-
-   type Edge_Index is new Positive;
-
-   package Edge_Index_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Edge_Index);
-
-   type Node is record
-      Name  : Node_Name;
-      Edges : Edge_Index_Vectors.Vector;
-   end record;
-
-   procedure Delete_Edge (N : in out Node; E : Edge_Index) is
-
-   begin
-      N.Edges.Delete (N.Edges.Find_Index (E));
-   end Delete_Edge;
-
-   package Node_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Node_Index, Element_Type => Node);
+   --  Note these are zero-based for performance reasons.
+   type Node_Index is new Natural;
 
    package Node_Name_Maps is new Ada.Containers.Hashed_Maps
      (Key_Type        => Node_Name,
@@ -46,147 +19,307 @@ procedure Day25 is
       Hash            => Ada.Strings.Hash,
       Equivalent_Keys => "=");
 
-   --  All edges are bidirectional and de-duplicated as they are inserted into the graph.
-   type Edge is record
-      From : Node_Index;
-      To   : Node_Index;
+   --  Negative weights not supported: the input graph has edges all with
+   --  weight 1. However, the algorithm implemented here uses negative weights
+   --  while locating the min-cut.
+   type Weight_Type is new Integer;
+
+   type Adjacency_Matrix_Data is array (Node_Index range <>, Node_Index range <>) of Weight_Type;
+
+   --  We force zero-based indexing here for performance reasons.
+   type Adjacency_Matrix (Last_Index : Node_Index) is record
+      Data : Adjacency_Matrix_Data (0 .. Last_Index, 0 .. Last_Index);
    end record;
 
-   function Other (E : Edge; Index : Node_Index) return Node_Index is
-   begin
-      if E.From = Index then
-         return E.To;
-      else
-         return E.From;
-      end if;
-   end Other;
+   type Adjacency_Matrix_Ptr is access all Adjacency_Matrix;
 
-   subtype Extended_Edge_Index is Edge_Index'Base range Edge_Index'First - 1 .. Edge_Index'Last;
+   procedure Unchecked_Free_Matrix is new Ada.Unchecked_Deallocation
+     (Adjacency_Matrix, Adjacency_Matrix_Ptr);
 
-   No_Edge : constant := Extended_Edge_Index'First;
+   --  Operations that return rows/columns from the matrix return this type.
+   type Weight_Array is array (Node_Index range <>) of Weight_Type;
 
-   package Edge_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Edge_Index, Element_Type => Edge);
+   --  Using a package here so Graph can be a controlled type.
+   package Graphs is
+      type Graph is new Ada.Finalization.Controlled with private;
 
-   type Graph is record
-      Nodes         : Node_Vectors.Vector;
-      Nodes_By_Name : Node_Name_Maps.Map;
-      Edges         : Edge_Vectors.Vector;
-   end record;
+      procedure Adjust (G : in out Graph);
+      procedure Finalize (G : in out Graph);
 
-   function Include (G : in out Graph; Name : Node_Name) return Node_Index is
-      use type Node_Name_Maps.Cursor;
-      Cursor : Node_Name_Maps.Cursor := G.Nodes_By_Name.Find (Name);
-   begin
-      if Cursor = Node_Name_Maps.No_Element then
-         G.Nodes.Append ((Name => Name, Edges => <>));
-         G.Nodes_By_Name.Insert (Name, G.Nodes.Last_Index);
-         return G.Nodes.Last_Index;
-      else
-         return Node_Name_Maps.Element (Cursor);
-      end if;
-   end Include;
+      procedure Reserve (G : in out Graph; New_Capacity : Integer);
+      function Copy (G : Graph) return Graph;
 
-   function Find_Edge (G : Graph; From, To : Node_Name) return Extended_Edge_Index is
-      E : Edge;
-   begin
-      for I in G.Edges.First_Index .. G.Edges.Last_Index loop
-         E := G.Edges (I);
+      function First_Index (G : Graph) return Node_Index;
+      pragma Inline (First_Index);
 
-         if E.From = G.Nodes_By_Name (From) and then E.To = G.Nodes_By_Name (To) then
-            return I;
+      function Last_Index (G : Graph) return Node_Index;
+      pragma Inline (Last_Index);
+
+      function Length (G : Graph) return Integer;
+      pragma Inline (Length);
+
+      procedure Set_Weight (G : Graph; U, V : Node_Index; W : Weight_Type);
+      pragma Inline (Set_Weight);
+
+      function Get_Weight (G : Graph; U, V : Node_Index) return Weight_Type;
+      pragma Inline (Get_Weight);
+
+      No_Space : exception;
+
+      function Include (G : in out Graph; Name : Node_Name) return Node_Index;
+      function Contains_Edge (G : Graph; From, To : Node_Name) return Boolean;
+
+      --  Automatically creates nodes for `From` and `To` if they don't exist.
+      procedure Add_Edge (G : in out Graph; From, To : Node_Name);
+      procedure Delete_Edge (G : in out Graph; From, To : Node_Index);
+      procedure Delete_Edge (G : in out Graph; From, To : Node_Name);
+
+   private
+      type Graph is new Ada.Finalization.Controlled with record
+         Nodes         : Adjacency_Matrix_Ptr := null;
+         Length        : Integer              := 0;
+         Capacity      : Integer              := 0;
+         Nodes_By_Name : Node_Name_Maps.Map;
+      end record;
+   end Graphs;
+
+   package body Graphs is
+      procedure Adjust (G : in out Graph) is
+         New_Nodes : constant Adjacency_Matrix_Ptr := new Adjacency_Matrix (G.Nodes.Last_Index);
+      begin
+         New_Nodes.all := G.Nodes.all;
+         G.Nodes       := New_Nodes;
+      end Adjust;
+
+      procedure Finalize (G : in out Graph) is
+      begin
+         Unchecked_Free_Matrix (G.Nodes);
+      end Finalize;
+
+      procedure Reserve (G : in out Graph; New_Capacity : Integer) is
+      begin
+         G.Nodes      := new Adjacency_Matrix (Node_Index (New_Capacity - 1));
+         G.Nodes.Data := (others => (others => 0));
+         G.Capacity   := New_Capacity;
+      end Reserve;
+
+      function Copy (G : Graph) return Graph is
+         Result : Graph;
+      begin
+         Reserve (Result, G.Capacity);
+         Result.Nodes.all     := G.Nodes.all;
+         Result.Nodes_By_Name := G.Nodes_By_Name.Copy;
+         Result.Length        := G.Length;
+         return Result;
+      end Copy;
+
+      function First_Index (G : Graph) return Node_Index is
+      begin
+         return 0;
+      end First_Index;
+
+      function Last_Index (G : Graph) return Node_Index is
+      begin
+         return Node_Index (G.Length - 1);
+      end Last_Index;
+
+      function Length (G : Graph) return Integer is
+      begin
+         return G.Length;
+      end Length;
+
+      procedure Set_Weight (G : Graph; U, V : Node_Index; W : Weight_Type) is
+      begin
+         G.Nodes.Data (U, V) := W;
+      end Set_Weight;
+
+      function Get_Weight (G : Graph; U, V : Node_Index) return Weight_Type is
+      begin
+         return G.Nodes.Data (U, V);
+      end Get_Weight;
+
+      function Include (G : in out Graph; Name : Node_Name) return Node_Index is
+         use type Node_Name_Maps.Cursor;
+         Cursor : constant Node_Name_Maps.Cursor := G.Nodes_By_Name.Find (Name);
+      begin
+         if Cursor = Node_Name_Maps.No_Element then
+            if G.Length = G.Capacity then
+               raise No_Space;
+            end if;
+
+            declare
+               New_Index : constant Node_Index := Node_Index (G.Length);
+            begin
+               G.Length := G.Length + 1;
+               G.Nodes_By_Name.Insert (Name, New_Index);
+               return New_Index;
+            end;
+         else
+            return Node_Name_Maps.Element (Cursor);
          end if;
+      end Include;
 
-         --  Since edges are bidirectional the fields could be reversed.
-         if E.To = G.Nodes_By_Name (From) and then E.From = G.Nodes_By_Name (To) then
-            return I;
-         end if;
-      end loop;
+      function Contains_Edge (G : Graph; From, To : Node_Name) return Boolean is
+      begin
+         return G.Nodes.Data (G.Nodes_By_Name.Element (From), G.Nodes_By_Name (To)) /= 0;
+      end Contains_Edge;
 
-      return No_Edge;
-   end Find_Edge;
+      --  Automatically creates nodes for `From` and `To` if they don't exist.
+      procedure Add_Edge (G : in out Graph; From, To : Node_Name) is
+         From_Index : constant Node_Index := Include (G, From);
+         To_Index   : constant Node_Index := Include (G, To);
+      begin
+         G.Nodes.Data (From_Index, To_Index) := 1;
+         G.Nodes.Data (To_Index, From_Index) := 1;
+      end Add_Edge;
 
-   function Contains_Edge (G : Graph; From, To : Node_Name) return Boolean is
+      procedure Delete_Edge (G : in out Graph; From, To : Node_Index) is
+      begin
+         G.Nodes.Data (From, To) := 0;
+         G.Nodes.Data (To, From) := 0;
+      end Delete_Edge;
+
+      procedure Delete_Edge (G : in out Graph; From, To : Node_Name) is
+         From_Index : constant Node_Index := G.Nodes_By_Name (From);
+         To_Index   : constant Node_Index := G.Nodes_By_Name (To);
+      begin
+         Delete_Edge (G, From_Index, To_Index);
+      end Delete_Edge;
+   end Graphs;
+
+   subtype Graph is Graphs.Graph;
+
+   type Node_Set is array (Node_Index range <>) of Boolean;
+   type Node_Set_Ptr is access all Node_Set;
+
+   function Count (S : Node_Set) return Integer is
+      Result : Integer := 0;
    begin
-      return Find_Edge (G, From, To) /= No_Edge;
-   end Contains_Edge;
-
-   --  Automatically creates nodes for `From` and `To` if they don't exist.
-   procedure Add_Edge (G : in out Graph; From, To : Node_Name) is
-      From_Index : constant Node_Index := Include (G, From);
-      To_Index   : constant Node_Index := Include (G, To);
-   begin
-      if not Contains_Edge (G, From, To) then
-         G.Edges.Append ((From => From_Index, To => To_Index));
-         G.Nodes (From_Index).Edges.Append (G.Edges.Last_Index);
-         G.Nodes (To_Index).Edges.Append (G.Edges.Last_Index);
-      end if;
-   end Add_Edge;
-
-   procedure Delete_Edge (G : in out Graph; From, To : Node_Name) is
-      Index      : Extended_Edge_Index := Find_Edge (G, From, To);
-      From_Index : constant Node_Index := G.Nodes_By_Name (From);
-      To_Index   : constant Node_Index := G.Nodes_By_Name (To);
-   begin
-      if Index /= No_Edge then
-         --  We don't delete from G.Edges since that would invalidate indices stored in nodes.
-         Delete_Edge (G.Nodes (From_Index), Index);
-         Delete_Edge (G.Nodes (To_Index), Index);
-      end if;
-   end Delete_Edge;
-
-   function Count_Reachable (G : Graph; Start : Node_Name) return Integer is
-      Result  : Integer := 0;
-      Visited : Node_Index_Sets.Set;
-
-      Explore : Node_Index_Vectors.Vector;
-      Current : Node_Index;
-
-   begin
-
-      Explore.Append (G.Nodes_By_Name.Element (Start));
-
-      while Explore.Length > 0 loop
-         Current := Explore.Last_Element;
-         Explore.Delete_Last;
-
-         if not Visited.Contains (Current) then
-            Visited.Insert (Current);
+      for I in S'Range loop
+         if S (I) then
             Result := Result + 1;
-            for E of G.Nodes (Current).Edges loop
-               Explore.Append (Other (G.Edges (E), Current));
-            end loop;
          end if;
       end loop;
-
       return Result;
+   end Count;
 
-   end Count_Reachable;
+   procedure Union (Left : in out Node_Set; Right : Node_Set) is
+   begin
+      for I in Left'Range loop
+         Left (I) := Left (I) or Right (I);
+      end loop;
+   end Union;
 
-   Lines         : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
-   G             : Graph;
-   Before, After : Integer;
+   type Min_Cut (Last_Index : Node_Index) is record
+      W        : Weight_Type;
+      Subgraph : Node_Set (0 .. Last_Index);
+   end record;
+
+   type Phase_Result is record
+      W    : Weight_Type;
+      S, T : Node_Index;
+   end record;
+
+   function Extract_Row (G : Graph; I : Node_Index) return Weight_Array is
+      Result : Weight_Array (0 .. G.Last_Index);
+   begin
+      for J in 0 .. G.Last_Index loop
+         Result (J) := G.Get_Weight (I, J);
+      end loop;
+      return Result;
+   end Extract_Row;
+
+   function Max_Element_Index (R : Weight_Array) return Node_Index is
+      Max_Val : Weight_Type := Weight_Type'First;
+      Max_I   : Node_Index;
+   begin
+      for I in R'Range loop
+         if R (I) > Max_Val then
+            Max_I   := I;
+            Max_Val := R (I);
+         end if;
+      end loop;
+      return Max_I;
+   end Max_Element_Index;
+
+   function Stoer_Wagner_Phase (G : Graph; Phase : Integer) return Phase_Result is
+      W    : Weight_Array := Extract_Row (G, 0);
+      S, T : Node_Index   := 0;
+   begin
+      for Iteration in 0 .. (G.Length - Phase - 1) loop
+         W (T) := Weight_Type'First;
+         S     := T;
+         T     := Max_Element_Index (W);
+         for J in 0 .. G.Last_Index loop
+            W (J) := W (J) + G.Get_Weight (T, J);
+         end loop;
+      end loop;
+
+      --  Merge T into S.
+      for J in 0 .. G.Last_Index loop
+         --  Merge weights across row S
+         G.Set_Weight (S, J, G.Get_Weight (S, J) + G.Get_Weight (T, J));
+         --  Copy those same weights down column S
+         G.Set_Weight (J, S, G.Get_Weight (S, J));
+      end loop;
+
+      --  Make T functionally unreachable from the first vertex.
+      G.Set_Weight (0, T, Weight_Type'First);
+
+      return (W => W (T) - G.Get_Weight (T, T), S => S, T => T);
+   end Stoer_Wagner_Phase;
+
+   function Stoer_Wagner (G0 : Graph) return Min_Cut is
+      G          : Graph        := G0.Copy;
+      Best_Phase : Phase_Result := (W => Weight_Type'Last, others => <>);
+
+      --  Silly stuff to avoid allocation, but really this probably should be
+      --  done with a smart pointer or something.
+      subtype Node_Set_Type is Node_Set (0 .. Node_Index (G.Length));
+      type Node_Sets_Type is array (Node_Index range 0 .. Node_Index (G.Length)) of Node_Set_Type;
+
+      Subgraphs : Node_Sets_Type := (others => (others => False));
+   begin
+      for I in 0 .. G.Last_Index loop
+         Subgraphs (I) (I) := True;
+      end loop;
+
+      for Phase in 1 .. Integer (G.Length - 1) loop
+         declare
+            This_Phase : constant Phase_Result := Stoer_Wagner_Phase (G, Phase);
+         begin
+            if This_Phase.W < Best_Phase.W then
+               Best_Phase := This_Phase;
+            end if;
+
+            Union (Subgraphs (This_Phase.S), Subgraphs (This_Phase.T));
+         end;
+      end loop;
+
+      return (Last_Index => G.Last_Index, W => Best_Phase.W, Subgraph => Subgraphs (Best_Phase.T));
+   end Stoer_Wagner;
+
+   Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
+   G     : Graph;
 
 begin
 
+   G.Reserve (2_000);
+
    for Line of Lines loop
       declare
-         Nodes : String_Array := Split_Any (Line, " :", Keep_Empty => False);
+         Names : String_Array := Split_Any (Line, " :", Keep_Empty => False);
       begin
-         for I in Nodes.First_Index + 1 .. Nodes.Last_Index loop
-            Add_Edge (G, Nodes (0), Nodes (I));
+         for I in Names.First_Index + 1 .. Names.Last_Index loop
+            G.Add_Edge (Names (0), Names (I));
          end loop;
       end;
    end loop;
 
-   Before := Count_Reachable (G, G.Nodes (1).Name);
-
-   Delete_Edge (G, "mzb", "fjn");
-   Delete_Edge (G, "jlt", "sjr");
-   Delete_Edge (G, "zqg", "mhb");
-
-   After := Count_Reachable (G, G.Nodes (1).Name);
-
-   Solution ((Before - After) * After);
+   declare
+      Cut : Min_Cut := Stoer_Wagner (G);
+   begin
+      Solution (Count (Cut.Subgraph) * (G.Length - Count (Cut.Subgraph)));
+   end;
 
 end Day25;
