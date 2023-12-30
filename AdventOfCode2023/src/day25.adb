@@ -275,8 +275,8 @@ procedure Day25 is
 
       --  Silly stuff to avoid allocation, but really this probably should be
       --  done with a smart pointer or something.
-      subtype Node_Set_Type is Node_Set (0 .. Node_Index (G.Length));
-      type Node_Sets_Type is array (Node_Index range 0 .. Node_Index (G.Length)) of Node_Set_Type;
+      subtype Node_Set_Type is Node_Set (0 .. G.Last_Index);
+      type Node_Sets_Type is array (Node_Index range 0 .. G.Last_Index) of Node_Set_Type;
 
       Subgraphs : Node_Sets_Type := (others => (others => False));
    begin
