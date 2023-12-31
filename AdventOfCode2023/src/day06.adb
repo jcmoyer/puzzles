@@ -26,6 +26,8 @@ procedure Day06 is
       return Distance_Type (Remaining_Time * Charge_Time);
    end Calc_Distance;
 
+   No_Solution : exception;
+
    function Find_Min_Time (T : Time_Type; D : Distance_Type) return Time_Type is
    begin
       for I in 1 .. T loop
@@ -33,7 +35,7 @@ procedure Day06 is
             return I;
          end if;
       end loop;
-      return 0;
+      raise No_Solution;
    end Find_Min_Time;
 
    function Find_Max_Time (T : Time_Type; D : Distance_Type) return Time_Type is
@@ -43,7 +45,7 @@ procedure Day06 is
             return I;
          end if;
       end loop;
-      return 0;
+      raise No_Solution;
    end Find_Max_Time;
 
    function Find_Charge_Time (T : Time_Type; D : Distance_Type) return Time_Type is

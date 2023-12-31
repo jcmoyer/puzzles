@@ -4,13 +4,6 @@ with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Command_Line;
 
 procedure Day03 is
-   Map : constant Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
-   J   : Integer;
-
-   N_Start : Integer;
-   Sum1    : Integer := 0;
-   Sum2    : Integer := 0;
-
    type Grid_Number is record
       Value : Integer;
       Rect  : Rectangle;
@@ -20,8 +13,6 @@ procedure Day03 is
      (Index_Type => Positive, Element_Type => Grid_Number);
    subtype Grid_Number_Vector is Grid_Number_Vectors.Vector;
 
-   Grid_Numbers : Grid_Number_Vector;
-
    type Grid_Symbol is record
       Value    : Character;
       Location : Point;
@@ -30,6 +21,15 @@ procedure Day03 is
    package Grid_Symbol_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Grid_Symbol);
    subtype Grid_Symbol_Vector is Grid_Symbol_Vectors.Vector;
+
+   Map : constant Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
+   J   : Integer;
+
+   N_Start : Integer;
+   Sum1    : Integer := 0;
+   Sum2    : Integer := 0;
+
+   Grid_Numbers : Grid_Number_Vector;
 
    Grid_Symbols : Grid_Symbol_Vector;
    Value        : Integer := 0;

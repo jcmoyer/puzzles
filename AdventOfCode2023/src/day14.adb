@@ -208,10 +208,9 @@ begin
       end loop;
       History.Append (Total_Load (Map, Region));
       Cycles := Find_Cycle (History);
-      if Cycles.Found then
-         Solution (Extrapolate (History, Cycles, 1_000_000_000));
-         exit;
-      end if;
+      exit when Cycles.Found;
    end loop;
+
+   Solution (Extrapolate (History, Cycles, 1_000_000_000));
 
 end Day14;
