@@ -76,6 +76,9 @@ procedure Day25 is
       procedure Delete_Edge (G : in out Graph; From, To : Node_Index);
       procedure Delete_Edge (G : in out Graph; From, To : Node_Name);
 
+      --  Merges vertex V into U. Edges between U and V will be deleted.
+      procedure Merge (G : in out Graph; U, V : Node_Index);
+
    private
       type Graph is new Ada.Finalization.Controlled with record
          Nodes         : Adjacency_Matrix_Ptr := null;
@@ -187,11 +190,31 @@ procedure Day25 is
       begin
          Delete_Edge (G, From_Index, To_Index);
       end Delete_Edge;
+
+      procedure Merge (G : in out Graph; U, V : Node_Index) is
+      begin
+         for I in 0 .. G.Last_Index loop
+            declare
+               W : constant Weight_Type := G.Get_Weight (U, I) + G.Get_Weight (V, I);
+            begin
+               --  U's row and column should be element-wise identical, so we
+               --  write W down both.
+               G.Set_Weight (U, I, W);
+               G.Set_Weight (I, U, W);
+               --  Zero out V's row and column.
+               G.Set_Weight (V, I, 0);
+               G.Set_Weight (I, V, 0);
+            end;
+         end loop;
+         --  Eliminate the edge that was between U and V.
+         G.Set_Weight (U, U, 0);
+      end Merge;
    end Graphs;
 
    subtype Graph is Graphs.Graph;
 
    type Node_Set is array (Node_Index range <>) of Boolean;
+
    type Node_Set_Ptr is access all Node_Set;
 
    function Count (S : Node_Set) return Integer is
@@ -207,9 +230,7 @@ procedure Day25 is
 
    procedure Union (Left : in out Node_Set; Right : Node_Set) is
    begin
-      for I in Left'Range loop
-         Left (I) := Left (I) or Right (I);
-      end loop;
+      Left := Left or Right;
    end Union;
 
    type Min_Cut (Last_Index : Node_Index) is record
@@ -244,7 +265,7 @@ procedure Day25 is
       return Max_I;
    end Max_Element_Index;
 
-   function Stoer_Wagner_Phase (G : Graph; Phase : Integer) return Phase_Result is
+   function Stoer_Wagner_Phase (G : in out Graph; Phase : Integer) return Phase_Result is
       W    : Weight_Array := Extract_Row (G, 0);
       S, T : Node_Index   := 0;
    begin
@@ -257,18 +278,9 @@ procedure Day25 is
          end loop;
       end loop;
 
-      --  Merge T into S.
-      for J in 0 .. G.Last_Index loop
-         --  Merge weights across row S
-         G.Set_Weight (S, J, G.Get_Weight (S, J) + G.Get_Weight (T, J));
-         --  Copy those same weights down column S
-         G.Set_Weight (J, S, G.Get_Weight (S, J));
-      end loop;
+      G.Merge (S, T);
 
-      --  Make T functionally unreachable from the first vertex.
-      G.Set_Weight (0, T, Weight_Type'First);
-
-      return (W => W (T) - G.Get_Weight (T, T), S => S, T => T);
+      return (W => W (T), S => S, T => T);
    end Stoer_Wagner_Phase;
 
    function Stoer_Wagner (G0 : Graph) return Min_Cut is
