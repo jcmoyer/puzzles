@@ -4,6 +4,8 @@ generic
    type Element_Type is range <>;
 package Advent.Parsers.Integers is
 
+   pragma Preelaborate;
+
    package Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Element_Type);
 

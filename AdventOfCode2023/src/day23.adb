@@ -1,4 +1,5 @@
 with Advent;                     use Advent;
+with Advent.IO;                  use Advent.IO;
 with Advent.Directions;          use Advent.Directions;
 with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
 with Ada.Command_Line;
@@ -6,7 +7,6 @@ with Ada.Containers;             use Ada.Containers;
 with Ada.Containers.Vectors;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Hashed_Sets;
-with Ada.Text_IO;                use Ada.Text_IO;
 with Interfaces;                 use Interfaces;
 
 procedure Day23 is

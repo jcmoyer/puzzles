@@ -1,4 +1,6 @@
 with Advent;         use Advent;
+with Advent.IO;      use Advent.IO;
+with Advent.Strings; use Advent.Strings;
 with Ada.Command_Line;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Hashed_Maps;

@@ -1,15 +1,14 @@
 with Advent;         use Advent;
-with Advent.Parsers.Integers;
+with Advent.IO;      use Advent.IO;
+with Advent.Strings; use Advent.Strings;
 with Advent.Vector_Math;
+with Advent.Long_Parsers;
 with Ada.Command_Line;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Vectors;
 with Ada.Numerics.Long_Long_Real_Arrays;
-with Ada.Text_IO;    use Ada.Text_IO;
 
 procedure Day24 is
-
-   package Long_Parsers is new Advent.Parsers.Integers (Element_Type => Long_Long_Integer);
 
    package Long_Vectors is new Advent.Vector_Math (Element_Type => Long_Long_Integer);
 

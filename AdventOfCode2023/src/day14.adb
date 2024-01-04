@@ -1,5 +1,7 @@
 with Advent;                     use Advent;
+with Advent.IO;                  use Advent.IO;
 with Advent.Directions;          use Advent.Directions;
+with Advent.Integer_Geometry;    use Advent.Integer_Geometry;
 with Ada.Command_Line;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Vectors;

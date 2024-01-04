@@ -1,4 +1,6 @@
 with Advent;                  use Advent;
+with Advent.IO;               use Advent.IO;
+with Advent.Integer_Geometry; use Advent.Integer_Geometry;
 with Ada.Containers.Vectors;
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Command_Line;

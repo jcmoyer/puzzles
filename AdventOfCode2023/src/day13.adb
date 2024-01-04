@@ -1,4 +1,6 @@
-with Advent; use Advent;
+with Advent;         use Advent;
+with Advent.IO;      use Advent.IO;
+with Advent.Strings; use Advent.Strings;
 with Ada.Command_Line;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Vectors;

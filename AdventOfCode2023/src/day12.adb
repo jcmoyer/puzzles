@@ -1,5 +1,7 @@
 with Advent;                use Advent;
-with Advent.Parsers.Integers;
+with Advent.IO;             use Advent.IO;
+with Advent.Strings;        use Advent.Strings;
+with Advent.Integer_Parsers;
 with Ada.Command_Line;
 with Ada.Strings.Unbounded.Hash;
 with Ada.Strings.Maps;      use Ada.Strings.Maps;
@@ -9,9 +11,7 @@ with Ada.Containers;        use Ada.Containers;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 procedure Day12 is
-   package Integer_Parsers is new Advent.Parsers.Integers (Element_Type => Integer);
-
-   subtype Integer_Vector is Integer_Parsers.Vector;
+   subtype Integer_Vector is Advent.Integer_Parsers.Vector;
 
    --  Part 2: repeat pattern 5 times interspersed with '?''
    function Unfold_Pattern (S : String) return String is

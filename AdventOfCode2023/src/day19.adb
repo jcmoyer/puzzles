@@ -1,5 +1,7 @@
 with Advent;            use Advent;
-with Advent.Parsers.Integers;
+with Advent.IO;         use Advent.IO;
+with Advent.Strings;    use Advent.Strings;
+with Advent.Integer_Parsers;
 with Ada.Command_Line;
 with Ada.Containers;    use Ada.Containers;
 with Ada.Containers.Vectors;
@@ -10,8 +12,6 @@ with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Bounded.Hash;
 
 procedure Day19 is
-   package Integer_Parsers is new Advent.Parsers.Integers (Element_Type => Integer);
-
    package Workflow_Names is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 4);
 
    subtype Workflow_Name is Workflow_Names.Bounded_String;

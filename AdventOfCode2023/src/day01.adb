@@ -1,9 +1,11 @@
+with Advent;                     use Advent;
+with Advent.IO;                  use Advent.IO;
+with Advent.Strings;             use Advent.Strings;
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps.Constants;
 with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Bounded;        use Ada.Strings.Bounded;
-with Advent;                     use Advent;
 with Ada.Command_Line;
 
 procedure Day01 is

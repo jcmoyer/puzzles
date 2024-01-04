@@ -1,19 +1,20 @@
 with Advent;         use Advent;
-with Advent.Parsers.Integers;
+with Advent.IO;      use Advent.IO;
+with Advent.Strings; use Advent.Strings;
+with Advent.Long_Parsers;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers; use Ada.Containers;
 
 procedure Day09 is
 
-   --  parsing, types
-   package Parsers is new Advent.Parsers.Integers (Element_Type => Long_Long_Integer);
+   --  types
+   subtype Int_Vec is Advent.Long_Parsers.Vector;
 
-   --  TODO: kind of weird design, I guess Parsers should get a Vector type from elsewhere instead of providing its own
-   subtype Int_Vec is Parsers.Vector;
+   use type Int_Vec;
 
    package Int_Vec_Vecs is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Int_Vec, "=" => Parsers.Vectors."=");
+     (Index_Type => Positive, Element_Type => Int_Vec);
 
    subtype Int_Vec_Vec is Int_Vec_Vecs.Vector;
 
@@ -86,7 +87,8 @@ begin
 
    for Line of Lines loop
       declare
-         S : constant Derived_Sequence := Sequence_From_Base (Parsers.Extract_Integers (Line));
+         S : constant Derived_Sequence :=
+           Sequence_From_Base (Advent.Long_Parsers.Extract_Integers (Line));
       begin
          Sum1 := Sum1 + Base_Last (S);
          Sum2 := Sum2 + Base_First (S);

@@ -3,6 +3,8 @@ with Ada.Containers.Vectors;
 generic
    type Element_Type is range <>;
 package Advent.Intervals is
+
+   pragma Preelaborate;
    ----------------------------------------------------------------------------
    --  Interval
    ----------------------------------------------------------------------------

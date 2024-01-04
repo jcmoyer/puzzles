@@ -3,10 +3,13 @@
 --  of is 2019 day 10 which *could* be solved with real number trigonometry.
 
 with Advent.Directions; use Advent.Directions;
+with Ada.Containers;
 
 generic
    type Element_Type is range <>;
 package Advent.Vector_Math is
+
+   pragma Pure;
 
    --
    --  2D Vector math

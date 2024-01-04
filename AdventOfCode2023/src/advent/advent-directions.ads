@@ -1,5 +1,7 @@
 package Advent.Directions is
 
+   pragma Pure;
+
    type Direction is (North, South, West, East);
 
    --  Returns the opposite Direction from Dir. The conversions are:

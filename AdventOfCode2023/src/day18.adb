@@ -1,4 +1,6 @@
 with Advent;            use Advent;
+with Advent.IO;         use Advent.IO;
+with Advent.Strings;    use Advent.Strings;
 with Advent.Directions; use Advent.Directions;
 with Advent.Vector_Math;
 with Ada.Command_Line;

@@ -1,4 +1,6 @@
 with Advent;            use Advent;
+with Advent.IO;         use Advent.IO;
+with Advent.Strings;    use Advent.Strings;
 with Ada.Strings;       use Ada.Strings;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Command_Line;
