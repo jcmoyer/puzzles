@@ -21,10 +21,7 @@ procedure Day25 is
       Hash            => Ada.Strings.Hash,
       Equivalent_Keys => "=");
 
-   --  Negative weights not supported: the input graph has edges all with
-   --  weight 1. However, the algorithm implemented here uses negative weights
-   --  while locating the min-cut.
-   type Weight_Type is new Integer;
+   type Weight_Type is new Natural;
 
    type Adjacency_Matrix_Data is array (Node_Index range <>, Node_Index range <>) of Weight_Type;
 
@@ -252,29 +249,32 @@ procedure Day25 is
       return Result;
    end Extract_Row;
 
-   function Max_Element_Index (R : Weight_Array) return Node_Index is
-      Max_Val : Weight_Type := Weight_Type'First;
-      Max_I   : Node_Index;
+   function Max_Element_Index (W : Weight_Array; Exclude : Node_Set) return Node_Index is
+      Max_W : Weight_Type := Weight_Type'First;
+      Max_I : Node_Index;
    begin
-      for I in R'Range loop
-         if R (I) > Max_Val then
-            Max_I   := I;
-            Max_Val := R (I);
+      for I in W'Range loop
+         if not Exclude (I) and then W (I) > Max_W then
+            Max_I := I;
+            Max_W := W (I);
          end if;
       end loop;
       return Max_I;
    end Max_Element_Index;
 
    function Stoer_Wagner_Phase (G : in out Graph; Phase : Integer) return Phase_Result is
-      W    : Weight_Array := Extract_Row (G, 0);
-      S, T : Node_Index   := 0;
+      W       : Weight_Array                 := Extract_Row (G, 0);
+      S, T    : Node_Index                   := 0;
+      Exclude : Node_Set (0 .. G.Last_Index) := (others => False);
    begin
       for Iteration in 0 .. (G.Length - Phase - 1) loop
-         W (T) := Weight_Type'First;
-         S     := T;
-         T     := Max_Element_Index (W);
+         Exclude (T) := True;
+         S           := T;
+         T           := Max_Element_Index (W, Exclude);
          for J in 0 .. G.Last_Index loop
-            W (J) := W (J) + G.Get_Weight (T, J);
+            if not Exclude (J) then
+               W (J) := W (J) + G.Get_Weight (T, J);
+            end if;
          end loop;
       end loop;
 
