@@ -249,12 +249,25 @@ procedure Day25 is
       return Result;
    end Extract_Row;
 
-   function Max_Element_Index (W : Weight_Array; Exclude : Node_Set) return Node_Index is
+   function Extract_Row (G : Graph; I : Node_Index; Mask : Node_Set) return Weight_Array is
+      Result : Weight_Array (0 .. G.Last_Index);
+   begin
+      for J in 0 .. G.Last_Index loop
+         if Mask (J) then
+            Result (J) := G.Get_Weight (I, J);
+         else
+            Result (J) := 0;
+         end if;
+      end loop;
+      return Result;
+   end Extract_Row;
+
+   function Max_Element_Index (W : Weight_Array; Mask : Node_Set) return Node_Index is
       Max_W : Weight_Type := Weight_Type'First;
       Max_I : Node_Index;
    begin
       for I in W'Range loop
-         if not Exclude (I) and then W (I) > Max_W then
+         if Mask (I) and then W (I) > Max_W then
             Max_I := I;
             Max_W := W (I);
          end if;
@@ -262,20 +275,25 @@ procedure Day25 is
       return Max_I;
    end Max_Element_Index;
 
+   function "+" (A, B : Weight_Array) return Weight_Array is
+      Result : Weight_Array (A'Range);
+   begin
+      for I in A'Range loop
+         Result (I) := A (I) + B (I);
+      end loop;
+      return Result;
+   end "+";
+
    function Stoer_Wagner_Phase (G : in out Graph; Phase : Integer) return Phase_Result is
-      W       : Weight_Array                 := Extract_Row (G, 0);
-      S, T    : Node_Index                   := 0;
-      Exclude : Node_Set (0 .. G.Last_Index) := (others => False);
+      W    : Weight_Array                 := Extract_Row (G, 0);
+      S, T : Node_Index                   := 0;
+      Mask : Node_Set (0 .. G.Last_Index) := (others => True);
    begin
       for Iteration in 0 .. (G.Length - Phase - 1) loop
-         Exclude (T) := True;
-         S           := T;
-         T           := Max_Element_Index (W, Exclude);
-         for J in 0 .. G.Last_Index loop
-            if not Exclude (J) then
-               W (J) := W (J) + G.Get_Weight (T, J);
-            end if;
-         end loop;
+         Mask (T) := False;
+         S        := T;
+         T        := Max_Element_Index (W, Mask);
+         W        := W + Extract_Row (G, T, Mask);
       end loop;
 
       G.Merge (S, T);
