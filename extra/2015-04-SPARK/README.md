@@ -4,7 +4,7 @@ This is an Ada/SPARK solution for [Advent of Code 2015 day
 Features a SPARK Silver level MD5 implementation roughly based on the reference
 C implementation in [RFC 1321](https://www.ietf.org/rfc/rfc1321.txt).
 
-## Building and Running
+## Building, Running, and Verification
 
 Requires [Alire](https://alire.ada.dev/) and GNAT.
 
@@ -16,6 +16,9 @@ $ alr run md5_test[.exe]
 # run solver (accepts puzzle input as command line parameter)
 $ alr build --release
 $ alr run day04[.exe]
+
+# verify (--level=3 should be sufficient)
+$ alr gnatprove --level=3
 ```
 
 ## Optimizations
