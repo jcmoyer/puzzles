@@ -1,0 +1,38 @@
+with "config/advent_config.gpr";
+
+project Advent is
+   for Source_Dirs use ("src/", "src/md5/", "config/");
+   for Object_Dir use "obj/" & Advent_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
+   for Exec_Dir use "bin/" & Advent_Config.Build_Profile;
+   for Main use ("day04.adb", "md5_test.adb");
+
+   package Compiler is
+      for Default_Switches ("ada") use Advent_Config.Ada_Compiler_Switches;
+   end Compiler;
+
+   package Binder is
+      for Switches ("ada") use ("-Es");
+   end Binder;
+
+   package Install is
+      for Artifacts (".") use ("share");
+   end Install;
+
+   package Prove is
+      for Proof_Dir use "proof";
+   end Prove;
+
+   package Pretty_Printer is
+      for Default_Switches ("Ada") use (
+         "-M119",
+         "--vertical-enum-types",
+         "--insert-blank-lines",
+         "--vertical-named-aggregates",
+         "--no-compact",
+         "--comments-fill",
+         "--preserve-blank-lines"
+      );
+   end Pretty_Printer;
+end Advent;
+

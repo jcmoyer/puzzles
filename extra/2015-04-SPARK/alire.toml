@@ -1,0 +1,26 @@
+# Not intended to be published to alire. We're only using it to easily access
+# SPARK.
+
+name = "advent"
+description = "Ada/SPARK solution to Advent of Code 2015-04"
+version = "1.0.0"
+
+authors = ["jcmoyer"]
+# Open an issue instead :)
+maintainers = ["jcmoyer <1007628+jcmoyer@users.noreply.github.com>"]
+maintainers-logins = ["jcmoyer"]
+licenses = "MIT"
+website = "https://github.com/jcmoyer/puzzles"
+tags = []
+
+executables = ["day04", "md5_test"]
+
+[build-switches]
+"*".style_checks = ["-gnaty", "-gnaty-s", "-gnatyM119"]
+"*".ada_version = "Ada12"
+
+release.optimization = ["-O3", "-flto", "-march=native"]
+release.runtime_checks = "none"
+
+[[depends-on]]
+gnatprove = "^14.1.1"
