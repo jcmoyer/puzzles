@@ -93,17 +93,25 @@ procedure Day17 is
          return Current_Seq;
       end Next_Seq;
 
-      procedure Enqueue (S : Path_State) is
+      function Is_Cullable (S : Path_State) return Boolean is
       begin
          --  have we seen this state before at a lower score? if so, there's no
          --  point revisiting it
          if S.Heat_Loss >= Score (S.Position (0), S.Position (1), S.Forward_Steps, S.Forward) then
-            return;
+            return True;
          end if;
 
          --  if we've already found a solution and it's better than the current
          --  score, there's no point continuing
          if S.Heat_Loss > Best_Goal_Score then
+            return True;
+         end if;
+         return False;
+      end Is_Cullable;
+
+      procedure Enqueue (S : Path_State) is
+      begin
+         if Is_Cullable (S) then
             return;
          end if;
 
@@ -114,6 +122,10 @@ procedure Day17 is
          Current : Path_State;
       begin
          Explore.Dequeue (Current);
+
+         if Is_Cullable (Current) then
+            return;
+         end if;
 
          --  otherwise, mark the new best score for this cell
          Score
