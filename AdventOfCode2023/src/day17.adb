@@ -33,10 +33,6 @@ procedure Day17 is
       Heat_Loss     : Integer;
       Forward       : Direction;
       Position      : Vec2;
-      --  We use a sequence number to prioritize earlier paths and prevent the
-      --  queue from saturating. This is definitely the wrong approach but
-      --  accidentally works well. I will try to improve this later.
-      Seq           : Integer;
    end record;
 
    --  Should be roughly ~3.34mb for official inputs.
@@ -67,8 +63,7 @@ procedure Day17 is
    function Can_Turn_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
    function Can_Goal_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
 
-   function Priority_Less (A, B : Path_State) return Boolean is
-     (A.Seq < B.Seq and then A.Heat_Loss < B.Heat_Loss);
+   function Priority_Less (A, B : Path_State) return Boolean is (A.Heat_Loss < B.Heat_Loss);
 
    package Path_Queues is new Advent.Containers.Priority_Queues
      (Element_Type => Path_State, "<" => Priority_Less);
@@ -150,8 +145,7 @@ procedure Day17 is
                        (Forward_Steps => Current.Forward_Steps + 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Forward_Position)),
                         Forward       => Current.Forward,
-                        Position      => Forward_Position,
-                        Seq           => Next_Seq));
+                        Position      => Forward_Position));
                end if;
             end;
          end if;
@@ -167,8 +161,7 @@ procedure Day17 is
                        (Forward_Steps => 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Left_Position)),
                         Forward       => Rotate_Left (Current.Forward),
-                        Position      => Left_Position,
-                        Seq           => Next_Seq));
+                        Position      => Left_Position));
                end if;
             end;
 
@@ -182,8 +175,7 @@ procedure Day17 is
                        (Forward_Steps => 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Right_Position)),
                         Forward       => Rotate_Right (Current.Forward),
-                        Position      => Right_Position,
-                        Seq           => Next_Seq));
+                        Position      => Right_Position));
                end if;
             end;
          end if;
@@ -193,12 +185,10 @@ procedure Day17 is
       Score.all := (others => (others => (others => (others => Integer'Last))));
 
       Explore.Enqueue
-        (Path_State'
-           (Forward_Steps => 0, Heat_Loss => 0, Forward => East, Position => (1, 1), Seq => 0));
+        (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => East, Position => (1, 1)));
 
       Explore.Enqueue
-        (Path_State'
-           (Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1), Seq => 0));
+        (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1)));
 
       while Explore.Length > 0 loop
          Process_One;
