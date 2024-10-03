@@ -2,10 +2,8 @@ with Advent;                     use Advent;
 with Advent.IO;                  use Advent.IO;
 with Advent.Directions;          use Advent.Directions;
 with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
+with Advent.Containers.Priority_Queues;
 with Ada.Command_Line;
-with Ada.Containers;             use Ada.Containers;
-with Ada.Containers.Unbounded_Priority_Queues;
-with Ada.Containers.Synchronized_Queue_Interfaces;
 
 procedure Day17 is
    --  Digit matrix stores pre-converted characters so we don't have to keep
@@ -35,6 +33,10 @@ procedure Day17 is
       Heat_Loss     : Integer;
       Forward       : Direction;
       Position      : Vec2;
+      --  We use a sequence number to prioritize earlier paths and prevent the
+      --  queue from saturating. This is definitely the wrong approach but
+      --  accidentally works well. I will try to improve this later.
+      Seq           : Integer;
    end record;
 
    --  Should be roughly ~3.34mb for official inputs.
@@ -65,16 +67,11 @@ procedure Day17 is
    function Can_Turn_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
    function Can_Goal_Ultra (S : Path_State) return Boolean is (S.Forward_Steps >= 4);
 
-   package Path_Queue_Interfaces is new Ada.Containers.Synchronized_Queue_Interfaces
-     (Element_Type => Path_State);
+   function Priority_Less (A, B : Path_State) return Boolean is
+     (A.Seq < B.Seq and then A.Heat_Loss < B.Heat_Loss);
 
-   function Get_Priority (P : Path_State) return Integer is (P.Heat_Loss);
-
-   package Path_Queues is new Ada.Containers.Unbounded_Priority_Queues
-     (Queue_Interfaces => Path_Queue_Interfaces,
-      Queue_Priority   => Integer,
-      Before           => "<",
-      Get_Priority     => Get_Priority);
+   package Path_Queues is new Advent.Containers.Priority_Queues
+     (Element_Type => Path_State, "<" => Priority_Less);
 
    generic
       with function Can_Forward (S : Path_State) return Boolean;
@@ -88,26 +85,35 @@ procedure Day17 is
         new Path_Score_Map (Map'Range (1), Map'Range (2), Forward_Step_Count, Direction);
       Goal            : constant Vec2               := (Map'Length (1), Map'Length (2));
       Best_Goal_Score : Integer                     := Integer'Last;
+      Current_Seq     : Integer                     := 0;
 
-      procedure Process_One is
-         Current : Path_State;
+      function Next_Seq return Integer is
       begin
-         Explore.Dequeue (Current);
+         Current_Seq := Current_Seq + 1;
+         return Current_Seq;
+      end Next_Seq;
 
+      procedure Enqueue (S : Path_State) is
+      begin
          --  have we seen this state before at a lower score? if so, there's no
          --  point revisiting it
-         if Current.Heat_Loss >=
-           Score
-             (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward)
-         then
+         if S.Heat_Loss >= Score (S.Position (0), S.Position (1), S.Forward_Steps, S.Forward) then
             return;
          end if;
 
          --  if we've already found a solution and it's better than the current
          --  score, there's no point continuing
-         if Current.Heat_Loss > Best_Goal_Score then
+         if S.Heat_Loss > Best_Goal_Score then
             return;
          end if;
+
+         Explore.Enqueue (S);
+      end Enqueue;
+
+      procedure Process_One is
+         Current : Path_State;
+      begin
+         Explore.Dequeue (Current);
 
          --  otherwise, mark the new best score for this cell
          Score
@@ -127,12 +133,13 @@ procedure Day17 is
                Forward_Position : constant Vec2 := Current.Position + To_Vector (Current.Forward);
             begin
                if In_Bounds (Map, Forward_Position) then
-                  Explore.Enqueue
+                  Enqueue
                     (Path_State'
                        (Forward_Steps => Current.Forward_Steps + 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Forward_Position)),
                         Forward       => Current.Forward,
-                        Position      => Forward_Position));
+                        Position      => Forward_Position,
+                        Seq           => Next_Seq));
                end if;
             end;
          end if;
@@ -143,12 +150,13 @@ procedure Day17 is
                  Current.Position + To_Vector (Rotate_Left (Current.Forward));
             begin
                if In_Bounds (Map, Left_Position) then
-                  Explore.Enqueue
+                  Enqueue
                     (Path_State'
                        (Forward_Steps => 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Left_Position)),
                         Forward       => Rotate_Left (Current.Forward),
-                        Position      => Left_Position));
+                        Position      => Left_Position,
+                        Seq           => Next_Seq));
                end if;
             end;
 
@@ -157,12 +165,13 @@ procedure Day17 is
                  Current.Position + To_Vector (Rotate_Right (Current.Forward));
             begin
                if In_Bounds (Map, Right_Position) then
-                  Explore.Enqueue
+                  Enqueue
                     (Path_State'
                        (Forward_Steps => 1,
                         Heat_Loss => Current.Heat_Loss + Integer (Element (Map, Right_Position)),
                         Forward       => Rotate_Right (Current.Forward),
-                        Position      => Right_Position));
+                        Position      => Right_Position,
+                        Seq           => Next_Seq));
                end if;
             end;
          end if;
@@ -172,12 +181,14 @@ procedure Day17 is
       Score.all := (others => (others => (others => (others => Integer'Last))));
 
       Explore.Enqueue
-        (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => East, Position => (1, 1)));
+        (Path_State'
+           (Forward_Steps => 0, Heat_Loss => 0, Forward => East, Position => (1, 1), Seq => 0));
 
       Explore.Enqueue
-        (Path_State'(Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1)));
+        (Path_State'
+           (Forward_Steps => 0, Heat_Loss => 0, Forward => South, Position => (1, 1), Seq => 0));
 
-      while Explore.Current_Use > 0 loop
+      while Explore.Length > 0 loop
          Process_One;
       end loop;
 
