@@ -12,6 +12,11 @@ package Advent.Vector_Math is
    pragma Pure;
 
    --
+   --  Generic
+   --
+   type Axis is (X, Y, Z, W);
+
+   --
    --  2D Vector math
    --
    type Vec2 is array (0 .. 1) of Element_Type;
@@ -46,6 +51,13 @@ package Advent.Vector_Math is
    --
    --  3D Vector math
    --
-   type Vec3 is array (0 .. 2) of Element_Type;
+   subtype Axis3 is Axis range X .. Z;
+
+   type Vec3 is array (Axis3) of Element_Type;
+
+   function Hash (A : Vec3) return Ada.Containers.Hash_Type is
+     ((Ada.Containers.Hash_Type'Mod (A (X)) * 73_856_093) xor
+      (Ada.Containers.Hash_Type'Mod (A (Y)) * 19_349_663) xor
+      (Ada.Containers.Hash_Type'Mod (A (Z)) * 83_492_791));
 
 end Advent.Vector_Math;

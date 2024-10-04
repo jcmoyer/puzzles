@@ -34,7 +34,7 @@ procedure Day24 is
 
    --  Integer to real vector
    function Real (V : Vec3) return RVec3 is
-     ((Long_Long_Float (V (0)), Long_Long_Float (V (1)), Long_Long_Float (V (2))));
+     ((Long_Long_Float (V (X)), Long_Long_Float (V (Y)), Long_Long_Float (V (Z))));
 
    --  Determinant of a 2x2 matrix, here treating the rows/columns as vectors
    --  This intentionally takes a 3D vector and ignores the Z component.

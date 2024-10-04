@@ -1,6 +1,8 @@
-with Advent;         use Advent;
-with Advent.IO;      use Advent.IO;
-with Advent.Strings; use Advent.Strings;
+with Advent;                     use Advent;
+with Advent.IO;                  use Advent.IO;
+with Advent.Strings;             use Advent.Strings;
+with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
+
 with Ada.Command_Line;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Vectors;
@@ -18,17 +20,6 @@ procedure Day22 is
    --  The entire space is 10x10x309 = 30900 cells, which seems like a really
    --  small thing to simulate by AoC standards.
 
-   type Axis is (X, Y, Z);
-
-   type Vec3 is array (Axis) of Integer;
-
-   --  Credit: Optimized Spatial Hashing for Collision Detection of Deformable Objects
-   --  Full citation in src/advent/advent-vector_math.ads
-   function Hash (A : Vec3) return Hash_Type is
-     ((Ada.Containers.Hash_Type'Mod (A (X)) * 73_856_093) xor
-      (Ada.Containers.Hash_Type'Mod (A (Y)) * 19_349_663) xor
-      (Ada.Containers.Hash_Type'Mod (A (Z)) * 83_492_791));
-
    type AABB is record
       Min, Max : Vec3;
    end record;
@@ -38,7 +29,7 @@ procedure Day22 is
 
    --  Returns the size of the AABB along one axis. Turns out we didn't need
    --  this but I'll keep it and [TODO] move it into utils.
-   function Size (Box : AABB; Along : Axis) return Integer is
+   function Size (Box : AABB; Along : Axis3) return Integer is
      (Box.Max (Along) - Box.Min (Along) + 1);
 
    --  Drops the AABB one unit on the Z axis.
@@ -51,7 +42,7 @@ procedure Day22 is
    end Drop;
 
    --  Returns true if a single axis `Ax` in the AABB contains `Pos`.
-   function Contains (Box : AABB; Ax : Axis; Pos : Integer) return Boolean is
+   function Contains (Box : AABB; Ax : Axis3; Pos : Integer) return Boolean is
      (Box.Min (Ax) <= Pos and then Pos <= Box.Max (Ax));
 
    function Is_Adjacent_Z (Top, Bottom : AABB) return Boolean is
@@ -102,7 +93,7 @@ procedure Day22 is
    function Union (Left, Right : AABB) return AABB is
       Result : AABB;
    begin
-      for A in Axis loop
+      for A in Axis3 loop
          Result.Min (A) := Integer'Min (Left.Min (A), Right.Min (A));
          Result.Max (A) := Integer'Max (Left.Max (A), Right.Max (A));
       end loop;
@@ -244,7 +235,7 @@ procedure Day22 is
    end Count_Destroyable;
 
    --  Print the world along `Horizontal` and Z axes, useful for debugging
-   procedure Print (W : World; Horizontal : Axis) is
+   procedure Print (W : World; Horizontal : Axis3) is
       Bounds   : constant AABB := Extents (W);
       Num_Hit  : Integer       := 0;
       Last_Hit : Brick_Index;
