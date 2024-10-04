@@ -42,4 +42,20 @@ package body Advent.Directions is
       end case;
    end Rotate_Right;
 
+   function Parse_Direction (C : Character) return Direction is
+   begin
+      case C is
+         when 'U' | 'u' | 'N' | 'n' | '^' =>
+            return North;
+         when 'D' | 'd' | 'S' | 's' | 'v' =>
+            return South;
+         when 'L' | 'l' | 'W' | 'w' | '<' =>
+            return West;
+         when 'R' | 'r' | 'E' | 'e' | '>' =>
+            return East;
+         when others =>
+            raise Invalid_Character;
+      end case;
+   end Parse_Direction;
+
 end Advent.Directions;

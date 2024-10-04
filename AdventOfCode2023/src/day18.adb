@@ -28,25 +28,7 @@ procedure Day18 is
 
    subtype Dig_Plan is Dig_Plans.Vector;
 
-   Invalid_Character : exception;
-
-   function Parse_LRUD (C : Character) return Direction is
-   begin
-      case C is
-         when 'L' =>
-            return West;
-         when 'R' =>
-            return East;
-         when 'U' =>
-            return North;
-         when 'D' =>
-            return South;
-         when others =>
-            raise Invalid_Character;
-      end case;
-   end Parse_LRUD;
-
-   function Parse_LRUD (S : String) return Direction is (Parse_LRUD (S (S'First)));
+   function Parse_LRUD (S : String) return Direction is (Parse_Direction (S (S'First)));
 
    function Parse_Hex_Direction (C : Character) return Direction is
    begin
