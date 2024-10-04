@@ -79,8 +79,8 @@ procedure Day18 is
       for I in 1 .. Integer (Vertices.Length) loop
          --  I love arbitrary indexing
          J := Vertices.First_Index + ((I + 1 - Vertices.First_Index) rem Vertices.Last_Index);
-         Area      := Area + Long_Long_Integer (Vertices (I) (0) * Vertices (J) (1));
-         Area      := Area - Long_Long_Integer (Vertices (I) (1) * Vertices (J) (0));
+         Area      := Area + Long_Long_Integer (Vertices (I) (X) * Vertices (J) (Y));
+         Area      := Area - Long_Long_Integer (Vertices (I) (Y) * Vertices (J) (X));
          Perimeter := Perimeter + Manhattan (Vertices (I), Vertices (J));
       end loop;
       --  I don't know why the +1 is necessary here.

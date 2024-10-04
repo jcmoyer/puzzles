@@ -115,11 +115,11 @@ procedure Day16 is
       Current_Pos  : Vec2          := B.Position;
       Current_Char : Character;
    begin
-      while Current_Pos (0) in World.Map'Range (1) and then Current_Pos (1) in World.Map'Range (2)
+      while Current_Pos (X) in World.Map'Range (1) and then Current_Pos (Y) in World.Map'Range (2)
       loop
-         World.Energized (Current_Pos (0), Current_Pos (1)) := True;
+         World.Energized (Current_Pos (X), Current_Pos (Y)) := True;
 
-         Current_Char := World.Map (Current_Pos (0), Current_Pos (1));
+         Current_Char := World.Map (Current_Pos (X), Current_Pos (Y));
 
          if Current_Char = '-' or else Current_Char = '|' then
             Resolve_Splitter (World.Pending, Current_Pos, Opposite (B.Dir), Current_Char);

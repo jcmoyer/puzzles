@@ -33,10 +33,10 @@ procedure Day23 is
      (Element_Type => Vec2, Hash => Hash, Equivalent_Elements => "=");
 
    function In_Bounds (Map : Char_Matrix; Indices : Vec2) return Boolean is
-     (Indices (0) in Map'Range (1) and then Indices (1) in Map'Range (2));
+     (Indices (X) in Map'Range (1) and then Indices (Y) in Map'Range (2));
 
    function Element (Map : Char_Matrix; Indices : Vec2) return Character is
-     (Map (Indices (0), Indices (1)));
+     (Map (Indices (X), Indices (Y)));
 
    function Try_Element (Map : Char_Matrix; Indices : Vec2; Char : out Character) return Boolean is
    begin

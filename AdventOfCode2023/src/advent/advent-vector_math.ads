@@ -19,22 +19,24 @@ package Advent.Vector_Math is
    --
    --  2D Vector math
    --
-   type Vec2 is array (0 .. 1) of Element_Type;
-   function Image (V : Vec2) return String is ("<" & V (0)'Image & "," & V (1)'Image & ">");
+   subtype Axis2 is Axis range X .. Y;
 
-   function "-" (A : Vec2) return Vec2 is ((-A (0), -A (1)));
+   type Vec2 is array (Axis2) of Element_Type;
+   function Image (V : Vec2) return String is ("<" & V (X)'Image & "," & V (Y)'Image & ">");
 
-   function "+" (A, B : Vec2) return Vec2 is ((A (0) + B (0), A (1) + B (1)));
-   function "-" (A, B : Vec2) return Vec2 is ((A (0) - B (0), A (1) - B (1)));
-   function "*" (A : Vec2; B : Element_Type) return Vec2 is ((A (0) * B, A (1) * B));
-   function "/" (A : Vec2; B : Element_Type) return Vec2 is ((A (0) / B, A (1) / B));
+   function "-" (A : Vec2) return Vec2 is ((-A (X), -A (Y)));
 
-   function Absolute (A : Vec2) return Vec2 is ((abs A (0), abs A (1)));
+   function "+" (A, B : Vec2) return Vec2 is ((A (X) + B (X), A (Y) + B (Y)));
+   function "-" (A, B : Vec2) return Vec2 is ((A (X) - B (X), A (Y) - B (Y)));
+   function "*" (A : Vec2; B : Element_Type) return Vec2 is ((A (X) * B, A (Y) * B));
+   function "/" (A : Vec2; B : Element_Type) return Vec2 is ((A (X) / B, A (Y) / B));
 
-   function Elementwise_Mul (A, B : Vec2) return Vec2 is ((A (0) * B (0), A (1) * B (1)));
+   function Absolute (A : Vec2) return Vec2 is ((abs A (X), abs A (Y)));
+
+   function Elementwise_Mul (A, B : Vec2) return Vec2 is ((A (X) * B (X), A (Y) * B (Y)));
 
    function Manhattan (A, B : Vec2) return Element_Type is
-     (abs (A (0) - B (0)) + abs (A (1) - B (1)));
+     (abs (A (X) - B (X)) + abs (A (Y) - B (Y)));
 
    --  Teschner, Matthias & Heidelberger, Bruno & Müller, Matthias &
    --  Pomeranets, Danat & Gross, Markus. (2003). Optimized Spatial Hashing for
@@ -42,8 +44,8 @@ package Advent.Vector_Math is
    --  Vision, Modeling, Visualization. 3.
    use type Ada.Containers.Hash_Type;
    function Hash (A : Vec2) return Ada.Containers.Hash_Type is
-     ((Ada.Containers.Hash_Type'Mod (A (0)) * 73_856_093) xor
-      (Ada.Containers.Hash_Type'Mod (A (1)) * 19_349_663));
+     ((Ada.Containers.Hash_Type'Mod (A (X)) * 73_856_093) xor
+      (Ada.Containers.Hash_Type'Mod (A (Y)) * 19_349_663));
 
    --  Returns a vector using conventional <row, col> matrix coordinates.
    function To_Vector (Dir : Direction) return Vec2;

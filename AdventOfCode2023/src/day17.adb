@@ -48,10 +48,10 @@ procedure Day17 is
    type Path_Score_Map_Ptr is access all Path_Score_Map;
 
    function In_Bounds (Map : Digit_Matrix; Indices : Vec2) return Boolean is
-     (Indices (0) in Map'Range (1) and then Indices (1) in Map'Range (2));
+     (Indices (X) in Map'Range (1) and then Indices (Y) in Map'Range (2));
 
    function Element (Map : Digit_Matrix; Indices : Vec2) return Digit is
-     (Map (Indices (0), Indices (1)));
+     (Map (Indices (X), Indices (Y)));
 
    --  Part 1 rules
    function Can_Forward_Normal (S : Path_State) return Boolean is (S.Forward_Steps < 3);
@@ -85,7 +85,7 @@ procedure Day17 is
       begin
          --  have we seen this state before at a lower score? if so, there's no
          --  point revisiting it
-         if S.Heat_Loss >= Score (S.Position (0), S.Position (1), S.Forward_Steps, S.Forward) then
+         if S.Heat_Loss >= Score (S.Position (X), S.Position (Y), S.Forward_Steps, S.Forward) then
             return True;
          end if;
 
@@ -117,7 +117,7 @@ procedure Day17 is
 
          --  otherwise, mark the new best score for this cell
          Score
-           (Current.Position (0), Current.Position (1), Current.Forward_Steps, Current.Forward) :=
+           (Current.Position (X), Current.Position (Y), Current.Forward_Steps, Current.Forward) :=
            Current.Heat_Loss;
 
          --  if we're at the goal, record the final score and return since

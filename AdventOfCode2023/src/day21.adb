@@ -35,19 +35,19 @@ procedure Day21 is
 
    function Element (M : Char_Matrix; Index : Vec2) return Character is
    begin
-      return M (Index (0), Index (1));
+      return M (Index (X), Index (Y));
    end Element;
 
    function Element_Wrapping (M : Char_Matrix; Index : Vec2) return Character is
    begin
       --  First we go to zero-based indices, perform the modulus, then go back
       --  to one-based indices.
-      return M (1 + ((Index (0) - 1) mod Rows (M)), 1 + ((Index (1) - 1) mod Cols (M)));
+      return M (1 + ((Index (X) - 1) mod Rows (M)), 1 + ((Index (Y) - 1) mod Cols (M)));
    end Element_Wrapping;
 
    function In_Bounds (M : Char_Matrix; Index : Vec2) return Boolean is
    begin
-      return Index (0) in 1 .. Rows (M) and then Index (1) in 1 .. Cols (M);
+      return Index (X) in 1 .. Rows (M) and then Index (Y) in 1 .. Cols (M);
    end In_Bounds;
 
    function Is_Plot (C : Character) return Boolean is (C = '.' or else C = 'S');

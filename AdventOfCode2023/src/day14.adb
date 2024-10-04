@@ -22,8 +22,8 @@ procedure Day14 is
    subtype Load_History is Integer_Vectors.Vector;
 
    function Contains (R : Rectangle; P : Vec2) return Boolean is
-     (R.Left <= P (1) and then P (1) <= R.Right and then R.Top <= P (0)
-      and then P (0) <= R.Bottom);
+     (R.Left <= P (Y) and then P (Y) <= R.Right and then R.Top <= P (X)
+      and then P (X) <= R.Bottom);
 
    procedure Settle (M : in out Sparse_Map; Rock : Vec2; Dir : Direction; Region : Rectangle) is
       Dir_Vec : constant Vec2 := To_Vector (Dir);

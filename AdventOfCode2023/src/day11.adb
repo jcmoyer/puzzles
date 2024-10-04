@@ -103,16 +103,16 @@ procedure Day11 is
    begin
       for I of Col_Indices loop
          for G of Galaxies loop
-            if G.Position (1) < Long_Long_Integer (I) then
-               G.Position (1) := G.Position (1) - Insert_Count;
+            if G.Position (Y) < Long_Long_Integer (I) then
+               G.Position (Y) := G.Position (Y) - Insert_Count;
             end if;
          end loop;
       end loop;
 
       for I of Row_Indices loop
          for G of Galaxies loop
-            if G.Position (0) < Long_Long_Integer (I) then
-               G.Position (0) := G.Position (0) - Insert_Count;
+            if G.Position (X) < Long_Long_Integer (I) then
+               G.Position (X) := G.Position (X) - Insert_Count;
             end if;
          end loop;
       end loop;

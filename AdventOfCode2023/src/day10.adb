@@ -87,17 +87,17 @@ procedure Day10 is
 
    function Element (M : Map; Index : Vec2) return Tile is
    begin
-      return M.Tiles (Index (0), Index (1));
+      return M.Tiles (Index (X), Index (Y));
    end Element;
 
    function Reference (M : Map; Index : Vec2) return Tile_Ptr is
    begin
-      return M.Tiles (Index (0), Index (1))'Access;
+      return M.Tiles (Index (X), Index (Y))'Access;
    end Reference;
 
    function In_Bounds (M : Map; Index : Vec2) return Boolean is
    begin
-      return Index (0) in 1 .. M.Rows and then Index (1) in 1 .. M.Cols;
+      return Index (X) in 1 .. M.Rows and then Index (Y) in 1 .. M.Cols;
    end In_Bounds;
 
    --  Clears the contents of Buffer and replaces them with the relative
