@@ -80,13 +80,6 @@ procedure Day17 is
         new Path_Score_Map (Map'Range (1), Map'Range (2), Forward_Step_Count, Direction);
       Goal            : constant Vec2               := (Map'Length (1), Map'Length (2));
       Best_Goal_Score : Integer                     := Integer'Last;
-      Current_Seq     : Integer                     := 0;
-
-      function Next_Seq return Integer is
-      begin
-         Current_Seq := Current_Seq + 1;
-         return Current_Seq;
-      end Next_Seq;
 
       function Is_Cullable (S : Path_State) return Boolean is
       begin
