@@ -31,9 +31,7 @@ package body Advent.Containers.Priority_Queues is
    procedure Release (Q : in out Queue) is
       procedure Free is new Ada.Unchecked_Deallocation (Element_Array_Type, Element_Array_Ptr);
    begin
-      if Q.Elements /= null then
-         Free (Q.Elements);
-      end if;
+      Free (Q.Elements);
       Q.Capacity := 0;
       Q.Length   := 0;
    end Release;
