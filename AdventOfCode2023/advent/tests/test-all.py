@@ -4,12 +4,23 @@ import glob
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
+import textwrap
+import re
 
 
 @dataclass
 class FailedTest:
     source_path: Path
     stderr: str
+
+
+def get_failed_assert(stacktrace, source_filename):
+    m = re.search("at (test_.*?\.adb):(\d+)", stacktrace, re.MULTILINE)
+    if m:
+        line_number = int(m.group(2))
+        with open(source_filename, "r") as f:
+            lines = f.readlines()
+            return lines[line_number - 1].strip()
 
 
 def main():
@@ -32,13 +43,15 @@ def main():
         binary_path = f"bin/{mode}/{binary_name}"
 
         print(f"Run {binary_path}...")
-        proc = subprocess.run([binary_path])
+        proc = subprocess.run([binary_path], capture_output=True)
         if proc.returncode == 0:
             test_pass += 1
             print("Pass")
         else:
             test_fail += 1
-            fail_list.append(FailedTest(source_path=source_path, stderr=proc.stderr))
+            fail_list.append(
+                FailedTest(source_path=source_path, stderr=proc.stderr.decode().strip())
+            )
             print("Fail")
 
     print(f"{test_pass}/{test_count} tests passed; {test_fail} tests failed")
@@ -47,6 +60,16 @@ def main():
         print("\nFailed tests:\n")
         for failed in fail_list:
             print(f"   - {failed.source_path}")
+            if len(failed.stderr) > 0:
+                print("\n     stderr:")
+                print(textwrap.indent(failed.stderr, prefix="        "))
+                print("\n     most recent line in test file:")
+                print(
+                    textwrap.indent(
+                        get_failed_assert(failed.stderr, failed.source_path),
+                        prefix="        ",
+                    )
+                )
 
 
 if __name__ == "__main__":
