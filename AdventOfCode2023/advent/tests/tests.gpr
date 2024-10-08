@@ -1,0 +1,37 @@
+with "../advent.gpr";
+
+project Tests is
+    type Build_Type is ("Debug", "Release");
+
+    Build : Build_Type := external ("Build", "Debug");
+
+    for Source_Dirs use ("src");
+    for Object_Dir use "obj/" & Build;
+    for Exec_Dir use "bin/" & Build;
+
+    for Main use ("test_priority_queues.adb");
+
+    Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99");
+
+    package Compiler is
+        case Build is
+            when "Debug" =>
+                for Default_Switches ("Ada") use
+                    Common_Switches & ("-Og", "-gnata", "-gnatVa");
+            when "Release" =>
+                for Default_Switches ("Ada") use
+                    Common_Switches & ("-O3", "-gnatn", "-gnatp");
+        end case;
+    end Compiler;
+
+    package Binder is
+       for Default_Switches ("Ada") use ("-Es");
+    end Binder;
+
+    package Pretty_Printer is
+        for Default_Switches ("Ada") use (
+            "--no-compact",
+            "--max-line-length=99"
+        );
+    end Pretty_Printer;
+end Tests;
