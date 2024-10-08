@@ -1,6 +1,4 @@
-with "advent/advent.gpr";
-
-project AdventOfCode2023 is
+project Advent is
     type Build_Type is ("Debug", "Release");
 
     Build : Build_Type := external ("Build", "Debug");
@@ -8,33 +6,6 @@ project AdventOfCode2023 is
     for Source_Dirs use ("src");
     for Object_Dir use "obj/" & Build;
     for Exec_Dir use "bin/" & Build;
-    for Main use (
-       "day01.adb",
-       "day02.adb",
-       "day03.adb",
-       "day04.adb",
-       "day05.adb",
-       "day06.adb",
-       "day07.adb",
-       "day08.adb",
-       "day09.adb",
-       "day10.adb",
-       "day11.adb",
-       "day12.adb",
-       "day13.adb",
-       "day14.adb",
-       "day15.adb",
-       "day16.adb",
-       "day17.adb",
-       "day18.adb",
-       "day19.adb",
-       "day20.adb",
-       "day21.adb",
-       "day22.adb",
-       "day23.adb",
-       "day24.adb",
-       "day25.adb"
-    );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99", "-gnaty-s");
 
@@ -59,4 +30,4 @@ project AdventOfCode2023 is
             "--max-line-length=99"
         );
     end Pretty_Printer;
-end AdventOfCode2023;
+end Advent;
