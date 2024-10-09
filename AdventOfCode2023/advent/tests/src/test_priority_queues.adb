@@ -15,7 +15,7 @@ begin
    Test_Q.Enqueue (3);
    Assert (Test_Q.Length = 2);
    Test_Q.Enqueue (1);
-   Assert (Test_Q.Length = 5);
+   Assert (Test_Q.Length = 3);
 
    Test_Q.Dequeue (X);
    Assert (X = 1);
