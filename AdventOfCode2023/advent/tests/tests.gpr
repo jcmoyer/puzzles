@@ -9,7 +9,10 @@ project Tests is
     for Object_Dir use "obj/" & Build;
     for Exec_Dir use "bin/" & Build;
 
-    for Main use ("test_priority_queues.adb");
+    for Main use (
+        "test_priority_queues.adb",
+        "test_linked_deques.adb"
+    );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99");
 
