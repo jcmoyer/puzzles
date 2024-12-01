@@ -82,12 +82,12 @@ package body Advent.Containers.Priority_Queues is
             Right_Child : constant Queue_Index := Right (Pos);
             Min         : Queue_Index          := Pos;
          begin
-            if Left_Child < Q.Length and then (Q.Elements.Xs (Left_Child) < Q.Elements.Xs (Min))
+            if Left_Child <= Q.Length and then (Q.Elements.Xs (Left_Child) < Q.Elements.Xs (Min))
             then
                Min := Left_Child;
             end if;
 
-            if Right_Child < Q.Length and then (Q.Elements.Xs (Right_Child) < Q.Elements.Xs (Min))
+            if Right_Child <= Q.Length and then (Q.Elements.Xs (Right_Child) < Q.Elements.Xs (Min))
             then
                Min := Right_Child;
             end if;
