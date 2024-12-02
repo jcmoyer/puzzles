@@ -21,12 +21,15 @@ procedure Day01 is
    --  Looks up a value in a map but falls back to `Default` if it doesn't
    --  exist.
    function Element_Or
-     (M : Count_Maps.Map; Key, Default : Integer) return Integer is
+     (M : Count_Maps.Map; Key, Default : Integer) return Integer
+   is
+      use type Count_Maps.Cursor;
+      Cursor : constant Count_Maps.Cursor := M.Find (Key);
    begin
-      if M.Contains (Key) then
-         return M.Element (Key);
-      else
+      if Cursor = Count_Maps.No_Element then
          return Default;
+      else
+         return Count_Maps.Element (Cursor);
       end if;
    end Element_Or;
 
