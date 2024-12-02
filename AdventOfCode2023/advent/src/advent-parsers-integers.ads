@@ -13,4 +13,8 @@ package Advent.Parsers.Integers is
 
    function Extract_Integers (S : String) return Vector;
 
+   type Array_Type is array (Positive range <>) of Element_Type;
+
+   function Extract_Integers (S : String; Output : out Array_Type) return Natural;
+
 end Advent.Parsers.Integers;

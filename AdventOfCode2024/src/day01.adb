@@ -16,7 +16,7 @@ procedure Day01 is
         "<"          => "<",
         "="          => "=");
 
-   Row_Count_Mismatch : exception;
+   Input_Error : exception;
 
    --  Looks up a value in a map but falls back to `Default` if it doesn't
    --  exist.
@@ -40,20 +40,18 @@ procedure Day01 is
 begin
    for Line of Lines loop
       declare
-         Ints : constant Advent.Integer_Parsers.Vector :=
-           Advent.Integer_Parsers.Extract_Integers (Line);
-         L    : constant Integer := Ints (1);
-         R    : constant Integer := Ints (2);
+         Ints : Advent.Integer_Parsers.Array_Type (1 .. 2);
+         L    : Integer renames Ints (1);
+         R    : Integer renames Ints (2);
       begin
+         if 2 /= Advent.Integer_Parsers.Extract_Integers (Line, Ints) then
+            raise Input_Error with "number of columns in row /= 2";
+         end if;
          Left_PQ.Enqueue (L);
          Right_PQ.Enqueue (R);
          Occurrences.Include (R, 1 + Element_Or (Occurrences, R, 0));
       end;
    end loop;
-
-   if Left_PQ.Length /= Right_PQ.Length then
-      raise Row_Count_Mismatch with "columns have different row counts";
-   end if;
 
    while Left_PQ.Length > 0 loop
       declare
