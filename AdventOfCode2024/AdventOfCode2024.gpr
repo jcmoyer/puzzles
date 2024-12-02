@@ -9,7 +9,8 @@ project AdventOfCode2024 is
     for Object_Dir use "obj/" & Build;
     for Exec_Dir use "bin/" & Build;
     for Main use (
-       "day01.adb"
+       "day01.adb",
+       "day02.adb"
     );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99", "-gnaty-s");
