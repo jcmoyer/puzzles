@@ -199,6 +199,6 @@ procedure Day03 is
    Tokens : constant Token_Vectors.Vector := Lex (Text);
 
 begin
-   Advent.IO.Solution (Eval_Muls (Text, Tokens, False)'Image);
-   Advent.IO.Solution (Eval_Muls (Text, Tokens, True)'Image);
+   Advent.IO.Solution (Eval_Muls (Text, Tokens, False));
+   Advent.IO.Solution (Eval_Muls (Text, Tokens, True));
 end Day03;
