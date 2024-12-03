@@ -27,4 +27,23 @@ begin
    Assert (X = 5);
    Assert (Test_Q.Length = 0);
 
+   Test_Q.Enqueue (4);
+   Test_Q.Enqueue (3);
+   Test_Q.Enqueue (5);
+   Test_Q.Enqueue (3);
+   Test_Q.Enqueue (9);
+   Test_Q.Enqueue (3);
+
+   Test_Q.Dequeue (X);
+   Assert (X = 3);
+   Test_Q.Dequeue (X);
+   Assert (X = 3);
+   Test_Q.Dequeue (X);
+   Assert (X = 3);
+   Test_Q.Dequeue (X);
+   Assert (X = 4);
+   Test_Q.Dequeue (X);
+   Assert (X = 5);
+   Test_Q.Dequeue (X);
+   Assert (X = 9);
 end Test_Priority_Queues;
