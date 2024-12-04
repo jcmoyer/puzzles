@@ -32,12 +32,6 @@ procedure Day23 is
    package Vec2_Sets is new Ada.Containers.Hashed_Sets
      (Element_Type => Vec2, Hash => Hash, Equivalent_Elements => "=");
 
-   function In_Bounds (Map : Char_Matrix; Indices : Vec2) return Boolean is
-     (Indices (X) in Map'Range (1) and then Indices (Y) in Map'Range (2));
-
-   function Element (Map : Char_Matrix; Indices : Vec2) return Character is
-     (Map (Indices (X), Indices (Y)));
-
    function Try_Element (Map : Char_Matrix; Indices : Vec2; Char : out Character) return Boolean is
    begin
       if In_Bounds (Map, Indices) then

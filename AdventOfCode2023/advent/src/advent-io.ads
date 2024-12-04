@@ -1,4 +1,5 @@
 with Advent.Strings;
+with Advent.Integer_Vector_Math;
 with Ada.Streams;
 
 package Advent.IO is
@@ -26,5 +27,10 @@ package Advent.IO is
    function Cols (M : Char_Matrix) return Integer;
    function Image (M : Char_Matrix) return String;
    function Transpose (M : Char_Matrix) return Char_Matrix;
+   function In_Bounds (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Boolean;
+   function Element (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Character with
+     Pre => In_Bounds (M, Index);
+   function Element_Wrapping (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Character with
+     Pre => In_Bounds (M, Index);
 
 end Advent.IO;

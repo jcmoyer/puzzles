@@ -4,18 +4,6 @@ with Advent.Directions;          use Advent.Directions;
 with Ada.Command_Line;
 
 procedure Day04 is
-   function In_Bounds (M : Char_Matrix; Where : Vec2) return Boolean is
-   begin
-      return Where (X) in M'Range(1) and then Where (Y) in M'Range(2);
-   end In_Bounds;
-
-   function Index (M : Char_Matrix; Where : Vec2) return Character
-   with Pre => In_Bounds (M, Where)
-   is
-   begin
-      return M (Where (X), Where (Y));
-   end Index;
-
    function Equal_Along
      (Map       : Char_Matrix;
       Start     : Vec2;
@@ -31,7 +19,7 @@ procedure Day04 is
             return False;
          end if;
 
-         if Substring (Substring'First + Offset) /= Index (Map, Pos) then
+         if Substring (Substring'First + Offset) /= Element (Map, Pos) then
             return False;
          end if;
       end loop;

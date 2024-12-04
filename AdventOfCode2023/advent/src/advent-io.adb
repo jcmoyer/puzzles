@@ -145,4 +145,23 @@ package body Advent.IO is
       return Result;
    end Transpose;
 
+   package IV renames Advent.Integer_Vector_Math;
+
+   function In_Bounds (M : Char_Matrix; Index : IV.Vec2) return Boolean is
+   begin
+      return Index (IV.X) in M'Range(1) and then Index (IV.Y) in M'Range(2);
+   end In_Bounds;
+
+   function Element (M : Char_Matrix; Index : IV.Vec2) return Character is
+   begin
+      return M (Index (IV.X), Index (IV.Y));
+   end Element;
+
+   function Element_Wrapping (M : Char_Matrix; Index : IV.Vec2) return Character is
+   begin
+      --  First we go to zero-based indices, perform the modulus, then go back
+      --  to one-based indices.
+      return M (1 + ((Index (IV.X) - 1) mod Rows (M)), 1 + ((Index (IV.Y) - 1) mod Cols (M)));
+   end Element_Wrapping;
+
 end Advent.IO;
