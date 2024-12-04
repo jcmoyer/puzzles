@@ -51,9 +51,6 @@ procedure Day04 is
    end Count_XMAS;
 
    function Find_X_MAS (Map : Char_Matrix; Start : Vec2) return Boolean is
-      Search : constant String := "MAS";
-      Pos    : Vec2;
-
       Search_Start     : Vec2;
       Search_Direction : Direction;
       Perp             : Direction;
