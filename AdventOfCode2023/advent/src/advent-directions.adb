@@ -5,16 +5,27 @@ package body Advent.Directions is
       case Dir is
          when North =>
             return South;
-         when South =>
-            return North;
-         when West =>
-            return East;
+         when North_East =>
+            return South_West;
          when East =>
             return West;
+         when South_East =>
+            return North_West;
+         when South =>
+            return North;
+         when South_West =>
+            return North_East;
+         when West =>
+            return East;
+         when North_West =>
+            return South_East;
       end case;
    end Opposite;
 
-   function Rotate_Left (Dir : Direction) return Direction is
+   function Perpendicular (Dir : Direction) return Direction
+   is (Direction'Val ((Direction'Pos (Dir) + 2) rem 8));
+
+   function Rotate_Left (Dir : Cardinal_Direction) return Cardinal_Direction is
    begin
       case Dir is
          when North =>
@@ -28,7 +39,7 @@ package body Advent.Directions is
       end case;
    end Rotate_Left;
 
-   function Rotate_Right (Dir : Direction) return Direction is
+   function Rotate_Right (Dir : Cardinal_Direction) return Cardinal_Direction is
    begin
       case Dir is
          when North =>
@@ -42,7 +53,7 @@ package body Advent.Directions is
       end case;
    end Rotate_Right;
 
-   function Parse_Direction (C : Character) return Direction is
+   function Parse_Direction (C : Character) return Cardinal_Direction is
    begin
       case C is
          when 'U' | 'u' | 'N' | 'n' | '^' =>

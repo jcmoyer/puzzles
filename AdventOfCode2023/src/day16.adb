@@ -43,7 +43,7 @@ procedure Day16 is
    end record;
 
    procedure Resolve_Splitter
-     (Pending : in out Beam_Vector; Position : Vec2; Enter_From : Direction; Kind : Character) with
+     (Pending : in out Beam_Vector; Position : Vec2; Enter_From : Cardinal_Direction; Kind : Character) with
      Pre => Kind = '|' or else Kind = '-', Post => Pending.Length > Pending'Old.Length
    is
    begin
@@ -75,7 +75,7 @@ procedure Day16 is
    end Resolve_Splitter;
 
    procedure Resolve_Mirror
-     (Pending : in out Beam_Vector; Position : Vec2; Enter_From : Direction; Kind : Character) with
+     (Pending : in out Beam_Vector; Position : Vec2; Enter_From : Cardinal_Direction; Kind : Character) with
      Pre => Kind = '/' or else Kind = '\', Post => Pending.Length > Pending'Old.Length
    is
    begin

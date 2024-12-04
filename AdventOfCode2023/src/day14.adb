@@ -41,7 +41,7 @@ procedure Day14 is
       M.Insert (Current - Dir_Vec, 'O');
    end Settle;
 
-   procedure Tilt (M : in out Sparse_Map; Dir : Direction; Region : Rectangle) is
+   procedure Tilt (M : in out Sparse_Map; Dir : Cardinal_Direction; Region : Rectangle) is
       Cursor : Sparse_Maps.Cursor;
 
       procedure Settle_One (V : Vec2) is

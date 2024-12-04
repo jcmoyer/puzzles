@@ -60,7 +60,7 @@ procedure Day23 is
                N_Directions : Integer := 0;
                Char         : Character;
             begin
-               for D in Direction loop
+               for D in Cardinal_Direction loop
                   if Element (M, (I, J)) = '.'
                     and then Try_Element (M, Vec2'(I, J) + To_Vector (D), Char)
                   then
@@ -185,7 +185,7 @@ procedure Day23 is
          if Current.Position /= Start and then Known_Junctions.Contains (Current.Position) then
             Result.Append ((Position => Current.Position, Steps => Current.Steps));
          else
-            for D in Direction loop
+            for D in Cardinal_Direction loop
                declare
                   Index : constant Vec2 := Current.Position + To_Vector (D);
                   Value : Character;

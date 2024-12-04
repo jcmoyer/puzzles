@@ -109,7 +109,7 @@ procedure Day21 is
             if Current.Steps_Left = 0 then
                Result := Result + 1;
             else
-               for D in Direction loop
+               for D in Cardinal_Direction loop
                   declare
                      Neighbor_Pos : constant Vec2 := Current.Position + To_Vector (D);
                   begin
