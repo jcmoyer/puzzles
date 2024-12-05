@@ -28,9 +28,19 @@ package Advent.Directions is
    --  * East => West
    function Opposite (Dir : Direction) return Direction;
 
-   --  Returns the Direction perpendicular to Dir. The value returned will
-   --  always be the perpendicular formed rotating the direction clockwise by
-   --  90 degrees. The conversion table is as follows:
+   --  Rotates a Direction 90 degrees counter-clockwise. The conversion is as follows:
+   --
+   --  * North      => West
+   --  * North_East => North_West
+   --  * East       => North
+   --  * South_East => North_East
+   --  * South      => East
+   --  * South_West => South_East
+   --  * West       => South
+   --  * North_West => South_West
+   function Rotate_CCW_90 (Dir : Direction) return Direction;
+
+   --  Rotates a Direction 90 degrees clockwise. The conversion is as follows:
    --
    --  * North      => East
    --  * North_East => South_East
@@ -40,14 +50,21 @@ package Advent.Directions is
    --  * South_West => North_West
    --  * West       => North
    --  * North_West => North_East
-   function Perpendicular (Dir : Direction) return Direction;
+   function Rotate_CW_90 (Dir : Direction) return Direction;
+
+   --  Returns the Direction perpendicular to Dir. This is an alias to one of
+   --  the 90 degree rotation functions, but is provided because the name can
+   --  express intent more clearly.
+   function Perpendicular (Dir : Direction) return Direction renames Rotate_CW_90;
 
    type Direction_Flags is array (Direction) of Boolean;
    pragma Pack (Direction_Flags);
 
-   function Rotate_Left (Dir : Cardinal_Direction) return Cardinal_Direction;
+   function Rotate_Left (Dir : Cardinal_Direction) return Cardinal_Direction renames Rotate_CCW_90;
+   pragma Obsolescent (Rotate_Left, "Use Rotate_CCW_90");
 
-   function Rotate_Right (Dir : Cardinal_Direction) return Cardinal_Direction;
+   function Rotate_Right (Dir : Cardinal_Direction) return Cardinal_Direction renames Rotate_CW_90;
+   pragma Obsolescent (Rotate_Right, "Use Rotate_CW_90");
 
    Invalid_Character : exception;
 
