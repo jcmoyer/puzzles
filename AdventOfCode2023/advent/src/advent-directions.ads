@@ -22,10 +22,14 @@ package Advent.Directions is
 
    --  Returns the opposite Direction from Dir. The conversions are:
    --
-   --  * North => South
-   --  * South => North
-   --  * West => East
-   --  * East => West
+   --  * North      => South
+   --  * North_East => South_West
+   --  * East       => West
+   --  * South_East => North_West
+   --  * South      => North
+   --  * South_West => North_East
+   --  * West       => East
+   --  * North_West => South_East
    function Opposite (Dir : Direction) return Direction;
 
    --  Rotates a Direction 90 degrees counter-clockwise. The conversion is as follows:
