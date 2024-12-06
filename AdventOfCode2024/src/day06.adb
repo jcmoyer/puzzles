@@ -1,10 +1,7 @@
 with Advent.IO;                  use Advent.IO;
-with Advent.Strings;
 with Advent.Integer_Vector_Math; use Advent.Integer_Vector_Math;
 with Advent.Directions;          use Advent.Directions;
 with Ada.Command_Line;
-with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
-with Ada.Containers;
 
 procedure Day06 is
 
