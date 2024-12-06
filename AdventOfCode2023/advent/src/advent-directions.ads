@@ -4,21 +4,17 @@ package Advent.Directions is
 
    type Direction is
      (North,
-      North_East,
       East,
-      South_East,
       South,
-      South_West,
       West,
+      North_East,
+      South_East,
+      South_West,
       North_West);
 
-   subtype Cardinal_Direction is Direction
-   with Static_Predicate => Cardinal_Direction in North | East | South | West;
+   subtype Cardinal_Direction is Direction range North .. West;
 
-   subtype Ordinal_Direction is Direction
-   with
-     Static_Predicate =>
-       Ordinal_Direction in North_East | South_East | South_West | North_West;
+   subtype Ordinal_Direction is Direction range North_East .. North_West;
 
    --  Returns the opposite Direction from Dir. The conversions are:
    --
