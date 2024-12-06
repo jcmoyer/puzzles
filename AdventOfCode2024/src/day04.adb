@@ -5,10 +5,7 @@ with Ada.Command_Line;
 
 procedure Day04 is
    function Equal_Along
-     (Map       : Char_Matrix;
-      Start     : Vec2;
-      Dir       : Direction;
-      Substring : String) return Boolean
+     (Map : Char_Matrix; Start : Vec2; Dir : Direction; Substring : String) return Boolean
    is
       Pos : Vec2;
    begin
@@ -44,7 +41,7 @@ procedure Day04 is
       Perp             : Direction;
    begin
       for Offset_Dir in Ordinal_Direction loop
-         Search_Start := Start + To_Vector (Offset_Dir);
+         Search_Start     := Start + To_Vector (Offset_Dir);
          Search_Direction := Opposite (Offset_Dir);
 
          if Equal_Along (Map, Search_Start, Search_Direction, "MAS") then
@@ -62,15 +59,14 @@ procedure Day04 is
       return False;
    end Find_X_MAS;
 
-   Map : constant Char_Matrix :=
-     Advent.IO.Read_Tilemap (Ada.Command_Line.Argument (1));
+   Map : constant Char_Matrix := Advent.IO.Read_Tilemap (Ada.Command_Line.Argument (1));
 
    Sum_P1 : Integer := 0;
    Sum_P2 : Integer := 0;
 
 begin
-   for I in Map'Range(1) loop
-      for J in Map'Range(2) loop
+   for I in Map'Range (1) loop
+      for J in Map'Range (2) loop
          Sum_P1 := Sum_P1 + Count_XMAS (Map, Vec2'(I, J));
 
          if Find_X_MAS (Map, Vec2'(I, J)) then

@@ -6,23 +6,16 @@ with Ada.Command_Line;
 with Ada.Containers.Ordered_Maps;
 
 procedure Day01 is
-   package PQ is new
-     Advent.Containers.Priority_Queues (Element_Type => Integer, "<" => "<");
+   package PQ is new Advent.Containers.Priority_Queues (Element_Type => Integer, "<" => "<");
 
-   package Count_Maps is new
-     Ada.Containers.Ordered_Maps
-       (Key_Type     => Integer,
-        Element_Type => Integer,
-        "<"          => "<",
-        "="          => "=");
+   package Count_Maps is new Ada.Containers.Ordered_Maps
+     (Key_Type => Integer, Element_Type => Integer, "<" => "<", "=" => "=");
 
    Input_Error : exception;
 
    --  Looks up a value in a map but falls back to `Default` if it doesn't
    --  exist.
-   function Element_Or
-     (M : Count_Maps.Map; Key, Default : Integer) return Integer
-   is
+   function Element_Or (M : Count_Maps.Map; Key, Default : Integer) return Integer is
       use type Count_Maps.Cursor;
       Cursor : constant Count_Maps.Cursor := M.Find (Key);
    begin

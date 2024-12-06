@@ -16,8 +16,7 @@ procedure Day05 is
    type Dependency_Matrix is array (Page_Number, Page_Number) of Boolean;
 
    --  True if there are any edges coming from any node going to `To`
-   function Any_In_Edges
-     (D : Dependency_Matrix; To : Page_Number) return Boolean is
+   function Any_In_Edges (D : Dependency_Matrix; To : Page_Number) return Boolean is
    begin
       for From in Page_Number loop
          if D (From, To) then
@@ -28,9 +27,7 @@ procedure Day05 is
    end Any_In_Edges;
 
    --  Filters `D` to only contain the page numbers in `A`
-   function Reduce_Dependencies
-     (D : Dependency_Matrix; A : AIP.Vector) return Dependency_Matrix
-   is
+   function Reduce_Dependencies (D : Dependency_Matrix; A : AIP.Vector) return Dependency_Matrix is
       Result : Dependency_Matrix := D;
    begin
       for Row in Page_Number loop
@@ -45,8 +42,7 @@ procedure Day05 is
    end Reduce_Dependencies;
 
    --  Gathers all the page numbers that have no prior dependencies
-   procedure Gather_Roots
-     (D : Dependency_Matrix; Filter : AIP.Vector; Roots : out AIP.Vector) is
+   procedure Gather_Roots (D : Dependency_Matrix; Filter : AIP.Vector; Roots : out AIP.Vector) is
    begin
       for To in Page_Number loop
          if not Any_In_Edges (D, To) and Filter.Contains (To) then
@@ -130,17 +126,15 @@ procedure Day05 is
 begin
    for Line of Lines loop
       if Index (Line, "|") > 0 then
-         Ints := AIP.Extract_Integers (Line);
+         Ints                                     := AIP.Extract_Integers (Line);
          Dep (Ints.Element (1), Ints.Element (2)) := True;
       elsif Index (Line, ",") > 0 then
          Ints := AIP.Extract_Integers (Line);
          if Is_Sorted (Ints, Dep) then
-            Sum_P1 :=
-              Sum_P1 + Ints ((Ints.Last_Index - Ints.First_Index) / 2 + 1);
+            Sum_P1 := Sum_P1 + Ints ((Ints.Last_Index - Ints.First_Index) / 2 + 1);
          else
-            Ints := Sort (Ints, Dep);
-            Sum_P2 :=
-              Sum_P2 + Ints ((Ints.Last_Index - Ints.First_Index) / 2 + 1);
+            Ints   := Sort (Ints, Dep);
+            Sum_P2 := Sum_P2 + Ints ((Ints.Last_Index - Ints.First_Index) / 2 + 1);
          end if;
       end if;
    end loop;
