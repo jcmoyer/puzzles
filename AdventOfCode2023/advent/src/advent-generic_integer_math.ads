@@ -2,14 +2,16 @@ with Ada.Containers.Vectors;
 
 generic
    type Element_Type is range <>;
-package Advent.Integers is
+
+   with package Element_Vectors is new Ada.Containers.Vectors (
+      Index_Type => <>,
+      Element_Type => Element_Type
+   );
+package Advent.Generic_Integer_Math is
 
    pragma Preelaborate;
 
-   package Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Element_Type);
-
-   subtype Vector is Vectors.Vector;
+   subtype Vector is Element_Vectors.Vector;
 
    use type Ada.Containers.Count_Type;
 
@@ -20,4 +22,4 @@ package Advent.Integers is
    function Lcm (Xs : Vector) return Element_Type with
      Pre => Xs.Length > 0;
 
-end Advent.Integers;
+end Advent.Generic_Integer_Math;

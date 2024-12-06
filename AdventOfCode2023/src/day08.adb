@@ -1,7 +1,7 @@
 with Advent;            use Advent;
 with Advent.IO;         use Advent.IO;
 with Advent.Strings;    use Advent.Strings;
-with Advent.Integers;
+with Advent.Long_Integer_Math;
 with Ada.Command_Line;
 with Ada.Containers.Vectors;
 with Ada.Containers.Hashed_Maps;
@@ -11,7 +11,7 @@ with Ada.Strings.Hash;
 
 procedure Day08 is
    --  math
-   package Integers is new Advent.Integers (Element_Type => Long_Long_Integer);
+   package Integers renames Advent.Long_Integer_Math;
 
    --  directions
    type Direction is ('L', 'R');

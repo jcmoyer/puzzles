@@ -1,4 +1,4 @@
-package body Advent.Integers is
+package body Advent.Generic_Integer_Math is
 
    function Gcd (A, B : Element_Type) return Element_Type is
       M : Element_Type := A;
@@ -22,6 +22,8 @@ package body Advent.Integers is
    end Lcm;
 
    function Lcm (Xs : Vector) return Element_Type is
+      use type Element_Vectors.Index_Type;
+
       R : Element_Type := Xs (1);
    begin
       if Xs.Length = 1 then
@@ -35,4 +37,4 @@ package body Advent.Integers is
       return R;
    end Lcm;
 
-end Advent.Integers;
+end Advent.Generic_Integer_Math;
