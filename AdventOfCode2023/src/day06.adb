@@ -3,16 +3,33 @@ with Advent.IO;      use Advent.IO;
 with Advent.Strings; use Advent.Strings;
 with Advent.Parsers.Integers;
 with Ada.Containers; use Ada.Containers;
+with Ada.Containers.Vectors;
 with Ada.Command_Line;
 
 procedure Day06 is
    type Time_Type is new Long_Long_Integer;
 
-   package Time_Parsers is new Advent.Parsers.Integers (Element_Type => Time_Type);
+   package Time_Vectors is new Ada.Containers.Vectors (
+      Index_Type => Positive,
+      Element_Type => Time_Type
+   );
+
+   package Time_Parsers is new Advent.Parsers.Integers (
+      Element_Type => Time_Type,
+      Element_Vectors => Time_Vectors
+   );
 
    type Distance_Type is new Long_Long_Integer;
 
-   package Distance_Parsers is new Advent.Parsers.Integers (Element_Type => Distance_Type);
+   package Distance_Vectors is new Ada.Containers.Vectors (
+      Index_Type => Positive,
+      Element_Type => Distance_Type
+   );
+
+   package Distance_Parsers is new Advent.Parsers.Integers (
+      Element_Type => Distance_Type,
+      Element_Vectors => Distance_Vectors
+   );
 
    type Race_Records is record
       Time     : Time_Parsers.Vector;
