@@ -31,8 +31,7 @@ procedure Day07 is
    end Concat;
 
    function Find_Solution (E : ALP.Array_Type; With_Concat : Boolean) return Boolean is
-      function Add_Mul_Concat
-        (Total, Current : Long_Long_Integer; Parts : ALP.Array_Type) return Boolean
+      function Add_Mul_Concat (Total, Current : Long_Long_Integer; Place : Positive) return Boolean
       is
       begin
          --  Cull impossible solutions early
@@ -41,13 +40,13 @@ procedure Day07 is
          end if;
 
          --  Base case
-         if Parts'Length = 0 then
+         if Place = 1 + E'Last then
             return Total = Current;
          end if;
 
          declare
-            Head : constant Long_Long_Integer := Parts (Parts'First);
-            Tail : constant ALP.Array_Type    := Parts (Parts'First + 1 .. Parts'Last);
+            Head : constant Long_Long_Integer := E (Place);
+            Tail : constant Positive          := Place + 1;
          begin
             return
               Add_Mul_Concat (Total, Current + Head, Tail)
@@ -55,13 +54,8 @@ procedure Day07 is
               or else (With_Concat and then Add_Mul_Concat (Total, Concat (Current, Head), Tail));
          end;
       end Add_Mul_Concat;
-
-      Start, Goal : Long_Long_Integer;
-
    begin
-      Goal  := E (1);
-      Start := E (2);
-      return Add_Mul_Concat (Goal, Start, E (3 .. E'Last));
+      return Add_Mul_Concat (E (1), E (2), 3);
    end Find_Solution;
 
    Lines : constant String_Array := Advent.IO.Read_All_Lines (Ada.Command_Line.Argument (1));
