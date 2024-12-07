@@ -1,17 +1,33 @@
-with Advent.IO;         use Advent.IO;
-with Advent.Strings;    use Advent.Strings;
+with Advent.IO;      use Advent.IO;
+with Advent.Strings; use Advent.Strings;
 with Advent.Long_Parsers;
 with Ada.Command_Line;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-with Ada.Strings;       use Ada.Strings;
 
 procedure Day07 is
 
    package ALP renames Advent.Long_Parsers;
 
+   --  Oldest trick in the book :)
+   --
+   --  The input to this function is never more than 3 digits in official
+   --  inputs, so we optimize for that case but still provide total coverage up
+   --  to 20 digits for other inputs.
+   function N_Digits (X : Long_Long_Integer) return Natural is
+   begin
+      if X >= 100 then
+         if X >= 1_000 then
+            return 3 + N_Digits (X / 1_000);
+         end if;
+         return 3;
+      elsif X >= 10 then
+         return 2;
+      end if;
+      return 1;
+   end N_Digits;
+
    function Concat (X, Y : Long_Long_Integer) return Long_Long_Integer is
    begin
-      return Long_Long_Integer'Value (Trim (X'Image, Left) & Trim (Y'Image, Left));
+      return (X * (10**N_Digits (Y))) + Y;
    end Concat;
 
    function Find_Solution (E : ALP.Vector; With_Concat : Boolean) return Boolean is
@@ -21,12 +37,14 @@ procedure Day07 is
          Children : ALP.Vector;
          Head     : Long_Long_Integer;
       begin
+         --  Cull impossible solutions early
+         if Current > Total then
+            return False;
+         end if;
+
+         --  Base case
          if Parts.Is_Empty then
-            if Total = Current then
-               return True;
-            else
-               return False;
-            end if;
+            return Total = Current;
          end if;
 
          Children := Parts.Copy;
