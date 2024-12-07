@@ -30,12 +30,10 @@ procedure Day07 is
       return (X * (10**N_Digits (Y))) + Y;
    end Concat;
 
-   function Find_Solution (E : ALP.Vector; With_Concat : Boolean) return Boolean is
+   function Find_Solution (E : ALP.Array_Type; With_Concat : Boolean) return Boolean is
       function Add_Mul_Concat
-        (Total, Current : Long_Long_Integer; Parts : ALP.Vector) return Boolean
+        (Total, Current : Long_Long_Integer; Parts : ALP.Array_Type) return Boolean
       is
-         Children : ALP.Vector;
-         Head     : Long_Long_Integer;
       begin
          --  Cull impossible solutions early
          if Current > Total then
@@ -43,29 +41,27 @@ procedure Day07 is
          end if;
 
          --  Base case
-         if Parts.Is_Empty then
+         if Parts'Length = 0 then
             return Total = Current;
          end if;
 
-         Children := Parts.Copy;
-         Head     := Children.First_Element;
-         Children.Delete_First;
-
-         return
-           Add_Mul_Concat (Total, Current + Head, Children)
-           or else Add_Mul_Concat (Total, Current * Head, Children)
-           or else (With_Concat and then Add_Mul_Concat (Total, Concat (Current, Head), Children));
+         declare
+            Head : constant Long_Long_Integer := Parts (Parts'First);
+            Tail : constant ALP.Array_Type    := Parts (Parts'First + 1 .. Parts'Last);
+         begin
+            return
+              Add_Mul_Concat (Total, Current + Head, Tail)
+              or else Add_Mul_Concat (Total, Current * Head, Tail)
+              or else (With_Concat and then Add_Mul_Concat (Total, Concat (Current, Head), Tail));
+         end;
       end Add_Mul_Concat;
 
-      Children    : ALP.Vector := E.Copy;
       Start, Goal : Long_Long_Integer;
 
    begin
-      Goal := Children.First_Element;
-      Children.Delete_First;
-      Start := Children.First_Element;
-      Children.Delete_First;
-      return Add_Mul_Concat (Goal, Start, Children);
+      Goal  := E (1);
+      Start := E (2);
+      return Add_Mul_Concat (Goal, Start, E (3 .. E'Last));
    end Find_Solution;
 
    Lines : constant String_Array := Advent.IO.Read_All_Lines (Ada.Command_Line.Argument (1));
@@ -75,14 +71,15 @@ procedure Day07 is
 begin
    for Line of Lines loop
       declare
-         Equation : constant ALP.Vector := ALP.Extract_Integers (Line);
+         Equation   : ALP.Array_Type (1 .. 13);
+         Equation_N : constant Natural := ALP.Extract_Integers (Line, Equation);
       begin
-         if Find_Solution (Equation, False) then
-            Sum_P1 := Sum_P1 + Equation.First_Element;
+         if Find_Solution (Equation (1 .. Equation_N), False) then
+            Sum_P1 := Sum_P1 + Equation (1);
          end if;
 
-         if Find_Solution (Equation, True) then
-            Sum_P2 := Sum_P2 + Equation.First_Element;
+         if Find_Solution (Equation (1 .. Equation_N), True) then
+            Sum_P2 := Sum_P2 + Equation (1);
          end if;
       end;
    end loop;
