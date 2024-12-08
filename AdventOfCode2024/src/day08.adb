@@ -63,6 +63,31 @@ procedure Day08 is
       end loop;
    end Get_Single_Antinodes;
 
+   --  There is a general form of this that can solve part 1 with the same code
+   --  but it's annoying to write because it needs to have an upper bound on
+   --  iterations that doesn't really apply in part 2, so you have to provide
+   --  some bogus number.
+   --
+   --  Part 1: if I and J are vectors representing the location of two
+   --  antennae, the antinodes will appear at I + I - J and J + J - I. This
+   --  looks odd, because it's actually a special case of the more generalized
+   --  form in part 2.
+   --
+   --  The actual formula for an antinode at any position away from I or J is
+   --  D = I - J      (distance between positions)
+   --  I + KD         (position of an antenna offset by some K multiple of D)
+   --
+   --  Part 1 is as if K = 1: I + 1(I - J) = I + I - J.
+   --
+   --  Part 2 uses the general form, and goes from K = 0 to infinity. So you
+   --  place an antinode at:
+   --
+   --  I + 0D = I
+   --  I + 1D = I + 1I - 1J
+   --  I + 2D = I + 2I - 2J = 3I - 2J
+   --  I + 3D = I + 3I - 3J = 4I - 4J
+   --
+   --  ...and so on until both I and J are out of bounds
    procedure Raycast_Antinodes
      (Map : Char_Matrix; Antennae : Antenna_Table; Result : out Antinode_Map)
    is
