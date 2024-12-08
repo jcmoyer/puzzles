@@ -83,9 +83,9 @@ procedure Day08 is
    --  place an antinode at:
    --
    --  I + 0D = I
-   --  I + 1D = I + 1I - 1J
+   --  I + 1D = I + 1I - 1J = 2I - J   (part 1 form)
    --  I + 2D = I + 2I - 2J = 3I - 2J
-   --  I + 3D = I + 3I - 3J = 4I - 4J
+   --  I + 3D = I + 3I - 3J = 4I - 3J
    --
    --  ...and so on until both I and J are out of bounds
    procedure Raycast_Antinodes
