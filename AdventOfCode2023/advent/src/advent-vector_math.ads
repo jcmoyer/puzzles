@@ -29,6 +29,7 @@ package Advent.Vector_Math is
    function "+" (A, B : Vec2) return Vec2 is ((A (X) + B (X), A (Y) + B (Y)));
    function "-" (A, B : Vec2) return Vec2 is ((A (X) - B (X), A (Y) - B (Y)));
    function "*" (A : Vec2; B : Element_Type) return Vec2 is ((A (X) * B, A (Y) * B));
+   function "*" (A : Element_Type; B : Vec2) return Vec2 is (B * A);
    function "/" (A : Vec2; B : Element_Type) return Vec2 is ((A (X) / B, A (Y) / B));
 
    function Absolute (A : Vec2) return Vec2 is ((abs A (X), abs A (Y)));
