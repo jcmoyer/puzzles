@@ -48,8 +48,8 @@ procedure Day08 is
          for I in A.First_Index .. A.Last_Index loop
             for J in I + 1 .. A.Last_Index loop
                declare
-                  P0 : constant Vec2 := (A.Element (I) * 2) - A.Element (J);
-                  P1 : constant Vec2 := (A.Element (J) * 2) - A.Element (I);
+                  P0 : constant Vec2 := (2 * A.Element (I)) - A.Element (J);
+                  P1 : constant Vec2 := (2 * A.Element (J)) - A.Element (I);
                begin
                   if In_Bounds (Map, P0) then
                      Result (P0 (X), P0 (Y)) := True;
