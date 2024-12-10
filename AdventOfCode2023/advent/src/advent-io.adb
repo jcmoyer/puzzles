@@ -17,6 +17,11 @@ package body Advent.IO is
       Ada.Text_IO.Put_Line (Trim (Value'Image, Ada.Strings.Left));
    end Solution;
 
+   procedure Solution (Value : Long_Long_Long_Integer) is
+   begin
+      Ada.Text_IO.Put_Line (Trim (Value'Image, Ada.Strings.Left));
+   end Solution;
+
    procedure Solution (Value : String) is
    begin
       Ada.Text_IO.Put_Line (Value);

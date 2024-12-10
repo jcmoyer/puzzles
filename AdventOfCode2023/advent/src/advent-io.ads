@@ -8,6 +8,7 @@ package Advent.IO is
 
    procedure Solution (Value : Integer);
    procedure Solution (Value : Long_Long_Integer);
+   procedure Solution (Value : Long_Long_Long_Integer);
    procedure Solution (Value : String);
 
    type Stream_Element_Array_Ptr is access all Ada.Streams.Stream_Element_Array;
