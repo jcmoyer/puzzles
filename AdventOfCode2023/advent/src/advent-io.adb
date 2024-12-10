@@ -50,8 +50,8 @@ package body Advent.IO is
       return Result;
    end Read_All_Text;
 
-   function Read_All_Lines (Filename : String) return Advent.Strings.String_Array is
-      Result : Advent.Strings.String_Array;
+   function Read_All_Lines (Filename : String) return Advent.Containers.String_Vectors.Vector is
+      Result : Advent.Containers.String_Vectors.Vector;
 
       Buffer : constant Stream_Element_Array_Ptr := Read_All_Bytes (Filename);
 
@@ -95,9 +95,10 @@ package body Advent.IO is
    end Read_All_Lines;
 
    function Read_Tilemap (Filename : String) return Char_Matrix is
-      Lines     : constant Advent.Strings.String_Array := Read_All_Lines (Filename);
-      Row_Count : constant Integer                     := Integer (Lines.Length);
-      Col_Count : constant Integer                     := Lines.First_Element'Length;
+      Lines : constant Advent.Containers.String_Vectors.Vector := Read_All_Lines (Filename);
+
+      Row_Count : constant Integer := Integer (Lines.Length);
+      Col_Count : constant Integer := Lines.First_Element'Length;
    begin
       return Result : Char_Matrix (1 .. Row_Count, 1 .. Col_Count) do
          for I in 1 .. Row_Count loop

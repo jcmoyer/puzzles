@@ -1,4 +1,4 @@
-with Advent.Strings;
+with Advent.Containers.String_Vectors;
 with Advent.Integer_Vector_Math;
 with Ada.Streams;
 
@@ -16,9 +16,9 @@ package Advent.IO is
 
    function Read_All_Text (Filename : String) return String;
 
-   --  Returns an array of strings where each element corresponds to a single
+   --  Returns a vector of strings where each element corresponds to a single
    --  line in the input file.
-   function Read_All_Lines (Filename : String) return Advent.Strings.String_Array;
+   function Read_All_Lines (Filename : String) return Advent.Containers.String_Vectors.Vector;
 
    type Char_Matrix is array (Integer range <>, Integer range <>) of Character;
 
