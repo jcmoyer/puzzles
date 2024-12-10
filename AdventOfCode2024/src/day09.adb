@@ -35,6 +35,8 @@ procedure Day09 is
 
    type Block_Array is array (Block_Index range <>) of Block;
 
+   type Block_Array_Ptr is access all Block_Array;
+
    --  As an optimization for part 2, we keep min-heaps keyed by the width of
    --  the free space so that we can find the next place to move a file in
    --  ~O(log(N)).
@@ -255,12 +257,14 @@ procedure Day09 is
       --  end loop;
    end Compress_Whole_Files;
 
-   function Checksum (Blocks : Block_Array) return Long_Long_Integer is
-      Result : Long_Long_Integer := 0;
+   subtype I128 is Long_Long_Long_Integer;
+
+   function Checksum (Blocks : Block_Array) return I128 is
+      Result : I128 := 0;
    begin
       for I in Blocks'Range loop
          if Blocks (I).Kind = File then
-            Result := Result + Long_Long_Integer ((I - Blocks'First) * Blocks (I).File_Id);
+            Result := Result + I128 (I - Blocks'First) * I128 (Blocks (I).File_Id);
          end if;
       end loop;
       return Result;
@@ -270,14 +274,14 @@ procedure Day09 is
 
 begin
    declare
-      A : Block_Array (1 .. Measure_Disk_Size (Lines.First_Element));
+      A : Block_Array_Ptr := new Block_Array (1 .. Measure_Disk_Size (Lines.First_Element));
    begin
-      Load_Disk (Lines.First_Element, A);
-      Compress_Blocks (A);
-      Solution (Checksum (A));
+      Load_Disk (Lines.First_Element, A.all);
+      Compress_Blocks (A.all);
+      Solution (Checksum (A.all));
 
-      Load_Disk (Lines.First_Element, A);
-      Compress_Whole_Files (A);
-      Solution (Checksum (A));
+      Load_Disk (Lines.First_Element, A.all);
+      Compress_Whole_Files (A.all);
+      Solution (Checksum (A.all));
    end;
 end Day09;
