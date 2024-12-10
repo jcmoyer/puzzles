@@ -29,12 +29,9 @@ package body Advent.IO is
       Input_File : SIO.File_Type;
       Buffer     : Stream_Element_Array_Ptr;
       Last       : Stream_Element_Offset;
-
-      use type SIO.Count;
-
    begin
       SIO.Open (Input_File, SIO.In_File, Filename);
-      Buffer := new Stream_Element_Array (0 .. Stream_Element_Offset (SIO.Size (Input_File) - 1));
+      Buffer := new Stream_Element_Array (0 .. Stream_Element_Offset (SIO.Size (Input_File)) - 1);
       SIO.Read (Input_File, Buffer.all, Last);
       SIO.Close (Input_File);
       return Buffer;
@@ -42,11 +39,17 @@ package body Advent.IO is
 
    function Read_All_Text (Filename : String) return String is
       Buffer : constant Stream_Element_Array_Ptr := Read_All_Bytes (Filename);
-      Result : String (1 .. Buffer'Length);
+
+      --  This looks sketchy, but I've looked all over for good ways to avoid
+      --  copying and have come up with nothing better. This design is
+      --  motivated by massive community-created inputs, which can be many tens
+      --  of megabytes. Copying them is expensive and constructing a string
+      --  that large without the Address aspect overflows the stack.
+      --
+      --  The string returned by this function should always be valid since we
+      --  never free the above buffer.
+      Result : String (1 .. Buffer'Length) with Address => Buffer.all'Address;
    begin
-      for I in Buffer'Range loop
-         Result (Result'First + Integer (I - Buffer'First)) := Character'Val (Buffer (I));
-      end loop;
       return Result;
    end Read_All_Text;
 
@@ -80,13 +83,11 @@ package body Advent.IO is
          --  skip newline
          I := I + 1;
 
-         --  copy processed line
          declare
-            Line : String (1 .. Integer (Line_End - Line_Start + 1));
+            --  Safety: See above note in Read_All_Text.
+            Line : String (1 .. Integer (Line_End - Line_Start + 1)) with
+              Address => Buffer (Line_Start)'Address;
          begin
-            for J in Line_Start .. Line_End loop
-               Line (Line'First + Integer (J - Line_Start)) := Character'Val (Buffer.all (J));
-            end loop;
             Result.Append (Line);
          end;
       end loop;
