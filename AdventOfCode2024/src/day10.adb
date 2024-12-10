@@ -66,9 +66,6 @@ begin
 
    for S of Starts loop
       Sum_P1 := Sum_P1 + Count_Reachable (Map, S, Distinct => True);
-   end loop;
-
-   for S of Starts loop
       Sum_P2 := Sum_P2 + Count_Reachable (Map, S, Distinct => False);
    end loop;
 
