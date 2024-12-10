@@ -20,10 +20,10 @@ begin
          --  <game-info> ": " <rounds>
          Game_Rounds : constant String_Array := Split (Line, ": ");
          --  (<number> <color> ", "?)+ "; " | $
-         Rounds      : constant String_Array := Split (Game_Rounds (1), "; ");
+         Rounds      : constant String_Array := Split (Game_Rounds (2), "; ");
          --  "Game " <game-id>
-         Game_Info   : constant String_Array := Split (Game_Rounds (0), " ");
-         Game_Id     : constant Integer      := Integer'Value (Game_Info (1));
+         Game_Info   : constant String_Array := Split (Game_Rounds (1), " ");
+         Game_Id     : constant Integer      := Integer'Value (Game_Info (2));
 
          --  game state
          Is_Game_Valid : Boolean                       := True;
@@ -38,8 +38,8 @@ begin
                for P of Pairs loop
                   declare
                      Number_Color : constant String_Array := Split (P, " ");
-                     Number : constant Integer := Integer'Value (Trim (Number_Color (0), Both));
-                     Color_Str    : constant String       := Trim (Number_Color (1), Both);
+                     Number : constant Integer := Integer'Value (Trim (Number_Color (1), Both));
+                     Color_Str    : constant String       := Trim (Number_Color (2), Both);
                      Color        : constant Color_Name   := Color_Name'Value (Color_Str);
                   begin
                      Sum (Color)        := Sum (Color) + Number;

@@ -73,18 +73,18 @@ procedure Day22 is
    --  Parses a string of the form "0,1,6~2,1,6"
    function Parse_AABB (S : String) return AABB is
       Left_Right   : constant String_Array := Split (S, "~");
-      Left_Coords  : constant String_Array := Split (Left_Right (0), ",");
-      Right_Coords : constant String_Array := Split (Left_Right (1), ",");
+      Left_Coords  : constant String_Array := Split (Left_Right (1), ",");
+      Right_Coords : constant String_Array := Split (Left_Right (2), ",");
       Result       : AABB;
    begin
       Result.Min :=
-        (Integer'Value (Left_Coords (0)),
-         Integer'Value (Left_Coords (1)),
-         Integer'Value (Left_Coords (2)));
+        (Integer'Value (Left_Coords (1)),
+         Integer'Value (Left_Coords (2)),
+         Integer'Value (Left_Coords (3)));
       Result.Max :=
-        (Integer'Value (Right_Coords (0)),
-         Integer'Value (Right_Coords (1)),
-         Integer'Value (Right_Coords (2)));
+        (Integer'Value (Right_Coords (1)),
+         Integer'Value (Right_Coords (2)),
+         Integer'Value (Right_Coords (3)));
       return Result;
    end Parse_AABB;
 

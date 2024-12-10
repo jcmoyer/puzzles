@@ -78,9 +78,9 @@ procedure Day05 is
    function Parse_Source_Dest_Range (S : String) return Source_Dest_Range is
       Parts : constant String_Array := Split (S, " ");
 
-      Dest_Start   : constant I64 := I64'Value (Parts (0));
-      Source_Start : constant I64 := I64'Value (Parts (1));
-      Length       : constant I64 := I64'Value (Parts (2));
+      Dest_Start   : constant I64 := I64'Value (Parts (1));
+      Source_Start : constant I64 := I64'Value (Parts (2));
+      Length       : constant I64 := I64'Value (Parts (3));
    begin
       return
         (Source      => (Source_Start, Source_Start + Length - 1),

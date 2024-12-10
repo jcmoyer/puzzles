@@ -51,11 +51,11 @@ procedure Day18 is
 
    function Parse_Dig_Order (S : String) return Dig_Order is
       Parts  : constant String_Array    := Split_Any (S, " #()", Keep_Empty => False);
-      Color  : constant String (1 .. 6) := Parts.Element (2);
+      Color  : constant String (1 .. 6) := Parts.Element (3);
       Result : Dig_Order;
    begin
-      Result.Dir_1    := Parse_LRUD (Parts.Element (0));
-      Result.Amount_1 := Long_Long_Integer'Value (Parts.Element (1));
+      Result.Dir_1    := Parse_LRUD (Parts.Element (1));
+      Result.Amount_1 := Long_Long_Integer'Value (Parts.Element (2));
       Result.Dir_2    := Parse_Hex_Direction (Color);
       Result.Amount_2 := Long_Long_Integer'Value ("16#" & Color (1 .. 5) & "#");
       return Result;

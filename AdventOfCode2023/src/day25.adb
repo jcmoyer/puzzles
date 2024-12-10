@@ -343,7 +343,7 @@ begin
          Names : String_Array := Split_Any (Line, " :", Keep_Empty => False);
       begin
          for I in Names.First_Index + 1 .. Names.Last_Index loop
-            G.Add_Edge (Names (0), Names (I));
+            G.Add_Edge (Names (1), Names (I));
          end loop;
       end;
    end loop;

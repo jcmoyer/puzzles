@@ -41,12 +41,12 @@ begin
    for Line of Lines loop
       declare
          Card_Values : constant String_Array := Split (Line, ": ");
-         Card_Info   : constant String_Array := Split (Card_Values (0), " ", Keep_Empty => False);
-         Card_Number : constant Integer      := Integer'Value (Card_Info (1));
-         Values      : constant String_Array := Split (Card_Values (1), " | ");
+         Card_Info   : constant String_Array := Split (Card_Values (1), " ", Keep_Empty => False);
+         Card_Number : constant Integer      := Integer'Value (Card_Info (2));
+         Values      : constant String_Array := Split (Card_Values (2), " | ");
 
-         Winning_Strs : constant String_Array := Split (Values (0), " ", Keep_Empty => False);
-         Actual_Strs  : constant String_Array := Split (Values (1), " ", Keep_Empty => False);
+         Winning_Strs : constant String_Array := Split (Values (1), " ", Keep_Empty => False);
+         Actual_Strs  : constant String_Array := Split (Values (2), " ", Keep_Empty => False);
 
          Winning_Set : Integer_Set;
          Actual_Set  : Integer_Set;

@@ -256,9 +256,9 @@ procedure Day19 is
 
                Parts : constant String_Array := Split_Any (S, ":<>");
 
-               Part_Kind  : constant Part_Field      := Parse_Field (Parts (0));
-               Compare_To : constant Integer         := Integer'Value (Parts (1));
-               Output     : constant Workflow_Output := Parse_Output (Parts (2));
+               Part_Kind  : constant Part_Field      := Parse_Field (Parts (1));
+               Compare_To : constant Integer         := Integer'Value (Parts (2));
+               Output     : constant Workflow_Output := Parse_Output (Parts (3));
             begin
                return
                  (Workflow_Step'
@@ -283,9 +283,9 @@ procedure Day19 is
          W     : Workflow;
          Parts : constant String_Array := Split_Any (Line, "{},", Keep_Empty => False);
       begin
-         W.Name := Workflow_Names.To_Bounded_String (Parts (0));
+         W.Name := Workflow_Names.To_Bounded_String (Parts (1));
 
-         for I in 1 .. Parts.Last_Index loop
+         for I in Parts.First_Index + 1 .. Parts.Last_Index loop
             W.Steps.Append (Parse_Workflow_Step (Parts (I)));
          end loop;
 

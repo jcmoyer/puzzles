@@ -102,7 +102,7 @@ package body Advent.IO is
       return Result : Char_Matrix (1 .. Row_Count, 1 .. Col_Count) do
          for I in 1 .. Row_Count loop
             for J in 1 .. Col_Count loop
-               Result (I, J) := Lines (I - 1) (J);
+               Result (I, J) := Lines (I) (J);
             end loop;
          end loop;
       end return;

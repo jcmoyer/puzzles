@@ -92,9 +92,9 @@ begin
             Parent_Children : constant String_Array :=
               Split_Any (Line, "(),= ", Keep_Empty => False);
 
-            Parent_Name : constant Node_Name := Parent_Children.Element (0);
-            Child_L     : constant Node_Name := Parent_Children.Element (1);
-            Child_R     : constant Node_Name := Parent_Children.Element (2);
+            Parent_Name : constant Node_Name := Parent_Children.Element (1);
+            Child_L     : constant Node_Name := Parent_Children.Element (2);
+            Child_R     : constant Node_Name := Parent_Children.Element (3);
          begin
             Insert (G, Parent_Name, Child_L, Child_R);
             if Ends_With (Parent_Name, "A") then

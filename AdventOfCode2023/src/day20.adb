@@ -230,9 +230,9 @@ procedure Day20 is
    --  Loads a single module definition from the input.
    procedure Load_Module (G : in out Module_Graph; S : String) is
       Left_Right   : constant String_Array := Split (S, " -> ");
-      Output_Names : constant String_Array := Split (Left_Right (1), ", ");
+      Output_Names : constant String_Array := Split (Left_Right (2), ", ");
 
-      This_Name : constant String    := Parse_Module_Name (Left_Right (0));
+      This_Name : constant String    := Parse_Module_Name (Left_Right (1));
       This_Id   : constant Module_Id := Get_Or_Alloc_Module (G, This_Name);
    begin
 
@@ -240,7 +240,7 @@ procedure Day20 is
          Add_Output (G, This_Id, Get_Or_Alloc_Module (G, Output_Name));
       end loop;
 
-      case Parse_Module_Kind (Left_Right (0)) is
+      case Parse_Module_Kind (Left_Right (1)) is
          when Flip_Flop =>
             G.Modules.Replace_Element
               (This_Id,

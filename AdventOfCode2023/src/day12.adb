@@ -145,8 +145,8 @@ begin
    for Line of Lines loop
       declare
          Left_Right : constant String_Array   := Split (Line, " ");
-         Pattern    : constant String         := Left_Right (0);
-         Spans      : constant Integer_Vector := Integer_Parsers.Extract_Integers (Left_Right (1));
+         Pattern    : constant String         := Left_Right (1);
+         Spans      : constant Integer_Vector := Integer_Parsers.Extract_Integers (Left_Right (2));
 
          Unfolded_Pattern : constant String         := Unfold_Pattern (Pattern);
          Unfolded_Spans   : constant Integer_Vector := Unfold_Spans (Spans);
