@@ -17,7 +17,8 @@ project AdventOfCode2024 is
        "day06.adb",
        "day07.adb",
        "day08.adb",
-       "day09.adb"
+       "day09.adb",
+       "day10.adb"
     );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99", "-gnaty-s");
