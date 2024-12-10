@@ -30,7 +30,6 @@ package Advent.IO is
    function In_Bounds (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Boolean;
    function Element (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Character with
      Pre => In_Bounds (M, Index);
-   function Element_Wrapping (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Character with
-     Pre => In_Bounds (M, Index);
+   function Element_Wrapping (M : Char_Matrix; Index : Advent.Integer_Vector_Math.Vec2) return Character;
 
 end Advent.IO;
