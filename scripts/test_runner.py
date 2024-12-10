@@ -29,12 +29,18 @@ def main():
         # ignored stdin, but need to investigate more.
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         encoding="utf-8",
     )
     results = proc.stdout.strip()
 
     if proc.returncode != 0:
-        print("process exited with non-zero return code")
+        stderr = proc.stderr
+        print("process exited with non-zero return code:")
+        if len(stderr.strip()) == 0:
+            print("(no stderr)")
+        else:
+            print(stderr)
         sys.exit(1)
     if results != expected:
         print("result differs from expected; context diff:\n")
