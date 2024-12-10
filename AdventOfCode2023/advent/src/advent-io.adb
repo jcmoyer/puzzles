@@ -95,10 +95,9 @@ package body Advent.IO is
    end Read_All_Lines;
 
    function Read_Tilemap (Filename : String) return Char_Matrix is
-      use Advent.Strings.String_Vectors;
       Lines     : constant Advent.Strings.String_Array := Read_All_Lines (Filename);
       Row_Count : constant Integer                     := Integer (Lines.Length);
-      Col_Count : constant Integer                     := First_Element (Lines)'Length;
+      Col_Count : constant Integer                     := Lines.First_Element'Length;
    begin
       return Result : Char_Matrix (1 .. Row_Count, 1 .. Col_Count) do
          for I in 1 .. Row_Count loop

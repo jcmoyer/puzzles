@@ -1,13 +1,11 @@
-with Ada.Containers.Indefinite_Vectors;
+with Advent.Containers.String_Vectors;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package Advent.Strings is
 
    pragma Preelaborate;
 
-   package String_Vectors is new Ada.Containers.Indefinite_Vectors
-     (Index_Type => Natural, Element_Type => String);
-   subtype String_Array is String_Vectors.Vector;
+   subtype String_Array is Advent.Containers.String_Vectors.Vector;
 
    function Is_Any_Of (C : Character; Vals : String) return Boolean;
 
