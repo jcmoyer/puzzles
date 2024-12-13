@@ -39,6 +39,8 @@ package Advent.Vector_Math is
    function Manhattan (A, B : Vec2) return Element_Type is
      (abs (A (X) - B (X)) + abs (A (Y) - B (Y)));
 
+   function Fill (X : Element_Type) return Vec2 is ((X, X));
+
    --  Teschner, Matthias & Heidelberger, Bruno & Müller, Matthias &
    --  Pomeranets, Danat & Gross, Markus. (2003). Optimized Spatial Hashing for
    --  Collision Detection of Deformable Objects. VMV’03: Proceedings of the
