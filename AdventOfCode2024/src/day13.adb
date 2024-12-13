@@ -1,13 +1,8 @@
-with Advent.IO;         use Advent.IO;
-with Advent.Strings;    use Advent.Strings;
-with Advent.Directions; use Advent.Directions;
-with Ada.Command_Line;
-with Ada.Text_IO;       use Ada.Text_IO;
-with Ada.Containers.Hashed_Sets;
-with Ada.Containers.Vectors;
-with Ada.Containers;
+with Advent.IO;      use Advent.IO;
 with Advent.Vector_Math;
 with Advent.Parsers.Integers;
+with Ada.Command_Line;
+with Ada.Containers.Vectors;
 
 --  System:
 --
@@ -54,62 +49,46 @@ procedure Day13 is
    package AIP is new Advent.Parsers.Integers
      (Element_Type => Int, Element_Vectors => Int_Vectors);
 
-   Lines : constant String_Array := Advent.IO.Read_All_Lines (Ada.Command_Line.Argument (1));
+   --  See above.
+   procedure Solve_IJ (A, B, P : Vec2; I, J : out Int) is
+   begin
+      --!pp off
+      I := (P(X) - B(X)*((P(Y)*A(X) - A(Y)*P(X)) / (A(X)*B(Y) - A(Y)*B(X)))) / A(X);
+      J := (P(Y)*A(X) - A(Y)*P(X)) / ((-A(Y))*B(X) + A(X)*B(Y));
+      --!pp on
+   end Solve_IJ;
+
+   Text : constant String := Advent.IO.Read_All_Text (Ada.Command_Line.Argument (1));
+
+   Ints : constant Int_Vectors.Vector := AIP.Extract_Integers (Text);
+
+   Index : Positive := Ints.First_Index;
 
    Part_1 : Int := 0;
    Part_2 : Int := 0;
 
-   Ints : Int_Vectors.Vector;
-   Line : Positive := Lines.First_Index;
-
    A, B, P : Vec2;
-
-   --  See above.
-   procedure Get_IJ (I, J : out Int) is
-   begin
-      --!pp off
-      I := (P(X) - B(X)*((P(Y)*A(X) - A(Y)*P(X)) / (A(X)*B(Y) - A(Y)*B(X)))) / A(X);
-      J := (P(Y)*A(X) - A(Y)*P(X)) / (-A(Y)*B(X) + A(X)*B(Y));
-      --!pp on
-   end Get_IJ;
+   I, J    : Int;
 
 begin
-   while Line <= Lines.Last_Index loop
-      Ints  := AIP.Extract_Integers (Lines (Line));
-      A (X) := Ints (1);
-      A (Y) := Ints (2);
-      Line  := Line + 1;
+   while Index <= Ints.Last_Index loop
+      A := (Ints (Index + 0), Ints (Index + 1));
+      B := (Ints (Index + 2), Ints (Index + 3));
+      P := (Ints (Index + 4), Ints (Index + 5));
 
-      Ints  := AIP.Extract_Integers (Lines (Line));
-      B (X) := Ints (1);
-      B (Y) := Ints (2);
-      Line  := Line + 1;
+      Index := Index + 6;
 
-      Ints  := AIP.Extract_Integers (Lines (Line));
-      P (X) := Ints (1);
-      P (Y) := Ints (2);
-      Line  := Line + 2;
+      Solve_IJ (A, B, P, I, J);
+      if A * I + B * J = P then
+         Part_1 := Part_1 + (3 * I + J);
+      end if;
 
-      declare
-         I, J : Int := 0;
-      begin
-         Get_IJ (I, J);
-         if A * I + B * J = P then
-            Part_1 := Part_1 + (3 * I + J);
-         end if;
-      end;
+      P := P + Fill (10_000_000_000_000);
 
-      P (X) := P (X) + 10_000_000_000_000;
-      P (Y) := P (Y) + 10_000_000_000_000;
-
-      declare
-         I, J : Int := 0;
-      begin
-         Get_IJ (I, J);
-         if A * I + B * J = P then
-            Part_2 := Part_2 + (3 * I + J);
-         end if;
-      end;
+      Solve_IJ (A, B, P, I, J);
+      if A * I + B * J = P then
+         Part_2 := Part_2 + (3 * I + J);
+      end if;
    end loop;
 
    Solution (Part_1);
