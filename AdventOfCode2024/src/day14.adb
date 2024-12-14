@@ -104,10 +104,10 @@ procedure Day14 is
    Iterations : Natural := 0;
 
 begin
-   for line of Lines loop
+   for Line of Lines loop
       declare
          Ints : AIP.Array_Type (1 .. 4);
-         N    : constant Natural := AIP.Extract_Integers (line, Ints);
+         N    : constant Natural := AIP.Extract_Integers (Line, Ints);
       begin
          if 4 /= N then
             raise Program_Error with "expected 4 integers in line";
