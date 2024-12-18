@@ -48,6 +48,10 @@ package Advent.Containers.Priority_Queues is
    procedure Release (Q : in out Queue) with
      Post => Q.Length = 0 and Q.Capacity = 0;
 
+   --  Returns the queue to an empty state but retains allocated memory.
+   procedure Clear (Q : in out Queue) with
+     Post => Q.Length = 0 and Q.Capacity = Q.Capacity'Old;
+
 private
 
    pragma Inline (Length);

@@ -36,6 +36,11 @@ package body Advent.Containers.Priority_Queues is
       Q.Length   := 0;
    end Release;
 
+   procedure Clear (Q : in out Queue) is
+   begin
+      Q.Length := 0;
+   end Clear;
+
    procedure Swap (A, B : in out Element_Type) is
       Temp : constant Element_Type := A;
    begin
