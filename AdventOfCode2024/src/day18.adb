@@ -94,6 +94,36 @@ procedure Day18 is
       return Trim (V (X)'Image, Left) & ',' & Trim (V (Y)'Image, Left);
    end Format_Vec2;
 
+   function Lower_Bound_Unpathable
+     (Pf     : in out Pathfinder;
+      Points :        Vec2_Vectors.Vector;
+      Walls  : in out Vec2_Sets.Set)
+      return Vec2
+   is
+      Low  : Integer := 1_024;
+      High : Integer := Points.Last_Index;
+      Mid  : Integer;
+      Hit  : Natural := 0;
+   begin
+      while Low <= High loop
+         Mid := Low + (High - Low) / 2;
+
+         Walls.Clear;
+         for I in 1 .. Mid loop
+            Walls.Include (Points (I));
+         end loop;
+
+         if Find_Path (Pf, Walls, Any_Path).Completed then
+            Low := Mid + 1;
+         else
+            Hit  := Mid;
+            High := Mid - 1;
+         end if;
+      end loop;
+
+      return Points (Hit);
+   end Lower_Bound_Unpathable;
+
    Lines  : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
    Ints   : AIP.Array_Type (1 .. 2);
    Points : Vec2_Vectors.Vector;
@@ -115,12 +145,10 @@ begin
 
    Solution (Find_Path (Pf, Walls, Shortest_Path).Steps);
 
-   for I in 1_025 .. Points.Last_Index loop
-      Walls.Include (Points (I));
-      if not Find_Path (Pf, Walls, Any_Path).Completed then
-         --  Flip output from row,col back to x,y
-         Solution (Format_Vec2 (Vec2'(Points (I) (Y), Points (I) (X))));
-         exit;
-      end if;
-   end loop;
+   declare
+      Point : constant Vec2 := Lower_Bound_Unpathable (Pf, Points, Walls);
+   begin
+      --  Flip output from row,col back to x,y
+      Solution (Format_Vec2 (Vec2'(Point (Y), Point (X))));
+   end;
 end Day18;
