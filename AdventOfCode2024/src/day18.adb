@@ -26,17 +26,17 @@ procedure Day18 is
       Steps : Integer;
    end record;
 
+   Start : constant Vec2 := (0, 0);
+   Goal  : constant Vec2 := (70, 70);
+
    function Score_Distance (A, B : Path_State) return Boolean is
-     (Manhattan (A.Pos, (6, 6)) < Manhattan (B.Pos, (6, 6)));
+     (Manhattan (A.Pos, Goal) < Manhattan (B.Pos, Goal));
 
    package State_Queues is new Advent.Containers.Priority_Queues
      (Element_Type => Path_State, "<" => Score_Distance);
 
    type Score_Map is array (Integer range <>, Integer range <>) of Integer with
      Default_Component_Value => Integer'Last;
-
-   Start : constant Vec2 := (0, 0);
-   Goal  : constant Vec2 := (70, 70);
 
    --  We're just going to simulate a bunch of paths so keep the structures
    --  alive between searches
@@ -50,7 +50,11 @@ procedure Day18 is
       Steps     : Integer;
    end record;
 
-   function Find_Path (P : in out Pathfinder; Walls : Vec2_Sets.Set) return Find_Path_Result is
+   type Path_Kind is (Any_Path, Shortest_Path);
+
+   function Find_Path
+     (P : in out Pathfinder; Walls : Vec2_Sets.Set; Kind : Path_Kind) return Find_Path_Result
+   is
       S : Path_State;
       V : Vec2;
    begin
@@ -64,9 +68,7 @@ procedure Day18 is
          if S.Steps < P.Scores (S.Pos (X), S.Pos (Y)) then
             P.Scores (S.Pos (X), S.Pos (Y)) := S.Steps;
 
-            if S.Pos = Goal then
-               return Find_Path_Result'(Completed => True, Steps => S.Steps);
-            end if;
+            exit when Kind = Any_Path and then S.Pos = Goal;
 
             for D in Cardinal_Direction loop
                V := S.Pos + To_Vector (D);
@@ -79,7 +81,10 @@ procedure Day18 is
          end if;
       end loop;
 
-      return Find_Path_Result'(Completed => False, Steps => S.Steps);
+      return
+        Find_Path_Result'
+          (Completed => P.Scores (Goal (X), Goal (Y)) /= Integer'Last,
+           Steps     => P.Scores (Goal (X), Goal (Y)));
    end Find_Path;
 
    function Format_Vec2 (V : Vec2) return String is
@@ -108,11 +113,11 @@ begin
       Walls.Include (Points (I));
    end loop;
 
-   Solution (Find_Path (Pf, Walls).Steps);
+   Solution (Find_Path (Pf, Walls, Shortest_Path).Steps);
 
    for I in 1_025 .. Points.Last_Index loop
       Walls.Include (Points (I));
-      if not Find_Path (Pf, Walls).Completed then
+      if not Find_Path (Pf, Walls, Any_Path).Completed then
          --  Flip output from row,col back to x,y
          Solution (Format_Vec2 (Vec2'(Points (I) (Y), Points (I) (X))));
          exit;
