@@ -14,9 +14,9 @@ with Ada.Containers; use Ada.Containers;
 --  7 5  | cdv 5 | C = A / 2**B  ==>  C = A / 1<<((A&7)^2) | C assigned every iteration
 --  1 3  | bxl 3 | B = B xor 3   ==>  B = (A&7)^1          | operand varies with input seed
 --  4 3  | bxc 3 | B = B xor C   ==>  B = B ^ C            | B mixed with C every iteration
---  5,5  | out 5 | out B mod 8   ==>  out B & 7            | output discards B bits beyond 3
---  0,3  | adv 3 | A = A / 8     ==>  A = A >> 3           | 3 bits shifted out of A each iteration
---  3,0  | jnz 0 | if A /= 0 then PC := 0                  | repeat program until A is 0
+--  5 5  | out 5 | out B mod 8   ==>  out B & 7            | output discards B bits beyond 3
+--  0 3  | adv 3 | A = A / 8     ==>  A = A >> 3           | 3 bits shifted out of A each iteration
+--  3 0  | jnz 0 | if A /= 0 then PC := 0                  | repeat program until A is 0
 --
 --  Since the program must output 16 digits (the length of our program), we can
 --  conclude that A contains 46-48 bits because it shifts out groups of 3 bits
