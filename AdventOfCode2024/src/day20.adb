@@ -68,8 +68,7 @@ procedure Day20 is
 
       --!pp off
       function Is_Time_Save (From, To : Vec2) return Boolean is
-        (End_Distance (From) /= Integer'Last
-           and then In_Bounds (To)
+        (In_Bounds (To)
            and then Manhattan (From, To) <= Cheat_Distance
            and then End_Distance (From) > End_Distance (To)
            and then End_Distance (From) - End_Distance (To) - Manhattan (To, From) >= 100);
@@ -78,14 +77,16 @@ procedure Day20 is
       for I in Map'Range (1) loop
          for J in Map'Range (2) loop
             Current := (I, J);
-            for DI in -Cheat_Distance .. +Cheat_Distance loop
-               for DJ in -Cheat_Distance .. +Cheat_Distance loop
-                  Neighbor := Current + (DI, DJ);
-                  if Is_Time_Save (Current, Neighbor) then
-                     Time_Saves := Time_Saves + 1;
-                  end if;
+            if End_Distance (Current) /= Integer'Last then
+               for DI in -Cheat_Distance .. +Cheat_Distance loop
+                  for DJ in -Cheat_Distance .. +Cheat_Distance loop
+                     Neighbor := Current + (DI, DJ);
+                     if Is_Time_Save (Current, Neighbor) then
+                        Time_Saves := Time_Saves + 1;
+                     end if;
+                  end loop;
                end loop;
-            end loop;
+            end if;
          end loop;
       end loop;
       return Time_Saves;
