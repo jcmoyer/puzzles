@@ -59,7 +59,6 @@ procedure Day20 is
      (Map : Char_Matrix; Distances : Distance_Map; Cheat_Distance : Integer) return Integer
    is
       Current    : Vec2;
-      Neighbor   : Vec2;
       Time_Saves : Integer := 0;
 
       function End_Distance (Pos : Vec2) return Integer is (Distances (Pos (X), Pos (Y)));
@@ -80,8 +79,7 @@ procedure Day20 is
             if End_Distance (Current) /= Integer'Last then
                for DI in -Cheat_Distance .. +Cheat_Distance loop
                   for DJ in -Cheat_Distance .. +Cheat_Distance loop
-                     Neighbor := Current + (DI, DJ);
-                     if Is_Time_Save (Current, Neighbor) then
+                     if Is_Time_Save (Current, Current + (DI, DJ)) then
                         Time_Saves := Time_Saves + 1;
                      end if;
                   end loop;
