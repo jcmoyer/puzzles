@@ -70,7 +70,7 @@ procedure Day20 is
         (In_Bounds (To)
            and then Manhattan (From, To) <= Cheat_Distance
            and then End_Distance (From) > End_Distance (To)
-           and then End_Distance (From) - End_Distance (To) - Manhattan (To, From) >= 100);
+           and then End_Distance (From) - End_Distance (To) - Manhattan (From, To) >= 100);
       --!pp on
    begin
       for I in Map'Range (1) loop
