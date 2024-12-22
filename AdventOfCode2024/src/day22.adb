@@ -49,7 +49,7 @@ procedure Day22 is
       return Price_Diff (Price (Secret_1)) - Price_Diff (Price (Secret_0));
    end Diff;
 
-   Secrets     : array (1 .. 2_000) of U64;
+   Prices      : array (1 .. 2_000) of Price_Type;
    Price_Diffs : Diff_Array (1 .. 2_000);
 
    Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
@@ -66,7 +66,7 @@ begin
 
       for I in 1 .. 2_000 loop
          Secret          := Evolve (Secret);
-         Secrets (I)     := Secret;
+         Prices (I)      := Price (Secret);
          Price_Diffs (I) := Diff (Secret, Last);
          Last            := Secret;
       end loop;
@@ -77,9 +77,8 @@ begin
 
       for I in Price_Diffs'First .. Price_Diffs'Last - 3 loop
          declare
-            Diffs : constant Diff_Window := Price_Diffs (I .. I + 3);
-
-            Sell_Price : constant Price_Type := Price (Secrets (I + 3));
+            Diffs      : constant Diff_Window := Price_Diffs (I .. I + 3);
+            Sell_Price : constant Price_Type  := Prices (I + 3);
          begin
             if not Seen (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) then
                Seen (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) := True;
