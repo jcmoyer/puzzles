@@ -31,11 +31,12 @@ procedure Day22 is
       return Secret mod 16_777_216;
    end Prune;
 
-   procedure Evolve (Secret : in out U64) is
+   function Evolve (Secret : U64) return U64 is
+      A : constant U64 := Prune (Mix (Secret * 64, Secret));
+      B : constant U64 := Prune (Mix (A / 32, A));
+      C : constant U64 := Prune (Mix (B * 2_048, B));
    begin
-      Secret := Prune (Mix (Secret * 64, Secret));
-      Secret := Prune (Mix (Secret / 32, Secret));
-      Secret := Prune (Mix (Secret * 2_048, Secret));
+      return C;
    end Evolve;
 
    function Price (Secret : U64) return Price_Type is
@@ -64,7 +65,7 @@ begin
       Last   := Secret;
 
       for I in 1 .. 2_000 loop
-         Evolve (Secret);
+         Secret          := Evolve (Secret);
          Secrets (I)     := Secret;
          Price_Diffs (I) := Diff (Secret, Last);
          Last            := Secret;
