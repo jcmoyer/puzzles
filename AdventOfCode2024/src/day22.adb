@@ -1,10 +1,6 @@
 with Advent.IO;      use Advent.IO;
 with Advent.Strings; use Advent.Strings;
 with Ada.Command_Line;
-with Ada.Containers.Vectors;
-with Ada.Containers.Hashed_Maps;
-with Ada.Containers.Hashed_Sets;
-with Ada.Containers; use Ada.Containers;
 
 procedure Day22 is
 
@@ -14,19 +10,16 @@ procedure Day22 is
 
    type Price_Diff is range -9 .. +9;
 
-   type Diff_Array is array (1 .. 4) of Price_Diff;
+   type Diff_Array is array (Positive range <>) of Price_Diff;
 
-   --  Randomly chosen primes. TODO: algorithmically determine these; they can
-   --  vary runtime from a couple seconds to over a minute.
-   function Hash (T : Diff_Array) return Hash_Type is
-     (Hash_Type'Mod (T (1)) * 216_091 xor Hash_Type'Mod (T (2)) * 110_503 xor
-      Hash_Type'Mod (T (3)) * 57_885_161 xor Hash_Type'Mod (T (4)) * 30_402_457);
+   subtype Diff_Window is Diff_Array (1 .. 4);
 
-   package Diff_Array_Maps is new Ada.Containers.Hashed_Maps
-     (Key_Type => Diff_Array, Element_Type => U64, Hash => Hash, Equivalent_Keys => "=");
+   type Seen_Windows_Array is
+     array (Price_Diff, Price_Diff, Price_Diff, Price_Diff) of Boolean with
+     Default_Component_Value => False;
 
-   package Diff_Array_Sets is new Ada.Containers.Hashed_Sets
-     (Element_Type => Diff_Array, Hash => Hash, Equivalent_Elements => "=");
+   type Window_Score_Array is array (Price_Diff, Price_Diff, Price_Diff, Price_Diff) of U64 with
+     Default_Component_Value => 0;
 
    function Mix (Value, Secret : U64) return U64 is
    begin
@@ -55,20 +48,16 @@ procedure Day22 is
       return Price_Diff (Price (Secret_1)) - Price_Diff (Price (Secret_0));
    end Diff;
 
-   package U64_Vectors is new Ada.Containers.Vectors (Positive, U64);
-
-   package Price_Diff_Vectors is new Ada.Containers.Vectors (Positive, Price_Diff);
-
-   Secrets     : U64_Vectors.Vector;
-   Price_Diffs : Price_Diff_Vectors.Vector;
+   Secrets     : array (1 .. 2_000) of U64;
+   Price_Diffs : Diff_Array (1 .. 2_000);
 
    Lines : constant String_Array := Read_All_Lines (Ada.Command_Line.Argument (1));
 
-   Total_Prices : Diff_Array_Maps.Map;
-   Last         : U64 := U64'Last;
+   Total_Prices : Window_Score_Array;
+   Last         : U64;
    Secret       : U64;
    Sum          : U64 := 0;
-   Seen         : Diff_Array_Sets.Set;
+   Seen         : Seen_Windows_Array;
 begin
    for Line of Lines loop
       Secret := U64'Value (Line);
@@ -76,34 +65,29 @@ begin
 
       for I in 1 .. 2_000 loop
          Evolve (Secret);
-         Secrets.Append (Secret);
-         Price_Diffs.Append (Diff (Secret, Last));
-         Last := Secret;
+         Secrets (I)     := Secret;
+         Price_Diffs (I) := Diff (Secret, Last);
+         Last            := Secret;
       end loop;
 
-      for I in Price_Diffs.First_Index .. Price_Diffs.Last_Index - 3 loop
+      Sum := Sum + Secret;
+
+      Seen := (others => (others => (others => (others => False))));
+
+      for I in Price_Diffs'First .. Price_Diffs'Last - 3 loop
          declare
-            Diffs : constant Diff_Array :=
-              (Price_Diffs (I), Price_Diffs (I + 1), Price_Diffs (I + 2), Price_Diffs (I + 3));
+            Diffs : constant Diff_Window := Price_Diffs (I .. I + 3);
 
             Sell_Price : constant Price_Type := Price (Secrets (I + 3));
          begin
-            if not Seen.Contains (Diffs) then
-               Seen.Include (Diffs);
-               if Total_Prices.Contains (Diffs) then
-                  Total_Prices.Include (Diffs, Total_Prices.Element (Diffs) + U64 (Sell_Price));
-               else
-                  Total_Prices.Include (Diffs, U64 (Sell_Price));
-               end if;
+            if not Seen (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) then
+               Seen (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) := True;
+
+               Total_Prices (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) :=
+                 Total_Prices (Diffs (1), Diffs (2), Diffs (3), Diffs (4)) + U64 (Sell_Price);
             end if;
          end;
       end loop;
-
-      Secrets.Clear;
-      Price_Diffs.Clear;
-      Seen.Clear;
-
-      Sum := Sum + Secret;
    end loop;
 
    Solution (Long_Long_Integer (Sum));
@@ -117,4 +101,5 @@ begin
 
       Solution (Long_Long_Integer (Max));
    end;
+
 end Day22;
