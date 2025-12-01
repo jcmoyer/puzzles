@@ -12,7 +12,7 @@ procedure Day01 is
    Amount_Arr : Advent.Integer_Parsers.Array_Type (1 .. 1);
    Amount     : Integer;
    N_Ints     : Natural;
-   Clicks     : Integer;
+   New_Dial   : Integer;
 
    Dial   : Dial_Type := 50;
    Zeroes : Integer := 0;
@@ -29,18 +29,16 @@ begin
       Amount := Amount_Arr (Amount_Arr'First);
 
       if Line (Line'First) = 'L' then
-         Clicks := Integer (Dial) - Amount;
-         if Clicks <= 0 then
-            Zeroes := (if Dial = 0 then 0 else 1) + Clicks / (-100);
+         New_Dial := Integer (Dial) - Amount;
+         if New_Dial <= 0 then
+            Zeroes := (if Dial = 0 then 0 else 1) + New_Dial / (-100);
          end if;
-
-         Dial := Dial - Dial_Type'Mod (Amount);
       elsif Line (Line'First) = 'R' then
-         Clicks := Integer (Dial) + Amount;
-         Zeroes := Clicks / 100;
-
-         Dial := Dial + Dial_Type'Mod (Amount);
+         New_Dial := Integer (Dial) + Amount;
+         Zeroes := New_Dial / 100;
       end if;
+
+      Dial := Dial_Type'Mod (New_Dial);
 
       if Dial = 0 then
          P1 := P1 + 1;
