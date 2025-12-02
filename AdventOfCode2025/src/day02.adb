@@ -1,8 +1,11 @@
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-with Ada.Strings;       use Ada.Strings;
+with Ada.Strings.Fixed;   use Ada.Strings.Fixed;
+with Ada.Strings;         use Ada.Strings;
 with Advent.IO;
+with Advent.Parsers.Integers;
 with Advent.Strings;
+with Advent.Long_Parsers; use Advent.Long_Parsers;
 with Ada.Command_Line;
+with Advent.Containers.Long_Vectors;
 
 procedure Day02 is
    function Is_Invalid (S : String; First_Chunk_Size : Positive) return Boolean
@@ -37,11 +40,11 @@ procedure Day02 is
 
    ----------------------------------------------------------------------------
 
-   Lines : constant Advent.Strings.String_Array :=
-     Advent.IO.Read_All_Lines (Ada.Command_Line.Argument (1));
+   Text : constant String :=
+     Advent.IO.Read_All_Text (Ada.Command_Line.Argument (1));
 
-   Ints : constant Advent.Strings.String_Array :=
-     Advent.Strings.Split_Any (S => Lines.First_Element, Delims => "-,");
+   Ints : constant Advent.Containers.Long_Vectors.Vector :=
+     Advent.Long_Parsers.Extract_Positive_Integers (Text);
 
    I : Integer := Ints.First_Index;
 
@@ -50,8 +53,8 @@ procedure Day02 is
    First, Last : Long_Long_Integer;
 begin
    while I in Ints.First_Index .. Ints.Last_Index loop
-      First := Long_Long_Integer'Value (Ints (I));
-      Last := Long_Long_Integer'Value (Ints (I + 1));
+      First := Ints (I);
+      Last := Ints (I + 1);
 
       for Int in First .. Last loop
          declare
