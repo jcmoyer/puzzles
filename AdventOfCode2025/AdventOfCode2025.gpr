@@ -10,7 +10,8 @@ project AdventOfCode2025 is
     for Exec_Dir use "bin/" & Build;
     for Main use (
        "day01.adb",
-       "day02.adb"
+       "day02.adb",
+       "day03.adb"
     );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99", "-gnaty-s");
