@@ -20,7 +20,7 @@ procedure Day04 is
                Pos      : constant Vec2 := (I, J);
             begin
                if Element (Map, Pos) = '@' then
-                  for D in Advent.Directions.Direction loop
+                  for D in Direction loop
                      if In_Bounds (Map, Pos + To_Vector (D))
                        and then Element (Map, Pos + To_Vector (D)) = '@'
                      then
@@ -49,14 +49,13 @@ procedure Day04 is
 
    ----------------------------------------------------------------------------
 
-   Map : Advent.IO.Char_Matrix :=
-     Advent.IO.Read_Tilemap (Ada.Command_Line.Argument (1));
+   Map : Char_Matrix := Read_Tilemap (Ada.Command_Line.Argument (1));
 
    Q  : Vec_Deques.Deque;
    P2 : Integer := 0;
 begin
    Gather_Removable (Map, Q);
-   Advent.IO.Solution (Q.Length);
+   Solution (Q.Length);
 
    while Q.Length > 0 loop
       P2 := P2 + Q.Length;
@@ -64,5 +63,5 @@ begin
       Gather_Removable (Map, Q);
    end loop;
 
-   Advent.IO.Solution (P2);
+   Solution (P2);
 end Day04;
