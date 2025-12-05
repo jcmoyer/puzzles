@@ -52,6 +52,11 @@ package Advent.Intervals is
    procedure Translate (M : in out Multi_Interval; Amount : Element_Type);
    procedure Translate (M : in out Multi_Interval; Span : Interval; Amount : Element_Type);
    function First (M : Multi_Interval) return Element_Type;
+   function Contains (M : Multi_Interval; Value : Element_Type) return Boolean;
+
+   --  Returns the sum of all lengths of intervals contained within the
+   --  multi-interval.
+   function Count (M : Multi_Interval) return Element_Type;
 
 private
    package Interval_Vectors is new Ada.Containers.Vectors

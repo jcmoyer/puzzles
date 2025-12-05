@@ -22,6 +22,8 @@ package Advent.Parsers.Integers is
 
    type Array_Type is array (Positive range <>) of Element_Type;
 
+   function Extract_Positive_Integers (S : String; Output : out Array_Type) return Natural;
+
    function Extract_Integers (S : String; Output : out Array_Type) return Natural;
 
 end Advent.Parsers.Integers;

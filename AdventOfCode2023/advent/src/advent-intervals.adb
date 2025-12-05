@@ -185,4 +185,23 @@ package body Advent.Intervals is
       return Result;
    end First;
 
+   function Contains (M : Multi_Interval; Value : Element_Type) return Boolean is
+   begin
+      for Child of M.Children loop
+         if Contains(Child, Value) then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Contains;
+
+   function Count (M : Multi_Interval) return Element_Type is
+      Result : Element_Type := 0;
+   begin
+      for Child of M.Children loop
+         Result := Result + Length (Child);
+      end loop;
+      return Result;
+   end Count;
+
 end Advent.Intervals;

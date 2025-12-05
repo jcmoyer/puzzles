@@ -56,6 +56,30 @@ package body Advent.Parsers.Integers is
       return Result;
    end Extract_Integers;
 
+   function Extract_Positive_Integers (S : String; Output : out Array_Type) return Natural is
+      Read         : Natural := 0;
+      I            : Positive := S'First;
+      Output_Index : Positive := Output'First;
+   begin
+      while I <= S'Last loop
+         if Is_Digit (S (I)) then
+            declare
+               Int_Start : constant Positive := I;
+            begin
+               while I <= S'Last and then Is_Digit (S (I)) loop
+                  I := I + 1;
+               end loop;
+               Output (Output_Index) := Element_Type'Value (S (Int_Start .. I - 1));
+               Output_Index := Output_Index + 1;
+               Read := Read + 1;
+            end;
+         else
+            I := I + 1;
+         end if;
+      end loop;
+      return Read;
+   end Extract_Positive_Integers;
+
    function Extract_Integers (S : String; Output : out Array_Type) return Natural is
       Read         : Natural := 0;
       I            : Positive := S'First;
