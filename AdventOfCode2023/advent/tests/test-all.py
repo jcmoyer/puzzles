@@ -15,7 +15,7 @@ class FailedTest:
 
 
 def get_failed_assert(stacktrace, source_filename):
-    m = re.search("Test_.*? at (test_.*?\.adb):(\d+)", stacktrace, re.MULTILINE)
+    m = re.search(r"Test_.*? at (test_.*?\.adb):(\d+)", stacktrace, re.MULTILINE)
     if m:
         line_number = int(m.group(2))
         with open(source_filename, "r") as f:
