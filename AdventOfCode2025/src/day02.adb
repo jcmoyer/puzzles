@@ -1,8 +1,6 @@
 with Ada.Strings.Fixed;   use Ada.Strings.Fixed;
 with Ada.Strings;         use Ada.Strings;
 with Advent.IO;
-with Advent.Parsers.Integers;
-with Advent.Strings;
 with Advent.Long_Parsers; use Advent.Long_Parsers;
 with Ada.Command_Line;
 with Advent.Containers.Long_Vectors;
@@ -41,8 +39,7 @@ procedure Day02 is
 
    Text : constant String := Advent.IO.Read_All_Text (Ada.Command_Line.Argument (1));
 
-   Ints : constant Advent.Containers.Long_Vectors.Vector :=
-     Advent.Long_Parsers.Extract_Positive_Integers (Text);
+   Ints : constant Advent.Containers.Long_Vectors.Vector := Extract_Positive_Integers (Text);
 
    I : Integer := Ints.First_Index;
 
