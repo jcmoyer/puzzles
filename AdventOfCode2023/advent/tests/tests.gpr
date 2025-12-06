@@ -12,7 +12,8 @@ project Tests is
     for Main use (
         "test_priority_queues.adb",
         "test_linked_deques.adb",
-        "test_scanner.adb"
+        "test_scanner.adb",
+        "test_integer_parsers.adb"
     );
 
     Common_Switches := ("-gnaty", "-g", "-gnatwa", "-gnatyM99");
