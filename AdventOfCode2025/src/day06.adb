@@ -8,9 +8,7 @@ procedure Day06 is
 
    --  Returns the matrix column of the space right of the numbers such that
    --  result + 1 would be the start of the next number column
-   function Find_Right_Edge
-     (Source : Char_Matrix; Col : Positive) return Integer
-   is
+   function Find_Right_Edge (Source : Char_Matrix; Col : Positive) return Integer is
       J : Positive := Col;
    begin
       loop
@@ -22,8 +20,7 @@ procedure Day06 is
    end Find_Right_Edge;
 
    function Extract_Operands_Columnwise
-     (Source : Char_Matrix; Col : Positive; Right_Edge : Positive)
-      return Operand_Array
+     (Source : Char_Matrix; Col : Positive; Right_Edge : Positive) return Operand_Array
    is
       Result : Operand_Array (1 .. Right_Edge - Col) := (others => 0);
    begin
@@ -31,9 +28,7 @@ procedure Day06 is
          for I in 1 .. 4 loop
             if Source (I, J) /= ' ' then
                Result (J - Col + 1) :=
-                 Result (J - Col + 1)
-                 * 10
-                 + Long_Long_Integer'Value ("" & Source (I, J));
+                 Result (J - Col + 1) * 10 + Long_Long_Integer'Value ("" & Source (I, J));
             end if;
          end loop;
       end loop;
@@ -41,18 +36,14 @@ procedure Day06 is
    end Extract_Operands_Columnwise;
 
    function Extract_Operands_Rowwise
-     (Source : Char_Matrix; Col : Positive; Right_Edge : Positive)
-      return Operand_Array
+     (Source : Char_Matrix; Col : Positive; Right_Edge : Positive) return Operand_Array
    is
       Result : Operand_Array (1 .. 4) := (others => 0);
    begin
       for I in 1 .. 4 loop
          for J in Col .. Right_Edge - 1 loop
             if Source (I, J) /= ' ' then
-               Result (I) :=
-                 Result (I)
-                 * 10
-                 + Long_Long_Integer'Value ("" & Source (I, J));
+               Result (I) := Result (I) * 10 + Long_Long_Integer'Value ("" & Source (I, J));
             end if;
          end loop;
       end loop;
@@ -60,8 +51,7 @@ procedure Day06 is
    end Extract_Operands_Rowwise;
 
    function Extract_Operands
-     (Mode : Mode_Type; Map : Char_Matrix; Col, Right_Edge : Positive)
-      return Operand_Array is
+     (Mode : Mode_Type; Map : Char_Matrix; Col, Right_Edge : Positive) return Operand_Array is
    begin
       case Mode is
          when Rowwise    =>
@@ -72,9 +62,7 @@ procedure Day06 is
       end case;
    end Extract_Operands;
 
-   function Solve
-     (Map : Char_Matrix; Mode : Mode_Type) return Long_Long_Integer
-   is
+   function Solve (Map : Char_Matrix; Mode : Mode_Type) return Long_Long_Integer is
       Col        : Integer := 1;
       Right_Edge : Integer;
       Next_Col   : Integer;
@@ -96,8 +84,7 @@ procedure Day06 is
                Op_Result := Op_Result + N;
             end loop;
          else
-            raise Program_Error
-              with "expected * or + under text column " & Col'Image;
+            raise Program_Error with "expected * or + under text column " & Col'Image;
          end if;
 
          Result := Result + Op_Result;
@@ -107,8 +94,7 @@ procedure Day06 is
       return Result;
    end Solve;
 
-   Map : constant Char_Matrix :=
-     Advent.IO.Read_Tilemap (Ada.Command_Line.Argument (1));
+   Map : constant Char_Matrix := Advent.IO.Read_Tilemap (Ada.Command_Line.Argument (1));
 
 begin
    for Mode in Mode_Type loop

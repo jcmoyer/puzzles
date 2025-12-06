@@ -8,8 +8,7 @@ with Ada.Command_Line;
 with Advent.Containers.Long_Vectors;
 
 procedure Day02 is
-   function Is_Invalid (S : String; First_Chunk_Size : Positive) return Boolean
-   is
+   function Is_Invalid (S : String; First_Chunk_Size : Positive) return Boolean is
       Chunk_Size  : Positive := First_Chunk_Size;
       Chunk_Count : Integer;
 
@@ -40,8 +39,7 @@ procedure Day02 is
 
    ----------------------------------------------------------------------------
 
-   Text : constant String :=
-     Advent.IO.Read_All_Text (Ada.Command_Line.Argument (1));
+   Text : constant String := Advent.IO.Read_All_Text (Ada.Command_Line.Argument (1));
 
    Ints : constant Advent.Containers.Long_Vectors.Vector :=
      Advent.Long_Parsers.Extract_Positive_Integers (Text);
@@ -60,9 +58,7 @@ begin
          declare
             S : constant String := Trim (Int'Image, Left);
          begin
-            if S'Length rem 2 = 0
-              and then Is_Invalid (S, First_Chunk_Size => S'Length / 2)
-            then
+            if S'Length rem 2 = 0 and then Is_Invalid (S, First_Chunk_Size => S'Length / 2) then
                P1 := P1 + Int;
             end if;
 

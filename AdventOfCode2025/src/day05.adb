@@ -5,8 +5,7 @@ with Advent.Intervals;
 with Ada.Command_Line;
 
 procedure Day05 is
-   package Long_Intervals is new
-     Advent.Intervals (Element_Type => Long_Long_Integer);
+   package Long_Intervals is new Advent.Intervals (Element_Type => Long_Long_Integer);
    use Long_Intervals;
 
    Lines  : constant Advent.Strings.String_Array :=

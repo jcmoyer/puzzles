@@ -6,11 +6,9 @@ with Ada.Command_Line;
 
 procedure Day04 is
    type Deque_Index is mod 64;
-   package Vec_Deques is new
-     Advent.Containers.Linked_Deques (Vec2, Deque_Index);
+   package Vec_Deques is new Advent.Containers.Linked_Deques (Vec2, Deque_Index);
 
-   procedure Gather_Removable (Map : Char_Matrix; Q : in out Vec_Deques.Deque)
-   is
+   procedure Gather_Removable (Map : Char_Matrix; Q : in out Vec_Deques.Deque) is
    begin
       Q.Clear;
       for I in Map'Range (1) loop
@@ -37,8 +35,7 @@ procedure Day04 is
       end loop;
    end Gather_Removable;
 
-   procedure Remove_All (Map : in out Char_Matrix; Q : in out Vec_Deques.Deque)
-   is
+   procedure Remove_All (Map : in out Char_Matrix; Q : in out Vec_Deques.Deque) is
       Pos : Vec2;
    begin
       while not Q.Empty loop

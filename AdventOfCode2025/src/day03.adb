@@ -5,8 +5,7 @@ with Ada.Command_Line;
 procedure Day03 is
    type Integer_Array is array (Natural range <>) of Integer;
 
-   function Find_Largest (S : String; Size : Integer) return Long_Long_Integer
-   is
+   function Find_Largest (S : String; Size : Integer) return Long_Long_Integer is
       Num    : Integer_Array (0 .. Size) := (others => 0);
       Pos    : Integer_Array (0 .. Size) := (others => 0);
       Cur    : Integer;
