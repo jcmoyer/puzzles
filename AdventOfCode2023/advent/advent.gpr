@@ -30,4 +30,8 @@ project Advent is
             "--max-line-length=99"
         );
     end Pretty_Printer;
+
+    package Format is
+        for Width ("Ada") use "99";
+    end Format;
 end Advent;
