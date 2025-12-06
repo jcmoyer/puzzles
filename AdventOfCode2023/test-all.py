@@ -70,7 +70,7 @@ def main():
 
         for input in inputs:
             output = input.replace("input", "output")
-            year, day = re.match(".*?(\d{4})\-(\d{2})\-input.txt$", input).groups()
+            year, day = re.match(r".*?(\d{4})\-(\d{2})\-input.txt$", input).groups()
             exe = f"bin/{mode}/day{day}"
 
             test_name = f"day{day}"
