@@ -54,9 +54,9 @@ procedure Day07 is
 
       while In_Bounds (Map, Cur) loop
          if Element (Map, Cur) = '^' then
-            Sum := Sum - 1;
-            Sum := Sum + Count_Paths (Map, Cur + To_Vector (West), Cache);
-            Sum := Sum + Count_Paths (Map, Cur + To_Vector (East), Cache);
+            Sum :=
+              Count_Paths (Map, Cur + To_Vector (West), Cache)
+              + Count_Paths (Map, Cur + To_Vector (East), Cache);
             exit;
          else
             Cur := Cur + To_Vector (South);
