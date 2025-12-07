@@ -9,6 +9,9 @@ procedure Day07 is
    type Index_Type is mod 64;
    package Vec_Deques is new Advent.Containers.Linked_Deques (Vec2, Index_Type);
 
+   type Visited_Map is array (Integer range <>, Integer range <>) of Boolean
+   with Default_Component_Value => False;
+
    type Count_Map is array (Integer range <>, Integer range <>) of Long_Long_Integer
    with Default_Component_Value => -1;
 
@@ -17,23 +20,20 @@ procedure Day07 is
       Cur    : Vec2 := Start;
       Splits : Long_Long_Integer := 0;
 
-      --  Draw on a copy of the map so we can keep track of which splitters we
-      --  already encountered. When we encounter a splitter we write a '*' into
-      --  its position on this map.
-      Seen : Char_Matrix := Map;
+      Visited : Visited_Map (Map'Range (1), Map'Range (2));
    begin
       Q.Push_Back (Cur);
 
       while not Q.Empty loop
          Q.Pop_Back (Cur);
 
-         if In_Bounds (Map, Cur) then
-            if Element (Map, Cur) = '^' and then Element (Seen, Cur) /= '*' then
+         if In_Bounds (Map, Cur) and then not Visited (Cur (X), Cur (Y)) then
+            Visited (Cur (X), Cur (Y)) := True;
+            if Element (Map, Cur) = '^' then
                Q.Push_Back (Cur + To_Vector (West));
                Q.Push_Back (Cur + To_Vector (East));
                Splits := Splits + 1;
-               Seen (Cur (X), Cur (Y)) := '*';
-            elsif Element (Seen, Cur) /= '*' then
+            else
                Q.Push_Back (Cur + To_Vector (South));
             end if;
          end if;
