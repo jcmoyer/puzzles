@@ -4,6 +4,7 @@ with Advent.Containers.String_Vectors;
 with Ada.Containers.Generic_Array_Sort;
 with Advent.Long_Parsers; use Advent.Long_Parsers;
 with Advent.Vector_Math;
+with Ada.Containers.Vectors;
 
 procedure Day08 is
    package Long_Vectors is new Advent.Vector_Math (Long_Long_Integer);
@@ -36,6 +37,8 @@ procedure Day08 is
 
    Null_Pair : constant Box_Pair := (First => Null_Box_ID, Second => Null_Box_ID);
 
+   package Pair_Vectors is new Ada.Containers.Vectors (Positive, Box_Pair);
+
    function Sqdist (A, B : Vec3) return Long_Long_Integer is
       Sum_Diff_Sq : Long_Long_Integer := 0;
    begin
@@ -58,22 +61,17 @@ procedure Day08 is
    end Calc_Distances;
 
    function Find_Shortest_Unconnected
-     (Boxes : Box_Array; Distances : Box_Distance_Matrix; Conn : Box_Connectivity_Matrix)
-      return Box_Pair
-   is
-      Best      : Long_Long_Integer := Long_Long_Integer'Last;
-      Best_Pair : Box_Pair := Null_Pair;
+     (Ordering : Pair_Vectors.Vector; Order : in out Positive; Conn : Box_Connectivity_Matrix)
+      return Box_Pair is
    begin
-      for I in 1 .. Boxes'Last loop
-         for J in I + 1 .. Boxes'Last loop
-            if not Conn (I, J) and then Distances (I, J) < Best then
-               Best := Distances (I, J);
-               Best_Pair := (First => I, Second => J);
-            end if;
-         end loop;
+      for I in Order .. Ordering.Last_Index loop
+         if not Conn (Ordering (I).First, Ordering (I).Second) then
+            Order := I;
+            return Ordering (I);
+         end if;
       end loop;
-
-      return Best_Pair;
+      Order := Ordering.Last_Index + 1;
+      return Null_Pair;
    end Find_Shortest_Unconnected;
 
    function Find_Largest_Circuits (Conn : Box_Connectivity_Matrix) return Circuit_Sizes is
@@ -116,13 +114,22 @@ procedure Day08 is
    Lines : constant Advent.Containers.String_Vectors.Vector :=
      Read_All_Lines (Ada.Command_Line.Argument (1));
 
-   Ints        : Array_Type (1 .. 3);
-   N_Ints      : Integer;
-   Last_Box_ID : Box_ID := 0;
-   Boxes       : Box_Array;
-   Connected   : Box_Connectivity_Matrix;
-   Distances   : Box_Distance_Matrix;
-   Pair        : Box_Pair;
+   Ints          : Array_Type (1 .. 3);
+   N_Ints        : Integer;
+   Last_Box_ID   : Box_ID := 0;
+   Boxes         : Box_Array;
+   Connected     : Box_Connectivity_Matrix;
+   Distances     : Box_Distance_Matrix;
+   Pair          : Box_Pair;
+   Optimal_Order : Pair_Vectors.Vector;
+   Current_Order : Positive := 1;
+
+   function Order_Distance (Left, Right : Box_Pair) return Boolean is
+   begin
+      return Distances (Left.First, Left.Second) < Distances (Right.First, Right.Second);
+   end Order_Distance;
+
+   package Distance_Sorting is new Pair_Vectors.Generic_Sorting ("<" => Order_Distance);
 
 begin
    for Line of Lines loop
@@ -137,8 +144,16 @@ begin
 
    Calc_Distances (Boxes, Distances);
 
+   for I in 1 .. Last_Box_ID loop
+      for J in I + 1 .. Last_Box_ID loop
+         Optimal_Order.Append (Box_Pair'(First => I, Second => J));
+      end loop;
+   end loop;
+
+   Distance_Sorting.Sort (Optimal_Order);
+
    for I in 1 .. 1000 loop
-      Pair := Find_Shortest_Unconnected (Boxes, Distances, Connected);
+      Pair := Find_Shortest_Unconnected (Optimal_Order, Current_Order, Connected);
       Connected (Pair.First, Pair.Second) := True;
       Connected (Pair.Second, Pair.First) := True;
    end loop;
@@ -150,7 +165,7 @@ begin
    end;
 
    loop
-      Pair := Find_Shortest_Unconnected (Boxes, Distances, Connected);
+      Pair := Find_Shortest_Unconnected (Optimal_Order, Current_Order, Connected);
       if Pair = Null_Pair then
          raise Program_Error with "no solution for input";
       end if;
@@ -166,4 +181,5 @@ begin
          end if;
       end;
    end loop;
+
 end Day08;
