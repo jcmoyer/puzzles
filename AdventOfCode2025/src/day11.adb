@@ -76,7 +76,7 @@ procedure Day11 is
       function Impl_Normal (Pos, Goal : Node_ID) return Long_Long_Integer is
          Sum : Long_Long_Integer := 0;
       begin
-         if World.Cache (Pos, Goal, False, False) /= -1 then
+         if World.Cache (Pos, Goal, False, False) /= No_Count then
             return World.Cache (Pos, Goal, False, False);
          end if;
 
@@ -99,7 +99,7 @@ procedure Day11 is
       is
          Sum : Long_Long_Integer := 0;
       begin
-         if World.Cache (Pos, Goal, Fft, Dac) /= -1 then
+         if World.Cache (Pos, Goal, Fft, Dac) /= No_Count then
             return World.Cache (Pos, Goal, Fft, Dac);
          end if;
 
