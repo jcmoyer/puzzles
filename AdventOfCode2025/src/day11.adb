@@ -136,7 +136,6 @@ procedure Day11 is
      Read_All_Lines (Ada.Command_Line.Argument (1));
 
    Node_Names : Advent.Containers.String_Vectors.Vector;
-   Unused     : Node_ID;
    World      : World_Type;
 
 begin
